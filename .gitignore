@@ -1,0 +1,29 @@
+# Rust build targets
+target/
+Cargo.lock
+
+# ESP-IDF and C build artifacts
+build/
+managed_components/
+sdkconfig
+sdkconfig.old
+dependencies.lock
+*.o
+*.a
+*.d
+*.bin
+*.elf
+*.map
+
+# Test harness binaries and outputs
+test_harness/test_runner
+test_harness/lvgl/
+test_harness/artifacts/
+
+# IDE and OS
+.vscode/
+.idea/
+.DS_Store
+
+# Documentation build output
+docs/book/

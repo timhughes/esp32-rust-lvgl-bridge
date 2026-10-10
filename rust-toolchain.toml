@@ -1,0 +1,4 @@
+[toolchain]
+channel = "nightly"
+components = ["rust-src"]
+targets = ["xtensa-esp32s3-none-elf", "riscv32imafc-unknown-none-elf", "riscv32imac-unknown-none-elf"]

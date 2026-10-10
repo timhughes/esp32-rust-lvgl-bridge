@@ -1,0 +1,13 @@
+[workspace]
+resolver = "2"
+members = [
+    "crates/bridge-core",
+    "crates/app-core",
+]
+
+[profile.dev]
+panic = "abort"
+
+[profile.release]
+panic = "abort"
+

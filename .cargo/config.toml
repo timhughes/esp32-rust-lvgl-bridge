@@ -1,0 +1,12 @@
+[target.riscv32imafc-unknown-none-elf]
+runner = "espflash flash"
+
+[target.riscv32imac-unknown-none-elf]
+runner = "espflash flash"
+
+[target.xtensa-esp32s3-none-elf]
+runner = "espflash flash"
+rustflags = ["-C", "target-feature=+exception,+windowed"]
+
+[unstable]
+build-std = ["core", "alloc"]
