@@ -1,0 +1,104 @@
+name: CI / Automated Visual QA
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  rust-checks:
+    name: Rust Workspace Checks & Docs
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Setup Rust Nightly Toolchain
+        uses: dtolnay/rust-toolchain@nightly
+        with:
+          components: rust-src
+
+      - name: Rust Cache
+        uses: Swatinem/rust-cache@v2
+
+      - name: Cargo Check
+        run: cargo check --workspace
+
+      - name: Verify Rustdoc
+        run: cargo doc --workspace --no-deps
+
+  headless-visual-qa:
+    name: Headless Visual QA Test Suite
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Setup Build Tools
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y gcc make git
+
+      - name: Setup Rust Nightly Toolchain
+        uses: dtolnay/rust-toolchain@nightly
+        with:
+          components: rust-src
+
+      - name: Rust Cache
+        uses: Swatinem/rust-cache@v2
+
+      - name: Clone LVGL v9 for Host Test Harness
+        run: |
+          git clone --depth 1 --branch release/v9.2 https://github.com/lvgl/lvgl.git test_harness/lvgl
+
+      - name: Build & Run Headless Visual Test Harness
+        run: |
+          cd test_harness
+          make clean
+          make run
+
+      - name: Verify Generated Snapshots
+        run: |
+          ls -lh test_harness/artifacts/*.png
+          test -f test_harness/artifacts/01_initial_state.png
+          test -f test_harness/artifacts/02_switch_toggled.png
+          test -f test_harness/artifacts/03_slider_dragging.png
+          test -f test_harness/artifacts/04_slider_released.png
+          test -f test_harness/artifacts/05_slider_telemetry_settled.png
+          test -f test_harness/artifacts/06_counter_reset.png
+          test -f test_harness/artifacts/07_tier1_showcase.png
+
+      - name: Upload Visual Test Snapshots
+        uses: actions/upload-artifact@v4
+        with:
+          name: visual-test-snapshots
+          path: test_harness/artifacts/*.png
+          retention-days: 14
+
+  docs-build:
+    name: mdBook Documentation Build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Install mdBook
+        run: |
+          curl -sL https://github.com/rust-lang/mdBook/releases/download/v0.5.4/mdbook-v0.5.4-x86_64-unknown-linux-gnu.tar.gz | sudo tar -xz -C /usr/local/bin
+          mdbook --version
+
+      - name: Build Documentation Book
+        run: mdbook build docs
+
+      - name: Upload mdBook Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: mdbook-html
+          path: docs/book/
+          retention-days: 14
