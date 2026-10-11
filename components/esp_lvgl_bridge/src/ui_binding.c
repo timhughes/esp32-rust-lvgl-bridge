@@ -28,9 +28,16 @@ static void apply_layout_flow(lv_obj_t *obj, layout_flow_t flow_mode) {
 }
 #endif
 
-#define MAX_BINDINGS 16
-#define MAX_LABEL_BINDINGS 16
-#define MAX_PARAM_LOOKUPS 64
+#define MAX_BINDINGS 32
+#define MAX_LABEL_BINDINGS 32
+#define MAX_PARAM_LOOKUPS 256
+
+#ifdef ESP_PLATFORM
+#include "esp_log.h"
+#define LOG_BIND_ERR(fmt, ...) ESP_LOGE("UI_BINDING", fmt, ##__VA_ARGS__)
+#else
+#define LOG_BIND_ERR(fmt, ...) fprintf(stderr, "[UI_BINDING ERROR] " fmt "\n", ##__VA_ARGS__)
+#endif
 
 typedef struct {
     ui_binding_slider_opts_t opts;
@@ -377,6 +384,9 @@ static void register_lookup(param_id_t param_id, lv_obj_t *obj) {
         s_lookups[s_num_lookups].param_id = param_id;
         s_lookups[s_num_lookups].obj = obj;
         s_num_lookups++;
+    } else {
+        LOG_BIND_ERR("Lookup table capacity exhausted (max %d)! Failed to register param %lu",
+                     MAX_PARAM_LOOKUPS, (unsigned long)param_id);
     }
 }
 
@@ -728,6 +738,8 @@ static void on_calendar_event_value_changed(lv_event_t *e) {
     }
 }
 
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wdeprecated-declarations"
 static void on_list_button_clicked(lv_event_t *e) {
     param_id_t param_id = (param_id_t)(intptr_t)lv_event_get_user_data(e);
     lv_obj_t *target = lv_event_get_current_target(e);
@@ -744,6 +756,7 @@ static void on_list_button_clicked(lv_event_t *e) {
     }
     bridge_send_command_from_ui(&cmd);
 }
+#pragma GCC diagnostic pop
 
 // ----------------------------------------------------------------------
 // Helper to parse button matrix maps
@@ -846,7 +859,12 @@ void ui_engine_init(void) {
 }
 
 void ui_engine_bind_slider(const ui_binding_slider_opts_t *opts) {
-    if (!opts || !opts->slider || s_num_sliders >= MAX_BINDINGS) return;
+    if (!opts || !opts->slider) return;
+    if (s_num_sliders >= MAX_BINDINGS) {
+        LOG_BIND_ERR("Slider bindings capacity exhausted (max %d)! Cannot bind param %lu",
+                     MAX_BINDINGS, (unsigned long)opts->param_id);
+        return;
+    }
 
     bound_slider_t *b = &s_sliders[s_num_sliders++];
     b->opts = *opts;
@@ -872,7 +890,12 @@ void ui_engine_bind_slider(const ui_binding_slider_opts_t *opts) {
 }
 
 void ui_engine_bind_switch(const ui_binding_switch_opts_t *opts) {
-    if (!opts || !opts->sw || s_num_switches >= MAX_BINDINGS) return;
+    if (!opts || !opts->sw) return;
+    if (s_num_switches >= MAX_BINDINGS) {
+        LOG_BIND_ERR("Switch bindings capacity exhausted (max %d)! Cannot bind param %lu",
+                     MAX_BINDINGS, (unsigned long)opts->param_id);
+        return;
+    }
 
     bound_switch_t *b = &s_switches[s_num_switches++];
     b->opts = *opts;
@@ -894,7 +917,12 @@ void ui_engine_bind_switch(const ui_binding_switch_opts_t *opts) {
 }
 
 void ui_engine_bind_button(const ui_binding_button_opts_t *opts) {
-    if (!opts || !opts->button || s_num_buttons >= MAX_BINDINGS) return;
+    if (!opts || !opts->button) return;
+    if (s_num_buttons >= MAX_BINDINGS) {
+        LOG_BIND_ERR("Button bindings capacity exhausted (max %d)! Cannot bind param %lu",
+                     MAX_BINDINGS, (unsigned long)opts->param_id);
+        return;
+    }
 
     bound_button_t *b = &s_buttons[s_num_buttons++];
     b->opts = *opts;
@@ -904,7 +932,12 @@ void ui_engine_bind_button(const ui_binding_button_opts_t *opts) {
 }
 
 void ui_engine_bind_label(const ui_binding_label_opts_t *opts) {
-    if (!opts || !opts->label || s_num_labels >= MAX_LABEL_BINDINGS) return;
+    if (!opts || !opts->label) return;
+    if (s_num_labels >= MAX_LABEL_BINDINGS) {
+        LOG_BIND_ERR("Label bindings capacity exhausted (max %d)! Cannot bind param %lu",
+                     MAX_LABEL_BINDINGS, (unsigned long)opts->param_id);
+        return;
+    }
 
     bound_label_t *b = &s_labels[s_num_labels++];
     b->opts = *opts;
@@ -1259,6 +1292,10 @@ static lv_align_t map_align(ui_align_t a) {
 // ----------------------------------------------------------------------
 void ui_engine_build_from_schema(const widget_descriptor_t *schema, size_t count) {
     if (!schema || count == 0) return;
+    if (count > MAX_PARAM_LOOKUPS) {
+        LOG_BIND_ERR("Schema count (%zu) exceeds MAX_PARAM_LOOKUPS (%d)! Schema will be truncated",
+                     count, MAX_PARAM_LOOKUPS);
+    }
     s_num_lookups = 0;
     lv_obj_t *scr = lv_screen_active();
 
@@ -1760,7 +1797,12 @@ void ui_engine_build_from_schema(const widget_descriptor_t *schema, size_t count
             break;
         }
 
+        // Note: LVGL v9 marks lv_menu and lv_list as deprecated in favor of custom flex-container
+        // layouts with standard buttons/labels. We suppress diagnostic warnings for compatibility
+        // while maintaining declarative schema interoperability.
         case WIDGET_TYPE_MENU: {
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wdeprecated-declarations"
             lv_obj_t *menu = lv_menu_create(parent_obj);
             lv_obj_set_size(menu, d->width > 0 ? d->width : 220, d->height > 0 ? d->height : 220);
             lv_obj_align(menu, align, d->offset_x, d->offset_y);
@@ -1779,17 +1821,23 @@ void ui_engine_build_from_schema(const widget_descriptor_t *schema, size_t count
             lv_label_set_text(lbl3, "Core Engine: FreeRTOS + Rust");
 
             lv_menu_set_page(menu, page);
+#pragma GCC diagnostic pop
 
             if (s_num_menus < MAX_BINDINGS) {
                 bound_menu_t *b = &s_menus[s_num_menus++];
                 b->param_id = d->param_id;
                 b->menu = menu;
+            } else {
+                LOG_BIND_ERR("Menu bindings capacity exhausted (max %d)! Cannot bind param %lu",
+                             MAX_BINDINGS, (unsigned long)d->param_id);
             }
             register_lookup(d->param_id, menu);
             break;
         }
 
         case WIDGET_TYPE_LIST: {
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wdeprecated-declarations"
             lv_obj_t *list = lv_list_create(parent_obj);
             lv_obj_set_size(list, d->width > 0 ? d->width : 180, d->height > 0 ? d->height : 160);
             lv_obj_align(list, align, d->offset_x, d->offset_y);
@@ -1805,11 +1853,15 @@ void ui_engine_build_from_schema(const widget_descriptor_t *schema, size_t count
                     tok = strtok(NULL, "\n");
                 }
             }
+#pragma GCC diagnostic pop
 
             if (s_num_lists < MAX_BINDINGS) {
                 bound_list_t *b = &s_lists[s_num_lists++];
                 b->param_id = d->param_id;
                 b->list = list;
+            } else {
+                LOG_BIND_ERR("List bindings capacity exhausted (max %d)! Cannot bind param %lu",
+                             MAX_BINDINGS, (unsigned long)d->param_id);
             }
             register_lookup(d->param_id, list);
             break;
@@ -2018,9 +2070,11 @@ void ui_engine_build_from_schema(const widget_descriptor_t *schema, size_t count
             break;
         }
 
-        // --- Phase 2: Complex UI & Rich Media ---
+        // Note: LVGL v9 marks lv_win as deprecated in favor of standard container + header layouts.
         case WIDGET_TYPE_WIN: {
 #if LV_USE_WIN
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wdeprecated-declarations"
             lv_obj_t *win = lv_win_create(parent_obj);
             if (d->width > 0 && d->height > 0) {
                 lv_obj_set_size(win, d->width, d->height);
@@ -2046,7 +2100,11 @@ void ui_engine_build_from_schema(const widget_descriptor_t *schema, size_t count
                 if (close_btn) {
                     lv_obj_add_event_cb(close_btn, on_win_close_clicked, LV_EVENT_CLICKED, b);
                 }
+            } else {
+                LOG_BIND_ERR("Window bindings capacity exhausted (max %d)! Cannot bind param %lu",
+                             MAX_BINDINGS, (unsigned long)d->param_id);
             }
+#pragma GCC diagnostic pop
             register_lookup(d->param_id, win);
 #endif
             break;

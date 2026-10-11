@@ -58,8 +58,17 @@ typedef struct {
     param_val_t value;
 } device_telemetry_t;
 
-// Transport Initialization
+// Transport Statistics
+typedef struct {
+    uint32_t cmd_sent;
+    uint32_t cmd_dropped;
+    uint32_t telem_sent;
+    uint32_t telem_dropped;
+} bridge_transport_stats_t;
+
+// Transport Initialization & Stats
 void bridge_transport_init(size_t cmd_depth, size_t telem_depth);
+void bridge_transport_get_stats(bridge_transport_stats_t *out_stats);
 
 // UI Transport Functions (called from C UI)
 bool bridge_send_command_from_ui(const ui_command_t *cmd);

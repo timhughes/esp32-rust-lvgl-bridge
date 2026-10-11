@@ -292,6 +292,17 @@ pub enum LayoutFlow {
     ColumnReverse = 6,
 }
 
+/// Declarative UI widget descriptor used across the FFI ABI boundary.
+///
+/// # Safety and Lifetime Invariants
+///
+/// - `label_primary` and `label_secondary` are raw pointers (`*const c_char`) to null-terminated C strings.
+/// - In normal usage via constructor methods (e.g. `switch`, `slider`, `label`), these pointers are
+///   derived directly from `&'static core::ffi::CStr` string literals.
+/// - Therefore, they point to read-only program memory with `'static` lifetime and remain valid for the
+///   entire duration of the application.
+/// - When constructing `WidgetDescriptor` dynamically, callers must ensure the underlying string buffers
+///   outlive any UI engine usage (or have `'static` lifetime).
 #[repr(C)]
 #[derive(Copy, Clone)]
 pub struct WidgetDescriptor {
@@ -313,6 +324,9 @@ pub struct WidgetDescriptor {
     pub layout_flow: LayoutFlow,
 }
 
+// SAFETY: `WidgetDescriptor` only contains copyable scalar types and raw pointers to immutable static strings.
+// The descriptor is read-only after construction and never modifies pointees. Thus, sharing (`Sync`) and
+// transferring (`Send`) across threads or between the Rust domain task and C/LVGL render thread is safe.
 unsafe impl Sync for WidgetDescriptor {}
 unsafe impl Send for WidgetDescriptor {}
 

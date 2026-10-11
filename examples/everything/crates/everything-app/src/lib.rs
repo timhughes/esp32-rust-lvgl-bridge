@@ -479,7 +479,14 @@ pub extern "C" fn rust_get_everything_schema(out_count: *mut usize) -> *const Wi
 #[cfg(target_os = "none")]
 #[panic_handler]
 fn panic(_info: &core::panic::PanicInfo) -> ! {
-    loop {}
+    extern "C" {
+        fn esp_rom_printf(fmt: *const core::ffi::c_char, ...) -> i32;
+        fn abort() -> !;
+    }
+    unsafe {
+        esp_rom_printf(c"\n\n[FATAL PANIC] Rust kernel panic in everything-app!\n".as_ptr());
+        abort();
+    }
 }
 
 extern "C" {
