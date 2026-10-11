@@ -4,8 +4,9 @@ The framework includes reference applications and starter templates under the [`
 
 | Example | Path | Key Highlights | Target |
 |---|---|---|---|
-| **Minimal Starter** | [`examples/minimal/`](file:///home/thughes/git/esp32-rust-lvgl-framework/examples/minimal) | Cleanest starting point for a new project. 3 widgets, custom `ParamId`s, minimal worker loop. | Any ESP32 SoC |
+| **Minimal Starter** | [`examples/minimal/`](file:///home/thughes/git/esp32-rust-lvgl-framework/examples/minimal) | Cleanest starting point for a new project. 2 widgets, custom `ParamId`s, minimal worker loop. | Any ESP32 SoC |
 | **Flagship S3-4848** | [`examples/s3_4848_flagship/`](file:///home/thughes/git/esp32-rust-lvgl-framework/examples/s3_4848_flagship) | Complete 27-widget reference app across 6 tabs with virtual keyboard, oscilloscope charts, and 60s screensaver timeout. | Guition ESP32-S3-4848S040 |
+| **Widget Cookbook** | [`examples/widget_cookbook/`](file:///home/thughes/git/esp32-rust-lvgl-framework/examples/widget_cookbook) | Reference recipe catalog covering all 27 supported LVGL widgets across Tiers 1, 2, and 3. | Any ESP32 SoC |
 
 ---
 
@@ -146,6 +147,32 @@ cargo build --release --target xtensa-esp32s3-none-elf -p s3-flagship-app
 
 # Build and flash via ESP-IDF:
 cd examples/s3_4848_flagship
+idf.py -DIDF_TARGET=esp32s3 build
+idf.py -p /dev/ttyUSB0 -b 460800 flash monitor
+```
+
+---
+
+## 3. Widget Cookbook Reference Catalog (`examples/widget_cookbook`)
+
+The **Widget Cookbook** serves as a modular recipe book for all 27 supported LVGL widgets. Developers can copy individual widget declarations and layouts directly into their projects.
+
+### Catalog Recipes
+
+1. **Recipe 1: Tier 1 Scalar Controls (`TIER1_SHOWCASE_SCHEMA`):**
+   * Foundational controls: Switch, Checkbox, LED, Activity Spinner, Arc Knob, Slider, Progress Bar, Dropdown, Roller, Button, Label, and Spinbox.
+2. **Recipe 2: Tier 2 Inputs & Keypads (`TIER2_SHOWCASE_SCHEMA`):**
+   * Text & feedback: Single-Line Text Input, Multi-Line Text Area, Button Matrix 3×4 Keypad, Analog Dial Scale, Virtual Keyboard, and Message Box Modal.
+3. **Recipe 3: Tier 3 Containers & Visualizations (`TIER3_SHOWCASE_SCHEMA`):**
+   * Multi-tab layouts & streaming data: Multi-Tab Container (`TabView`), Real-Time Streaming Chart, Structured Diagnostic Table, Interactive Calendar, and Scrollable List.
+
+### Building the Widget Cookbook
+```bash
+# Build the bare-metal Xtensa Rust staticlib:
+cargo build --release --target xtensa-esp32s3-none-elf -p widget-cookbook
+
+# Build and flash via ESP-IDF:
+cd examples/widget_cookbook
 idf.py -DIDF_TARGET=esp32s3 build
 idf.py -p /dev/ttyUSB0 -b 460800 flash monitor
 ```

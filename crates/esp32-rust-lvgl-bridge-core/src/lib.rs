@@ -17,7 +17,7 @@
 //! - [`abi`]: C-compatible data structures, parameter identifiers, and alignment constants.
 //! - [`worker`]: Generic traits for closed-loop controllers and worker execution loops.
 
-#![no_std]
+#![cfg_attr(not(test), no_std)]
 
 pub mod abi;
 pub mod worker;

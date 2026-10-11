@@ -123,8 +123,8 @@ You can compile and run the full LVGL v9 engine, Rust state machine, and test ha
 git clone https://github.com/your-org/esp32-rust-lvgl-framework.git
 cd esp32-rust-lvgl-framework
 
-# 2. Build the Rust domain logic staticlib
-cargo build --release -p app-core
+# 2. Build the Rust test harness staticlib
+cargo build --release -p test-app
 
 # 3. Build and execute the visual test harness
 cd test_harness
@@ -163,7 +163,7 @@ The test runner executes 4 headless unit test suites (FFI serialization, P4-C6 l
 
 ### Option B: Build & Flash to Physical Hardware
 
-Follow these steps to deploy the full 26-widget demo application to a **Guition ESP32-S3-4848S040** display:
+Follow these steps to deploy the full 27-widget flagship application to a **Guition ESP32-S3-4848S040** display:
 
 ```bash
 # 1. Connect your ESP32-S3 board to USB (e.g. /dev/ttyUSB0 on Linux)
@@ -172,7 +172,7 @@ Follow these steps to deploy the full 26-widget demo application to a **Guition 
 source $HOME/esp/esp-idf/export.sh
 
 # 3. Build the Rust static library for Xtensa bare-metal
-cargo build --release --target xtensa-esp32s3-none-elf -p app-core
+cargo build --release --target xtensa-esp32s3-none-elf -p s3-flagship-app
 
 # 4. Build the ESP-IDF firmware binary
 idf.py -DIDF_TARGET=esp32s3 build
@@ -188,7 +188,7 @@ idf.py -p /dev/ttyUSB0 monitor
 
 ### Option C: Build the Minimal Starter Example (`examples/minimal`)
 
-To build the self-contained 3-widget starter project:
+To build the self-contained 2-widget starter project:
 
 ```bash
 # 1. Compile the minimal Rust staticlib:
@@ -200,13 +200,27 @@ idf.py -DIDF_TARGET=esp32s3 build
 idf.py -p /dev/ttyUSB0 -b 460800 flash monitor
 ```
 
+### Option D: Build the Widget Cookbook (`examples/widget_cookbook`)
+
+To explore the recipes covering all 27 widgets:
+
+```bash
+# 1. Compile the widget cookbook Rust staticlib:
+cargo build --release --target xtensa-esp32s3-none-elf -p widget-cookbook
+
+# 2. Build and flash the cookbook ESP-IDF project:
+cd examples/widget_cookbook
+idf.py -DIDF_TARGET=esp32s3 build
+idf.py -p /dev/ttyUSB0 -b 460800 flash monitor
+```
+
 ---
 
 ## 6. How It Works
 
 ### FFI Communication Protocol (Zero-Copy POD Structs)
 
-All communication between C (LVGL) and Rust (`SystemEngine`) uses Plain Old Data (POD) structs passed by value over FreeRTOS queues ([`components/esp_lvgl_bridge/include/bridge_protocol.h`](file:///home/thughes/git/esp32-rust-lvgl-framework/components/esp_lvgl_bridge/include/bridge_protocol.h) and [`crates/bridge-core/src/abi.rs`](file:///home/thughes/git/esp32-rust-lvgl-framework/crates/bridge-core/src/abi.rs)):
+All communication between C (LVGL) and Rust (`SystemEngine`) uses Plain Old Data (POD) structs passed by value over FreeRTOS queues ([`components/esp_lvgl_bridge/include/bridge_protocol.h`](file:///home/thughes/git/esp32-rust-lvgl-framework/components/esp_lvgl_bridge/include/bridge_protocol.h) and [`crates/esp32-rust-lvgl-bridge-core/src/abi.rs`](file:///home/thughes/git/esp32-rust-lvgl-framework/crates/esp32-rust-lvgl-bridge-core/src/abi.rs)):
 
 ```rust
 // Fixed-size Plain Old Data parameter value (no heap pointers!)
@@ -459,7 +473,7 @@ make run
 esp32-rust-lvgl-framework/
 ├── CMakeLists.txt              # Top-level ESP-IDF CMake orchestration
 ├── .cargo/config.toml          # Xtensa Windowed ABI & bare-metal targets
-├── Cargo.toml                  # Workspace definition (bridge-core, app-core)
+├── Cargo.toml                  # Workspace definition (crates, examples, test-app)
 ├── components/                 # Reusable Modular ESP-IDF Components
 │   ├── esp_lvgl_bridge/        # Core Bridge Engine Library Component
 │   │   ├── CMakeLists.txt      # ESP-IDF component registration
@@ -469,8 +483,9 @@ esp32-rust-lvgl-framework/
 │   │   │   └── esp_rust.cmake  # Reusable CMake helper for building & linking Rust staticlibs
 │   │   ├── include/
 │   │   │   ├── esp_lvgl_bridge.h # Umbrella public header
+│   │   │   ├── esp_lvgl_bsp.h  # Generic BSP operations table interface
 │   │   │   ├── bridge_protocol.h # C FFI mirror of bridge-core ABI
-│   │   │   ├── ui_binding.h    # 26-widget schema parser & arbitration engine
+│   │   │   ├── ui_binding.h    # 27-widget schema parser & arbitration engine
 │   │   │   └── p4_c6_link.h    # P4 <-> C6 co-processor link
 │   │   └── src/
 │   │       ├── bridge_transport.c # FreeRTOS ring queue message passing
@@ -480,20 +495,27 @@ esp32-rust-lvgl-framework/
 │       ├── CMakeLists.txt      # Registers ST7701S & GT911 dependencies
 │       ├── idf_component.yml   # Managed component dependencies
 │       ├── include/
-│       │   └── bsp_4848s040.h  # Board HAL interface
+│       │   └── bsp_4848s040.h  # Board HAL interface & esp_lvgl_bsp_ops_t getter
 │       └── src/
 │           └── bsp_4848s040.c  # ST7701S RGB parallel bus & GT911 touch driver
 ├── crates/
-│   ├── bridge-core/            # no_std Rust crate: ABI contracts & open ParamId newtype
-│   └── app-core/               # Domain state machine & declarative UI schemas (staticlib)
-├── main/                       # Application layer (consumes components)
-│   ├── CMakeLists.txt          # Links esp_lvgl_bridge, BSP, and Rust via esp_rust.cmake
+│   ├── esp32-rust-lvgl-bridge-core/    # Pure reusable no_std Rust library: ABI contracts & schemas
+│   └── esp32-rust-lvgl-bridge-harness/ # Self-contained headless LVGL host test harness for pure Rust tests
+├── examples/                   # Standalone Application Templates & Catalogs
+│   ├── minimal/                # Minimal 2-widget starter project
+│   ├── s3_4848_flagship/       # Full 27-widget 6-tab industrial dashboard
+│   └── widget_cookbook/        # Recipe catalog for all 27 widgets (Tiers 1, 2, 3)
+├── main/                       # Application layer (consumes components & s3-flagship-app)
+│   ├── CMakeLists.txt          # Links esp_lvgl_bridge, BSP, and s3-flagship-app
 │   └── main.c                  # FreeRTOS dual-core task spawners & screensaver timer
 ├── docs/                       # Architecture specifications & mdBook guides
 │   └── src/
 │       ├── declarative_ui.md   # Complete widget catalog & schema API guide
+│       ├── examples.md         # Example walkthroughs & build guides
 │       └── ffi_contracts.md    # POD ring queue protocol specification
-└── test_harness/               # Host-native headless visual test pipeline
+└── test_harness/               # Host-native headless visual QA & CI test pipeline
+    ├── crates/
+    │   └── test-app/           # Dedicated test fixtures & mock state engine
     ├── Makefile                # Native host build (make run)
     ├── harness.c               # Offscreen RGB888 canvas & mock touch injector
     ├── main_test.c             # 12-scenario automated visual test runner

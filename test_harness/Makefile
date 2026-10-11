@@ -9,7 +9,7 @@ LVGL_DIR ?= $(shell \
     else echo "./lvgl"; fi)
 
 RUST_ROOT = ..
-RUST_LIB = $(RUST_ROOT)/target/release/libapp_core.a
+RUST_LIB = $(RUST_ROOT)/target/release/libtest_app.a
 
 INCLUDES = -I. \
            -I../components/esp_lvgl_bridge/include \
@@ -35,8 +35,8 @@ $(LVGL_DIR):
 	git clone --depth 1 --branch release/v9.4 https://github.com/lvgl/lvgl.git $(LVGL_DIR)
 
 $(RUST_LIB): FORCE
-	@echo "Building Rust app-core staticlib..."
-	cd $(RUST_ROOT) && cargo build --release -p app-core
+	@echo "Building Rust test-app staticlib..."
+	cd $(RUST_ROOT) && cargo build --release -p test-app
 
 %.o: %.c
 	@mkdir -p $(dir $@)

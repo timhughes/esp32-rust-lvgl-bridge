@@ -11,7 +11,7 @@
 
 ```bash
 # 1. Compile the bare-metal Xtensa Rust static library:
-cargo build --release --target xtensa-esp32s3-none-elf -p app-core
+cargo build --release --target xtensa-esp32s3-none-elf -p s3-flagship-app
 
 # 2. Export the ESP-IDF toolchain environment:
 . $HOME/esp/esp-idf/export.sh
@@ -22,16 +22,25 @@ idf.py -DIDF_TARGET=esp32s3 build
 
 ---
 
-## 3. Compiling the Minimal Starter Example
+## 3. Compiling the Application Examples
 
-To build and run the minimal 3-widget starter project:
-
+### Minimal Starter (`examples/minimal`)
 ```bash
 # 1. Compile the minimal Rust static library:
 cargo build --release --target xtensa-esp32s3-none-elf -p minimal-app
 
 # 2. Build the minimal ESP-IDF project:
 cd examples/minimal
+idf.py -DIDF_TARGET=esp32s3 build
+```
+
+### Widget Cookbook (`examples/widget_cookbook`)
+```bash
+# 1. Compile the cookbook Rust static library:
+cargo build --release --target xtensa-esp32s3-none-elf -p widget-cookbook
+
+# 2. Build the cookbook ESP-IDF project:
+cd examples/widget_cookbook
 idf.py -DIDF_TARGET=esp32s3 build
 ```
 

@@ -60,9 +60,16 @@ components/
     └── src/bsp_4848s040.c     # ST7701S RGB parallel bus & GT911 touch driver
 
 crates/
-├── bridge-core/              # no_std Rust crate: ABI contracts & open ParamId newtype
-├── app-core/                 # Application staticlib: state machine & declarative schemas
-└── minimal-app/              # Minimal starter crate (examples/minimal)
+├── esp32-rust-lvgl-bridge-core/    # Pure reusable no_std Rust library: ABI contracts & schema engine
+└── esp32-rust-lvgl-bridge-harness/ # Self-contained headless LVGL host test harness for pure Rust tests
+
+examples/
+├── minimal/                  # Minimal 2-widget starter project (minimal-app crate)
+├── s3_4848_flagship/         # Full 27-widget 6-tab industrial dashboard (s3-flagship-app crate)
+└── widget_cookbook/          # Recipe catalog for all 27 widgets (widget-cookbook crate)
+
+test_harness/
+└── crates/test-app/          # Dedicated test fixtures & mock state engine
 ```
 
 ### Generic Hardware BSP Interface (`esp_lvgl_bsp_ops_t`)

@@ -1,7 +1,7 @@
 #ifndef HOST_TRANSPORT_H
 #define HOST_TRANSPORT_H
 
-#include "../main/include/bridge_protocol.h"
+#include "bridge_protocol.h"
 
 #ifdef __cplusplus
 extern "C" {

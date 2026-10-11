@@ -1,5 +1,5 @@
 [package]
-name = "app-core"
+name = "test-app"
 version = "0.1.0"
 edition = "2021"
 
@@ -7,7 +7,7 @@ edition = "2021"
 crate-type = ["staticlib", "rlib"]
 
 [dependencies]
-bridge-core = { path = "../bridge-core" }
+bridge-core = { package = "esp32-rust-lvgl-bridge-core", path = "../../../crates/esp32-rust-lvgl-bridge-core" }
 
 [features]
 default = []

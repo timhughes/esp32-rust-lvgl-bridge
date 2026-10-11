@@ -46,7 +46,7 @@ typedef enum {
 } param_id_t;
 ```
 
-In Rust (`crates/bridge-core/src/abi.rs`), `ParamId` is defined as an open `#[repr(transparent)]` `u32` newtype:
+In Rust (`crates/esp32-rust-lvgl-bridge-core/src/abi.rs`), `ParamId` is defined as an open `#[repr(transparent)]` `u32` newtype:
 
 ```rust
 #[repr(transparent)]
@@ -85,7 +85,7 @@ typedef union {
 } param_val_t;
 ```
 
-In Rust (`crates/bridge-core/src/abi.rs`):
+In Rust (`crates/esp32-rust-lvgl-bridge-core/src/abi.rs`):
 ```rust
 #[repr(C)]
 #[derive(Copy, Clone)]
@@ -184,7 +184,7 @@ typedef struct {
 
 ## Exported Rust C Entry Points
 
-The Rust `app-core` staticlib exports the following functions with C linkage (`extern "C"`):
+Application staticlibs (such as `s3-flagship-app`, `widget-cookbook`, and `test-app`) export the following functions with C linkage (`extern "C"`):
 
 | Function | Signature | Description |
 |---|---|---|

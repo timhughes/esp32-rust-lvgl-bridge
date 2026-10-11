@@ -7,11 +7,11 @@
 #include "lvgl.h"
 #include "harness.h"
 #include "host_transport.h"
-#include "../main/include/app_ui.h"
-#include "../main/include/bridge_protocol.h"
-#include "../main/include/ui_binding.h"
-#include "../main/include/p4_c6_link.h"
-#include "../main/include/bsp_4848s040.h"
+#include "app_ui.h"
+#include "bridge_protocol.h"
+#include "ui_binding.h"
+#include "p4_c6_link.h"
+#include "bsp_4848s040.h"
 
 // ----------------------------------------------------------------------
 // Phase 1 Unit Tests: Protocol & Engine Assertions

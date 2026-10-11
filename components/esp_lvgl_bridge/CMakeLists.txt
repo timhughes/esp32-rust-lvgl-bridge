@@ -10,3 +10,6 @@ idf_component_register(
         esp_timer
         driver
 )
+
+include("${CMAKE_CURRENT_LIST_DIR}/cmake/esp_rust.cmake")
+

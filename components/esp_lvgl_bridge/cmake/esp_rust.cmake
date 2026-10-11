@@ -44,7 +44,7 @@ function(esp_rust_link_staticlib)
 
     add_custom_command(
         OUTPUT "${RUST_LIB_PATH}"
-        COMMAND cargo build --release --target ${RUST_TARGET} -p ${RUST_ARG_CRATE_NAME}
+        COMMAND cargo build --release --target ${RUST_TARGET} -Zbuild-std=core,alloc -p ${RUST_ARG_CRATE_NAME}
         WORKING_DIRECTORY "${RUST_ARG_CRATE_DIR}"
         COMMENT "Compiling Rust crate '${RUST_ARG_CRATE_NAME}' for target ${RUST_TARGET}..."
     )

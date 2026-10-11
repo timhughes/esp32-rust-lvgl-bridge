@@ -8,5 +8,5 @@ runner = "espflash flash"
 runner = "espflash flash"
 rustflags = ["-C", "target-feature=+exception,+windowed"]
 
-[unstable]
-build-std = ["core", "alloc"]
+#[unstable]
+#build-std = ["core", "alloc"]

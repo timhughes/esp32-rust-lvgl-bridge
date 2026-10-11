@@ -1,0 +1,13 @@
+[package]
+name = "esp32-rust-lvgl-bridge-core"
+version = "0.1.0"
+edition = "2021"
+authors = ["Tim Hughes"]
+description = "Zero-heap FFI ABI, POD messages, and declarative LVGL schema types for ESP32 Rust"
+license = "MIT OR Apache-2.0"
+repository = "https://github.com/timhughes/esp32-rust-lvgl-framework"
+readme = "README.md"
+keywords = ["esp32", "lvgl", "embedded", "no-std", "gui"]
+categories = ["embedded", "gui", "no-std"]
+
+[dependencies]
