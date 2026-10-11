@@ -68,7 +68,7 @@ pub const PARAM_TEXT_AREA: ParamId         = ParamId::new(26);
 pub const PARAM_IMAGE_PREVIEW: ParamId     = ParamId::new(27);
 pub const PARAM_LINE_GRAPH: ParamId        = ParamId::new(28);
 pub const PARAM_ARC_LABEL_HEADING: ParamId = ParamId::new(29);
-pub const PARAM_QR_WIFI_CONFIG: ParamId    = ParamId::new(30);
+pub const PARAM_QR_REPO: ParamId           = ParamId::new(30);
 pub const PARAM_WINDOW_MODAL: ParamId      = ParamId::new(31);
 pub const PARAM_IMAGE_TRIGGER: ParamId     = ParamId::new(32);
 pub const PARAM_FORMATTED_SPAN: ParamId    = ParamId::new(33);
@@ -420,12 +420,12 @@ pub static TAB6_SYSTEM_SCHEMA: &[WidgetDescriptor] = &[
         c"System Settings",
     ).with_parent(PARAM_NAV_TAB, 6),
     WidgetDescriptor::qr_code(
-        PARAM_QR_WIFI_CONFIG,
+        PARAM_QR_REPO,
         UiAlign::TopRight,
         -15,
         15,
         140,
-        c"WIFI:S:ESP32-S3-LAB;T:WPA;P:lvgl_rust;;",
+        c"https://github.com/timhughes/esp32-rust-lvgl-bridge",
     ).with_parent(PARAM_NAV_TAB, 6),
     WidgetDescriptor::tileview(
         PARAM_NAV_TILE,

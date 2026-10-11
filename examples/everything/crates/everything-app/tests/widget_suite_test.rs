@@ -304,7 +304,7 @@ fn test_tab6_system_navigation() {
 
     // Verify Menu, QRCode and TileView exist
     assert!(harness.widget_exists(PARAM_MENU_NAV));
-    assert!(harness.widget_exists(PARAM_QR_WIFI_CONFIG));
+    assert!(harness.widget_exists(PARAM_QR_REPO));
     assert!(harness.widget_exists(PARAM_NAV_TILE));
 }
 
