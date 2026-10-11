@@ -1,42 +1,182 @@
 # Rust & C FFI Contract Reference
 
-The boundary between C (LVGL) and Rust (`no_std`) relies on Plain Old Data (POD) structures passed strictly by value.
+The boundary between C (ESP-IDF / LVGL) and Rust (`no_std`) relies strictly on Plain Old Data (POD) structures passed by value across FreeRTOS queues. Zero dynamic heap pointers or raw widget handles cross the boundary.
 
-## Parameter IDs
+---
+
+## Parameter IDs (`param_id_t` / `ParamId`)
+
+Each interactive or observable parameter in the system has a unique, deterministic ID:
+
 ```c
 typedef enum {
-    PARAM_SETPOINT_HZ    = 1, // i32: Target frequency (Hz)
-    PARAM_SYSTEM_ENABLE  = 2, // bool: System run/stop state
-    PARAM_TRIGGER_RESET  = 3, // trigger: Momentary reset trigger
-    PARAM_CYCLE_COUNT    = 4, // u32: Monotonic execution cycle count
+    PARAM_NONE           = 0,
+
+    // Tier 1: Scalar Controls & Indicators
+    PARAM_SETPOINT_HZ    = 1,  // Slider: i32_val setpoint
+    PARAM_SYSTEM_ENABLE  = 2,  // Switch: bool_val enable/run state
+    PARAM_TRIGGER_RESET  = 3,  // Push Button: momentary command trigger
+    PARAM_CYCLE_COUNT    = 4,  // Readout: u32_val telemetry counter
+    PARAM_ARC_KNOB       = 5,  // Arc: i32_val knob setpoint
+    PARAM_PROGRESS_BAR   = 6,  // Bar: i32_val level indicator
+    PARAM_AUX_CHECKBOX   = 7,  // Checkbox: bool_val check state
+    PARAM_STATUS_LED     = 8,  // LED: bool_val status
+    PARAM_BUSY_SPINNER   = 9,  // Spinner: bool_val visibility
+    PARAM_MODE_DROPDOWN  = 10, // Dropdown: i32_val option index
+    PARAM_SPEED_ROLLER   = 11, // Roller: i32_val option index
+    PARAM_PRECISION_STEP = 12, // Spinbox: i32_val step value
+
+    // Tier 2: Text Inputs, Keypads, Modals & Gauges
+    PARAM_TEXT_INPUT     = 13, // TextArea: str_val buffer
+    PARAM_KEYBOARD       = 14, // Keyboard: i32_val action (1=ready, 2=cancel)
+    PARAM_KEYPAD_MATRIX  = 15, // ButtonMatrix: i32_val index, str_val key
+    PARAM_ALERT_MODAL    = 16, // MsgBox: i32_val btn, bool_val open/close
+    PARAM_GAUGE_SCALE    = 17, // Scale: i32_val needle value
+
+    // Tier 3: Containers, Navigation & Data Streams
+    PARAM_NAV_TAB        = 18, // TabView: i32_val active tab index
+    PARAM_NAV_TILE       = 19, // TileView: i32_val active tile index
+    PARAM_MENU_NAV       = 20, // Menu: i32_val selected item
+    PARAM_ITEM_LIST      = 21, // List: i32_val selected item
+    PARAM_TELEMETRY_CHART= 22, // Chart: i32_val streaming sample
+    PARAM_DATA_TABLE     = 23, // Table: i32_val / str_val
+    PARAM_CALENDAR_DATE  = 24, // Calendar: u32_val encoded YYYYMMDD
+    PARAM_CANVAS_DRAW    = 25, // Canvas: custom pixel draw trigger
 } param_id_t;
 ```
 
-## Binary Values
+---
+
+## Binary Values (`param_val_t` / `ParamVal`)
+
+Values are packed into a fixed-size, 32-byte union. The inclusion of `char str_val[32]` allows text inputs and button matrix keys to be transmitted across FreeRTOS queues without dynamic heap allocations or dangling pointer risks:
+
 ```c
 typedef union {
     int32_t  i32_val;
     uint32_t u32_val;
     float    f32_val;
     bool     bool_val;
-} param_value_t;
+    char     str_val[32];      // Zero-allocation fixed string buffer (NUL-terminated)
+} param_val_t;
 ```
 
+In Rust (`crates/bridge-core/src/abi.rs`):
+```rust
+#[repr(C)]
+#[derive(Copy, Clone)]
+pub union ParamVal {
+    pub i32_val: i32,
+    pub u32_val: u32,
+    pub f32_val: f32,
+    pub bool_val: bool,
+    pub str_val: [u8; 32],
+}
+```
+
+---
+
 ## Message Structs
+
 ```c
+// UI -> Rust Worker (Command Queue)
 typedef struct {
-    uint32_t      param_id;
-    param_value_t value;
+    param_id_t  param_id;
+    uint32_t    seq_id;         // Monotonic ticket for UI arbitration
+    param_val_t value;
 } ui_command_t;
 
+// Rust Worker -> UI (Telemetry Queue)
 typedef struct {
-    uint32_t      param_id;
-    param_value_t value;
-    uint32_t      timestamp_ms;
+    param_id_t  param_id;
+    uint32_t    ack_seq_id;     // Mirrored seq_id from acknowledged command
+    param_val_t value;
 } device_telemetry_t;
 ```
 
+---
+
+## Declarative Widget Types (`widget_type_t` / `WidgetType`)
+
+```c
+typedef enum {
+    WIDGET_TYPE_SWITCH        = 1,
+    WIDGET_TYPE_SLIDER        = 2,
+    WIDGET_TYPE_BUTTON        = 3,
+    WIDGET_TYPE_LABEL         = 4,
+    WIDGET_TYPE_ARC           = 5,
+    WIDGET_TYPE_BAR           = 6,
+    WIDGET_TYPE_CHECKBOX      = 7,
+    WIDGET_TYPE_LED           = 8,
+    WIDGET_TYPE_SPINNER       = 9,
+    WIDGET_TYPE_DROPDOWN      = 10,
+    WIDGET_TYPE_ROLLER        = 11,
+    WIDGET_TYPE_SPINBOX       = 12,
+    // Tier 2
+    WIDGET_TYPE_TEXTAREA      = 13,
+    WIDGET_TYPE_KEYBOARD      = 14,
+    WIDGET_TYPE_BUTTON_MATRIX = 15,
+    WIDGET_TYPE_MSGBOX        = 16,
+    WIDGET_TYPE_SCALE         = 17,
+    // Tier 3
+    WIDGET_TYPE_TABVIEW       = 18,
+    WIDGET_TYPE_TILEVIEW      = 19,
+    WIDGET_TYPE_MENU          = 20,
+    WIDGET_TYPE_LIST          = 21,
+    WIDGET_TYPE_CHART         = 22,
+    WIDGET_TYPE_TABLE         = 23,
+    WIDGET_TYPE_CALENDAR      = 24,
+    WIDGET_TYPE_CANVAS        = 25,
+} widget_type_t;
+```
+
+---
+
+## Widget Descriptor (`widget_descriptor_t` / `WidgetDescriptor`)
+
+Static data table defining UI layout, hierarchy, and binding behavior:
+
+```c
+typedef struct {
+    widget_type_t widget_type;
+    param_id_t    param_id;
+    ui_align_t    align;
+    int32_t       offset_x;
+    int32_t       offset_y;
+    int32_t       min_val;
+    int32_t       max_val;
+    int32_t       initial_val;
+    uint32_t      holdoff_ms;
+    const char   *label_primary;
+    const char   *label_secondary;
+    param_id_t    parent_param_id; // Parameter ID of container (e.g. TabView)
+    int32_t       width;           // Explicit width (0 = default/auto)
+    int32_t       height;          // Explicit height (0 = default/auto)
+    uint32_t      tab_index;       // Target tab index inside parent TabView
+} widget_descriptor_t;
+```
+
+---
+
 ## Exported Rust C Entry Points
-* `void rust_worker_init(void)`: Allocates and initializes the deterministic Rust state engine.
-* `void rust_worker_step(void)`: Steps the control loop (stepping internal timers, processing pending commands).
-* `const widget_descriptor_t *rust_get_s3_schema(size_t *count)`: Returns the static array of UI widget descriptors for the 480×480 screen.
+
+The Rust `app-core` staticlib exports the following functions with C linkage (`extern "C"`):
+
+| Function | Signature | Description |
+|---|---|---|
+| `rust_worker_init` | `void rust_worker_init(void)` | Initializes the static `SystemEngine` state machine. |
+| `rust_worker_step` | `void rust_worker_step(void)` | Consumes incoming commands, steps simulation, and emits telemetry. |
+| `rust_get_ui_schema` | `const widget_descriptor_t *rust_get_ui_schema(size_t *count)` | Returns baseline interactive schema (Switch, Slider, Button, Label). |
+| `rust_get_tier1_schema` | `const widget_descriptor_t *rust_get_tier1_schema(size_t *count)` | Returns the 12-widget Tier 1 showcase schema. |
+| `rust_get_tier2_schema` | `const widget_descriptor_t *rust_get_tier2_schema(size_t *count)` | Returns the Tier 2 showcase schema (TextArea, Keyboard, ButtonMatrix, Scale, MsgBox). |
+| `rust_get_tier3_schema` | `const widget_descriptor_t *rust_get_tier3_schema(size_t *count)` | Returns the Tier 3 multi-tab schema (TabView, Chart, Table, Calendar, List, Canvas). |
+| `rust_get_s3_schema` | `const widget_descriptor_t *rust_get_s3_schema(size_t *count)` | Returns the hardware-tuned 480×480 layout for the ESP32-S3 Guition display. |
+
+---
+
+## Transport Hooks Implemented by C Runtime
+
+The Rust domain logic calls these functions to communicate with the FreeRTOS queues:
+
+* `bool bridge_recv_command(ui_command_t *out_cmd, uint32_t timeout_ms)`: Pops an incoming command sent from LVGL touch events.
+* `bool bridge_send_telemetry(const device_telemetry_t *telem)`: Pushes an updated telemetry packet into the queue for LVGL to consume.

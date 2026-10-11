@@ -76,21 +76,27 @@ esp32-rust-lvgl-framework/
         ├── 03_slider_dragging.png
         ├── 04_slider_released.png
         ├── 05_slider_telemetry_settled.png
-        └── 06_counter_reset.png
+        ├── 06_counter_reset.png
+        ├── 07_tier1_showcase.png
+        ├── 08_tier2_showcase.png
+        ├── 09_tier3_telemetry.png
+        ├── 10_tier3_diagnostics.png
+        └── 11_tier3_config.png
 ```
 
 ---
 
 ## 4. Communication Protocol & FFI Contract
 
-Communication between C (LVGL) and Rust (Domain Logic) is strictly constrained to **Plain Old Data (POD)** structs passed by value:
+Communication between C (LVGL) and Rust (Domain Logic) is strictly constrained to **Plain Old Data (POD)** structs passed by value across FreeRTOS queues (zero shared heap, zero raw pointers). Full specification: [`docs/src/ffi_contracts.md`](file:///home/thughes/git/esp32-rust-lvgl-framework/docs/src/ffi_contracts.md).
 
 ```c
 typedef enum {
-    PARAM_SETPOINT_HZ    = 1, // Slider: i32_val setpoint
-    PARAM_SYSTEM_ENABLE  = 2, // Switch: bool_val enable/run state
-    PARAM_TRIGGER_RESET  = 3, // Push Button: momentary command trigger
-    PARAM_CYCLE_COUNT    = 4, // Readout: u32_val telemetry counter
+    PARAM_SETPOINT_HZ    = 1,  // Slider: i32_val setpoint
+    PARAM_SYSTEM_ENABLE  = 2,  // Switch: bool_val enable/run state
+    PARAM_TRIGGER_RESET  = 3,  // Push Button: momentary command trigger
+    PARAM_CYCLE_COUNT    = 4,  // Readout: u32_val telemetry counter
+    // ... Supports 25 parameters across Tier 1, Tier 2, and Tier 3 widgets
 } param_id_t;
 
 typedef union {
@@ -98,6 +104,7 @@ typedef union {
     uint32_t u32_val;
     float    f32_val;
     bool     bool_val;
+    char     str_val[32];      // Zero-allocation fixed string buffer
 } param_val_t;
 
 // UI -> Rust Worker (Command Queue)
@@ -188,6 +195,14 @@ void setup_test_ui(void) {
 }
 ```
 
+### Supported LVGL v9 Widget Catalog (25 Widgets)
+The declarative engine supports 25 LVGL v9 widgets out of the box without requiring custom C UI assembly:
+* **Tier 1 (Scalars & Selectors)**: `Switch`, `Slider`, `Button`, `Label`, `Arc` (Knob/Gauge), `Bar`, `Checkbox`, `LED`, `Spinner`, `Dropdown`, `Roller`, `Spinbox`.
+* **Tier 2 (Text, Keypads & Modals)**: `TextArea`, `Keyboard` (auto-focus binding), `ButtonMatrix` (PIN pad/keypad), `MsgBox` (alert overlays), `Scale` (analog dial meters).
+* **Tier 3 (Containers & Data Streams)**: `TabView` (multi-screen navigation with tab routing), `TileView`, `Menu`, `List`, `Chart` (streaming waveform oscilloscope), `Table` (system diagnostic matrix), `Calendar` (date picker), `Canvas` (custom graphics).
+
+See [`docs/src/declarative_ui.md`](file:///home/thughes/git/esp32-rust-lvgl-framework/docs/src/declarative_ui.md) for full constructor APIs, schema definitions, and container routing rules.
+
 ---
 
 ## 6. P4 <-> C6 Inter-Chip Communication Link
@@ -222,6 +237,11 @@ make run
 * **`04_slider_released.png`**: Touch lifted; 500ms holdoff lease actively suppresses intermediate ramping telemetry.
 * **`05_slider_telemetry_settled.png`**: Holdoff expired; label confirms `60 Hz (Actual)`, cycles incrementing.
 * **`06_counter_reset.png`**: Push button clicked; cycle count atomically clears to 0 and resumes.
+* **`07_tier1_showcase.png`**: 480×480 screen with all Tier 1 widgets active (Arc knob, Switch, LED, Bar, Spinner, Checkbox, Dropdown, Roller, Spinbox).
+* **`08_tier2_showcase.png`**: 480×480 screen with Tier 2 widgets active (TextArea pre-filled, On-Screen Keyboard, Numeric/Keypad ButtonMatrix, Analog Speedometer Scale, MsgBox alert overlay).
+* **`09_tier3_telemetry.png`**: Tier 3 TabView with Tab 0 ("Telemetry") active: real-time streaming waveform Chart, interactive Arc knob, and system status Bar.
+* **`10_tier3_diagnostics.png`**: Tier 3 TabView with Tab 1 ("Diagnostics") active: multi-row system status Table (`Module`, `Status`, `Core 0`, `Core 1`, `PSRAM`) and scrollable Item List.
+* **`11_tier3_config.png`**: Tier 3 TabView with Tab 2 ("Config") active: interactive Calendar date picker and raw-pixel graphics Canvas.
 
 ---
 

@@ -1,5 +1,5 @@
 CC ?= gcc
-CFLAGS ?= -O2 -g -Wall -Wextra -Wno-unused-function -Wno-unused-parameter
+CFLAGS ?= -O2 -g -Wall -Wextra -Wno-unused-function -Wno-unused-parameter -Wno-deprecated-declarations
 
 # Discover LVGL location: check managed components, Espressif cache, or local ./lvgl
 LVGL_DIR ?= $(shell \

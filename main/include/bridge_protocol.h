@@ -10,6 +10,7 @@ extern "C" {
 #endif
 
 typedef enum {
+    PARAM_NONE           = 0,
     PARAM_SETPOINT_HZ    = 1, // Slider: i32_val setpoint
     PARAM_SYSTEM_ENABLE  = 2, // Switch: bool_val enable/run state
     PARAM_TRIGGER_RESET  = 3, // Push Button: momentary command trigger
@@ -22,6 +23,21 @@ typedef enum {
     PARAM_MODE_DROPDOWN  = 10,// Dropdown: i32_val option index
     PARAM_SPEED_ROLLER   = 11,// Roller: i32_val option index
     PARAM_PRECISION_STEP = 12,// Spinbox: i32_val step value
+    // Tier 2: Text, Keypads, Modals & Gauges
+    PARAM_TEXT_INPUT     = 13,// TextArea: str_val buffer
+    PARAM_KEYBOARD       = 14,// Keyboard: i32_val action (1=ready, 2=cancel)
+    PARAM_KEYPAD_MATRIX  = 15,// ButtonMatrix: i32_val index, str_val key
+    PARAM_ALERT_MODAL    = 16,// MsgBox: i32_val btn, bool_val open/close
+    PARAM_GAUGE_SCALE    = 17,// Scale: i32_val needle value
+    // Tier 3: Containers, Navigation & Data Streams
+    PARAM_NAV_TAB        = 18,// TabView: i32_val active tab
+    PARAM_NAV_TILE       = 19,// TileView: i32_val active tile
+    PARAM_MENU_NAV       = 20,// Menu: i32_val selected item
+    PARAM_ITEM_LIST      = 21,// List: i32_val selected item
+    PARAM_TELEMETRY_CHART= 22,// Chart: i32_val streaming sample
+    PARAM_DATA_TABLE     = 23,// Table: i32_val/str_val
+    PARAM_CALENDAR_DATE  = 24,// Calendar: u32_val encoded YYYYMMDD
+    PARAM_CANVAS_DRAW    = 25,// Canvas
 } param_id_t;
 
 typedef union {
@@ -29,6 +45,7 @@ typedef union {
     uint32_t u32_val;
     float    f32_val;
     bool     bool_val;
+    char     str_val[32];
 } param_val_t;
 
 // UI -> Rust Worker (Command Queue)
@@ -58,18 +75,33 @@ bool bridge_send_telemetry(const device_telemetry_t *telem);
 
 // Declarative UI Schema Types
 typedef enum {
-    WIDGET_TYPE_SWITCH   = 1,
-    WIDGET_TYPE_SLIDER   = 2,
-    WIDGET_TYPE_BUTTON   = 3,
-    WIDGET_TYPE_LABEL    = 4,
-    WIDGET_TYPE_ARC      = 5,
-    WIDGET_TYPE_BAR      = 6,
-    WIDGET_TYPE_CHECKBOX = 7,
-    WIDGET_TYPE_LED      = 8,
-    WIDGET_TYPE_SPINNER  = 9,
-    WIDGET_TYPE_DROPDOWN = 10,
-    WIDGET_TYPE_ROLLER   = 11,
-    WIDGET_TYPE_SPINBOX  = 12,
+    WIDGET_TYPE_SWITCH        = 1,
+    WIDGET_TYPE_SLIDER        = 2,
+    WIDGET_TYPE_BUTTON        = 3,
+    WIDGET_TYPE_LABEL         = 4,
+    WIDGET_TYPE_ARC           = 5,
+    WIDGET_TYPE_BAR           = 6,
+    WIDGET_TYPE_CHECKBOX      = 7,
+    WIDGET_TYPE_LED           = 8,
+    WIDGET_TYPE_SPINNER       = 9,
+    WIDGET_TYPE_DROPDOWN      = 10,
+    WIDGET_TYPE_ROLLER        = 11,
+    WIDGET_TYPE_SPINBOX       = 12,
+    // Tier 2
+    WIDGET_TYPE_TEXTAREA      = 13,
+    WIDGET_TYPE_KEYBOARD      = 14,
+    WIDGET_TYPE_BUTTON_MATRIX = 15,
+    WIDGET_TYPE_MSGBOX        = 16,
+    WIDGET_TYPE_SCALE         = 17,
+    // Tier 3
+    WIDGET_TYPE_TABVIEW       = 18,
+    WIDGET_TYPE_TILEVIEW      = 19,
+    WIDGET_TYPE_MENU          = 20,
+    WIDGET_TYPE_LIST          = 21,
+    WIDGET_TYPE_CHART         = 22,
+    WIDGET_TYPE_TABLE         = 23,
+    WIDGET_TYPE_CALENDAR      = 24,
+    WIDGET_TYPE_CANVAS        = 25,
 } widget_type_t;
 
 typedef enum {
@@ -94,6 +126,10 @@ typedef struct {
     uint32_t      holdoff_ms;
     const char   *label_primary;
     const char   *label_secondary;
+    param_id_t    parent_param_id;
+    int32_t       width;
+    int32_t       height;
+    uint32_t      tab_index;
 } widget_descriptor_t;
 
 // Rust Worker Lifecycle Entry Points (implemented in Rust staticlib)
@@ -101,6 +137,8 @@ void rust_worker_init(void);
 void rust_worker_step(void);
 const widget_descriptor_t *rust_get_ui_schema(size_t *out_count);
 const widget_descriptor_t *rust_get_tier1_schema(size_t *out_count);
+const widget_descriptor_t *rust_get_tier2_schema(size_t *out_count);
+const widget_descriptor_t *rust_get_tier3_schema(size_t *out_count);
 const widget_descriptor_t *rust_get_s3_schema(size_t *out_count);
 
 #ifdef __cplusplus

@@ -167,6 +167,96 @@ int main(void) {
     }
     printf("  -> Saved artifacts/07_tier1_showcase.png\n");
 
-    printf("=== Test Suite Complete: All 7 Artifacts Successfully Generated ===\n");
+    // ----------------------------------------------------
+    // Scenario 8: Tier 2 Showcase
+    // Declarative schema with all Tier 2 widgets: TextArea,
+    // Keyboard, ButtonMatrix, Scale, MsgBox
+    // ----------------------------------------------------
+    printf("[8/9] Capturing Scenario 8: Tier 2 Widget Showcase...\n");
+    lv_obj_clean(lv_screen_active());
+    ui_engine_init();
+
+    size_t t2_count = 0;
+    const widget_descriptor_t *t2_schema = rust_get_tier2_schema(&t2_count);
+    printf("  -> Building Tier 2 UI schema with %zu widgets...\n", t2_count);
+    ui_engine_build_from_schema(t2_schema, t2_count);
+
+    // Step worker and pump telemetry for 10 cycles to calibrate scale and buffers
+    for (int i = 0; i < 10; i++) {
+        rust_worker_step();
+        pump_incoming_telemetry();
+        harness_step(20);
+    }
+
+    // Interact with Keypad Matrix
+    lv_obj_t *keypad = ui_engine_get_widget_by_param(PARAM_KEYPAD_MATRIX);
+    if (keypad) {
+        harness_click_widget(keypad);
+        rust_worker_step();
+        pump_incoming_telemetry();
+        harness_step(20);
+    }
+
+    if (!harness_save_png("artifacts/08_tier2_showcase.png")) {
+        fprintf(stderr, "Failed to save artifacts/08_tier2_showcase.png\n");
+        return 1;
+    }
+    printf("  -> Saved artifacts/08_tier2_showcase.png\n");
+
+    // ----------------------------------------------------
+    // Scenario 9: Tier 3 Showcase (Tab 0: Telemetry - Chart & List)
+    // ----------------------------------------------------
+    printf("[9/11] Capturing Scenario 9: Tier 3 Tab 0 (Telemetry)...\n");
+    lv_obj_clean(lv_screen_active());
+    ui_engine_init();
+
+    size_t t3_count = 0;
+    const widget_descriptor_t *t3_schema = rust_get_tier3_schema(&t3_count);
+    printf("  -> Building Tier 3 UI schema with %zu widgets...\n", t3_count);
+    ui_engine_build_from_schema(t3_schema, t3_count);
+
+    // Step worker across 20 cycles to stream real-time chart waveform data
+    for (int i = 0; i < 20; i++) {
+        rust_worker_step();
+        pump_incoming_telemetry();
+        harness_step(30);
+    }
+
+    if (!harness_save_png("artifacts/09_tier3_telemetry.png")) {
+        fprintf(stderr, "Failed to save artifacts/09_tier3_telemetry.png\n");
+        return 1;
+    }
+    printf("  -> Saved artifacts/09_tier3_telemetry.png\n");
+
+    // ----------------------------------------------------
+    // Scenario 10: Tier 3 Tab 1 (Diagnostics - Table)
+    // ----------------------------------------------------
+    printf("[10/11] Capturing Scenario 10: Tier 3 Tab 1 (Diagnostics - Table)...\n");
+    lv_obj_t *tv = ui_engine_get_widget_by_param(PARAM_NAV_TAB);
+    if (tv) {
+        lv_tabview_set_active(tv, 1, LV_ANIM_OFF);
+        harness_step(50);
+    }
+    if (!harness_save_png("artifacts/10_tier3_diagnostics.png")) {
+        fprintf(stderr, "Failed to save artifacts/10_tier3_diagnostics.png\n");
+        return 1;
+    }
+    printf("  -> Saved artifacts/10_tier3_diagnostics.png\n");
+
+    // ----------------------------------------------------
+    // Scenario 11: Tier 3 Tab 2 (Config - Calendar)
+    // ----------------------------------------------------
+    printf("[11/11] Capturing Scenario 11: Tier 3 Tab 2 (Config - Calendar)...\n");
+    if (tv) {
+        lv_tabview_set_active(tv, 2, LV_ANIM_OFF);
+        harness_step(50);
+    }
+    if (!harness_save_png("artifacts/11_tier3_config.png")) {
+        fprintf(stderr, "Failed to save artifacts/11_tier3_config.png\n");
+        return 1;
+    }
+    printf("  -> Saved artifacts/11_tier3_config.png\n");
+
+    printf("=== Test Suite Complete: All 11 Artifacts Successfully Generated ===\n");
     return 0;
 }

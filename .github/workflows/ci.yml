@@ -73,6 +73,10 @@ jobs:
           test -f test_harness/artifacts/05_slider_telemetry_settled.png
           test -f test_harness/artifacts/06_counter_reset.png
           test -f test_harness/artifacts/07_tier1_showcase.png
+          test -f test_harness/artifacts/08_tier2_showcase.png
+          test -f test_harness/artifacts/09_tier3_telemetry.png
+          test -f test_harness/artifacts/10_tier3_diagnostics.png
+          test -f test_harness/artifacts/11_tier3_config.png
 
       - name: Upload Visual Test Snapshots
         uses: actions/upload-artifact@v4

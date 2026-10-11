@@ -15,12 +15,18 @@
 //! Instead of procedural C UI assembly, UI layouts are declared as static data tables:
 //! - [`UI_SCHEMA`]: Baseline interactive schema (Switch, Slider, Reset Button, Cycle Counter).
 //! - [`TIER1_SHOWCASE_SCHEMA`]: Comprehensive 12-widget layout covering all Tier 1 LVGL widgets.
+//! - [`TIER2_SHOWCASE_SCHEMA`]: Text inputs, keypad button matrix, analog dial scale, and modal dialogs.
+//! - [`TIER3_SHOWCASE_SCHEMA`]: Multi-tab container (`TabView`) routing charts, tables, calendar, lists, and canvas.
 //! - [`S3_4848_SCHEMA`]: Hardware-tuned 480×480 layout for the Guition ESP32-S3 smart display.
 //!
 //! ## Exported C FFI Entry Points
 //! - [`rust_worker_init`]: Allocates and initializes the static state engine.
 //! - [`rust_worker_step`]: Advances the control loop by one tick (processes incoming commands, steps simulation).
-//! - [`rust_get_s3_schema`]: Provides the C UI engine with the 480×480 S3 widget descriptor table.
+//! - [`rust_get_ui_schema`]: Provides C UI engine with baseline interactive schema.
+//! - [`rust_get_tier1_schema`]: Provides C UI engine with the 12-widget Tier 1 showcase schema.
+//! - [`rust_get_tier2_schema`]: Provides C UI engine with the Tier 2 showcase schema.
+//! - [`rust_get_tier3_schema`]: Provides C UI engine with the Tier 3 multi-tab showcase schema.
+//! - [`rust_get_s3_schema`]: Provides C UI engine with the 480×480 S3 widget descriptor table.
 
 #![cfg_attr(not(feature = "std"), no_std)]
 #![allow(static_mut_refs)]
@@ -238,6 +244,110 @@ pub static S3_4848_SCHEMA: &[WidgetDescriptor] = &[
     ),
 ];
 
+pub static TIER2_SHOWCASE_SCHEMA: &[WidgetDescriptor] = &[
+    WidgetDescriptor::text_area(
+        ParamId::TextInput,
+        UiAlign::TopMid,
+        0,
+        20,
+        400,
+        45,
+        c"Enter command...",
+        Some(c"SYS:STATUS"),
+        true,
+        31,
+    ),
+    WidgetDescriptor::button_matrix(
+        ParamId::KeypadMatrix,
+        UiAlign::Center,
+        -160,
+        -30,
+        220,
+        170,
+        c"1 2 3 \n 4 5 6 \n 7 8 9 \n * 0 #",
+    ),
+    WidgetDescriptor::scale(
+        ParamId::GaugeScale,
+        UiAlign::Center,
+        160,
+        -30,
+        180,
+        180,
+        0,
+        100,
+        65,
+    ),
+    WidgetDescriptor::keyboard(
+        ParamId::Keyboard,
+        ParamId::TextInput,
+        UiAlign::BottomMid,
+        0,
+        -10,
+        640,
+        160,
+    ),
+    WidgetDescriptor::msgbox(
+        ParamId::AlertModal,
+        c"System Notice",
+        c"Hardware calibrated.",
+        false,
+    ),
+];
+
+pub static TIER3_SHOWCASE_SCHEMA: &[WidgetDescriptor] = &[
+    WidgetDescriptor::tabview(
+        ParamId::NavTab,
+        c"Telemetry\nDiagnostics\nConfig",
+        760,
+        460,
+    ),
+    WidgetDescriptor::chart(
+        ParamId::TelemetryChart,
+        ParamId::NavTab,
+        0,
+        UiAlign::Center,
+        0,
+        -70,
+        640,
+        220,
+        0,
+        100,
+    ),
+    WidgetDescriptor::list(
+        ParamId::ItemList,
+        ParamId::NavTab,
+        0,
+        UiAlign::BottomMid,
+        0,
+        -15,
+        640,
+        110,
+        c"Channel A (Active)\nChannel B (Standby)\nBus Voltage (3.3V)",
+    ),
+    WidgetDescriptor::table(
+        ParamId::DataTable,
+        ParamId::NavTab,
+        1,
+        UiAlign::Center,
+        0,
+        0,
+        500,
+        240,
+        (4 << 16) | 2,
+        c"Module;Status;Core 0;OK;Core 1;OK;PSRAM;8MB",
+    ),
+    WidgetDescriptor::calendar(
+        ParamId::CalendarDate,
+        ParamId::NavTab,
+        2,
+        UiAlign::Center,
+        0,
+        0,
+        320,
+        280,
+    ),
+];
+
 #[no_mangle]
 pub extern "C" fn rust_get_ui_schema(out_count: *mut usize) -> *const WidgetDescriptor {
     if !out_count.is_null() {
@@ -252,6 +362,22 @@ pub extern "C" fn rust_get_tier1_schema(out_count: *mut usize) -> *const WidgetD
         unsafe { *out_count = TIER1_SHOWCASE_SCHEMA.len() };
     }
     TIER1_SHOWCASE_SCHEMA.as_ptr()
+}
+
+#[no_mangle]
+pub extern "C" fn rust_get_tier2_schema(out_count: *mut usize) -> *const WidgetDescriptor {
+    if !out_count.is_null() {
+        unsafe { *out_count = TIER2_SHOWCASE_SCHEMA.len() };
+    }
+    TIER2_SHOWCASE_SCHEMA.as_ptr()
+}
+
+#[no_mangle]
+pub extern "C" fn rust_get_tier3_schema(out_count: *mut usize) -> *const WidgetDescriptor {
+    if !out_count.is_null() {
+        unsafe { *out_count = TIER3_SHOWCASE_SCHEMA.len() };
+    }
+    TIER3_SHOWCASE_SCHEMA.as_ptr()
 }
 
 #[no_mangle]
@@ -287,6 +413,15 @@ pub struct SystemEngine {
     mode_dropdown_idx: i32,
     speed_roller_idx: i32,
     spinbox_step_val: i32,
+    // Tier 2 & Tier 3 state
+    text_buffer: [u8; 32],
+    keyboard_action: i32,
+    keypad_last_key: i32,
+    modal_open: bool,
+    gauge_val: i32,
+    active_tab: i32,
+    chart_sample: i32,
+    selected_date: u32,
 }
 
 impl SystemEngine {
@@ -305,6 +440,14 @@ impl SystemEngine {
             mode_dropdown_idx: 0,
             speed_roller_idx: 1,
             spinbox_step_val: 1250,
+            text_buffer: [0u8; 32],
+            keyboard_action: 0,
+            keypad_last_key: 0,
+            modal_open: false,
+            gauge_val: 65,
+            active_tab: 0,
+            chart_sample: 30,
+            selected_date: 20261011,
         }
     }
 
@@ -342,6 +485,34 @@ impl SystemEngine {
             ParamId::PrecisionStep => {
                 self.spinbox_step_val = unsafe { cmd.value.i32_val };
             }
+            ParamId::TextInput => {
+                self.text_buffer = unsafe { cmd.value.str_val };
+            }
+            ParamId::Keyboard => {
+                self.keyboard_action = unsafe { cmd.value.i32_val };
+            }
+            ParamId::KeypadMatrix => {
+                self.keypad_last_key = unsafe { cmd.value.i32_val };
+            }
+            ParamId::AlertModal => {
+                self.modal_open = unsafe { cmd.value.i32_val != 0 };
+            }
+            ParamId::GaugeScale => {
+                self.gauge_val = unsafe { cmd.value.i32_val };
+            }
+            ParamId::NavTab => {
+                self.active_tab = unsafe { cmd.value.i32_val };
+            }
+            ParamId::CalendarDate => {
+                self.selected_date = unsafe { cmd.value.u32_val };
+            }
+            ParamId::None
+            | ParamId::NavTile
+            | ParamId::MenuNav
+            | ParamId::ItemList
+            | ParamId::TelemetryChart
+            | ParamId::DataTable
+            | ParamId::CanvasDraw => {}
         }
     }
 
@@ -356,6 +527,8 @@ impl SystemEngine {
             }
 
             self.progress_val = ((self.cycle_counter % 100) + 1) as i32;
+            self.gauge_val = ((self.cycle_counter * 3) % 100) as i32;
+            self.chart_sample = ((self.cycle_counter * 7 + 20) % 90 + 10) as i32;
         } else if self.current_hz > 0 {
             self.current_hz -= 1;
         }
@@ -438,6 +611,27 @@ impl SystemEngine {
             value: ParamVal { i32_val: self.spinbox_step_val },
         };
         unsafe { bridge_send_telemetry(&telem_step) };
+
+        let telem_scale = DeviceTelemetry {
+            param_id: ParamId::GaugeScale,
+            ack_seq_id: self.active_seq_id,
+            value: ParamVal { i32_val: self.gauge_val },
+        };
+        unsafe { bridge_send_telemetry(&telem_scale) };
+
+        let telem_chart = DeviceTelemetry {
+            param_id: ParamId::TelemetryChart,
+            ack_seq_id: self.active_seq_id,
+            value: ParamVal { i32_val: self.chart_sample },
+        };
+        unsafe { bridge_send_telemetry(&telem_chart) };
+
+        let telem_tab = DeviceTelemetry {
+            param_id: ParamId::NavTab,
+            ack_seq_id: self.active_seq_id,
+            value: ParamVal { i32_val: self.active_tab },
+        };
+        unsafe { bridge_send_telemetry(&telem_tab) };
     }
 }
 
