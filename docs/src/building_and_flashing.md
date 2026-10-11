@@ -2,34 +2,59 @@
 
 ## 1. Prerequisites
 * **ESP-IDF**: v5.4+ or v5.5+
-* **Python**: 3.10+ with `esptool`
+* **Python**: 3.10+ (Python 3.13 recommended) with `esptool`
 * **Rust**: Toolchain supporting Xtensa (`xtensa-esp32s3-none-elf`) and RISC-V (`riscv32imafc-unknown-none-elf`)
 
-## 2. Compiling Firmware
+---
+
+## 2. Compiling the Main Application (Flagship S3-4848)
 
 ```bash
-# Export the ESP-IDF toolchain environment
+# 1. Compile the bare-metal Xtensa Rust static library:
+cargo build --release --target xtensa-esp32s3-none-elf -p app-core
+
+# 2. Export the ESP-IDF toolchain environment:
 . $HOME/esp/esp-idf/export.sh
 
-# Build for ESP32-S3 (compiles both Rust crates and ESP-IDF C components):
+# 3. Build the ESP-IDF firmware binary:
 idf.py -DIDF_TARGET=esp32s3 build
-
-# Or for ESP32-P4:
-idf.py -DIDF_TARGET=esp32p4 build
 ```
 
-## 3. Flashing to ESP32-S3-4848S040
-Connect the device via the onboard USB-C port (identified as `/dev/ttyUSB0` or similar):
+---
+
+## 3. Compiling the Minimal Starter Example
+
+To build and run the minimal 3-widget starter project:
 
 ```bash
-cd build
-python -m esptool --chip esp32s3 -p /dev/ttyUSB0 -b 460800 \
-    --before default_reset --after hard_reset \
-    write_flash "@flash_args"
+# 1. Compile the minimal Rust static library:
+cargo build --release --target xtensa-esp32s3-none-elf -p minimal-app
+
+# 2. Build the minimal ESP-IDF project:
+cd examples/minimal
+idf.py -DIDF_TARGET=esp32s3 build
 ```
 
-## 4. Serial Monitoring
+---
+
+## 4. Flashing to Hardware (ESP32-S3-4848S040)
+
+Connect the Guition device via the onboard USB-C port (`/dev/ttyUSB0`):
+
+```bash
+# Flash at high speed (460,800 baud):
+idf.py -p /dev/ttyUSB0 -b 460800 flash
+
+# Or using esptool directly:
+esptool.py --chip esp32s3 -p /dev/ttyUSB0 -b 460800 \
+    --before default_reset --after hard_reset \
+    write_flash "@build/flash_args"
+```
+
+---
+
+## 5. Serial Monitoring
 ```bash
 idf.py -p /dev/ttyUSB0 monitor
 ```
-Press `Ctrl + ]` to exit the monitor.
+Press `Ctrl + ]` to exit the serial monitor.

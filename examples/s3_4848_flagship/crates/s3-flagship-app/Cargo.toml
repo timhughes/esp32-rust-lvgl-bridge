@@ -1,0 +1,14 @@
+[package]
+name = "s3-flagship-app"
+version = "0.1.0"
+edition = "2021"
+
+[lib]
+crate-type = ["staticlib", "rlib"]
+
+[dependencies]
+bridge-core = { path = "../../../../crates/bridge-core" }
+
+[features]
+default = []
+std = []

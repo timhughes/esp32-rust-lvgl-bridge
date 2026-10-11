@@ -33,13 +33,31 @@ The **Flagship S3-4848** application is the reference implementation of the **ES
 
 ---
 
+## Project Structure
+
+```text
+examples/s3_4848_flagship/
+├── CMakeLists.txt              # Standalone ESP-IDF project configuration
+├── README.md                   # This guide
+├── main/
+│   ├── CMakeLists.txt          # Links esp_lvgl_bridge, BSP, and s3-flagship-app
+│   └── main.c                  # C task initialization, screensaver timer & scene graph
+└── crates/
+    └── s3-flagship-app/        # no_std Rust application logic
+        ├── Cargo.toml
+        └── src/lib.rs          # 27-widget S3 schema, SystemEngine & virtual keyboard wiring
+```
+
+---
+
 ## How to Build & Flash
 
 ```bash
-# 1. Build the Rust app-core staticlib for Xtensa LX7:
-cargo build --release --target xtensa-esp32s3-none-elf -p app-core
+# 1. Build the Rust s3-flagship-app staticlib for Xtensa LX7:
+cargo build --release --target xtensa-esp32s3-none-elf -p s3-flagship-app
 
-# 2. Build and flash via ESP-IDF:
-idf.py build
-idf.py -p /dev/ttyUSB0 flash monitor
+# 2. Build and flash the standalone flagship project:
+cd examples/s3_4848_flagship
+idf.py -DIDF_TARGET=esp32s3 build
+idf.py -p /dev/ttyUSB0 -b 460800 flash monitor
 ```

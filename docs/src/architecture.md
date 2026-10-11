@@ -50,6 +50,7 @@ components/
 │   │   ├── esp_lvgl_bridge.h # Umbrella public header
 │   │   ├── bridge_protocol.h # FFI contracts & POD structs
 │   │   ├── ui_binding.h      # Declarative schema parser & arbitration engine
+│   │   ├── esp_lvgl_bsp.h    # Generic hardware BSP interface
 │   │   └── p4_c6_link.h      # High-speed co-processor link
 │   ├── cmake/
 │   │   └── esp_rust.cmake    # Reusable CMake helper for building & linking Rust
@@ -60,7 +61,35 @@ components/
 
 crates/
 ├── bridge-core/              # no_std Rust crate: ABI contracts & open ParamId newtype
-└── app-core/                 # Application staticlib: state machine & declarative schemas
+├── app-core/                 # Application staticlib: state machine & declarative schemas
+└── minimal-app/              # Minimal starter crate (examples/minimal)
+```
+
+### Generic Hardware BSP Interface (`esp_lvgl_bsp_ops_t`)
+
+To completely decouple the bridge and application from board-specific hardware drivers, display panel buses, and touch digitizers, the framework defines a standard operations table in [`esp_lvgl_bsp.h`](file:///home/thughes/git/esp32-rust-lvgl-framework/components/esp_lvgl_bridge/include/esp_lvgl_bsp.h):
+
+```c
+typedef struct {
+    const char   *board_name;
+    lv_display_t *(*init_display)(void);
+    lv_indev_t   *(*init_touch)(lv_display_t *disp);
+    void          (*set_backlight)(uint8_t percent);
+    bool          (*backlight_is_on)(void);
+} esp_lvgl_bsp_ops_t;
+```
+
+Any Board Support Package component (such as [`bsp_guition_s3_4848s040`](file:///home/thughes/git/esp32-rust-lvgl-framework/components/bsp_guition_s3_4848s040)) exports an instance of this struct. The application initializes hardware without coupling to driver internals:
+
+```c
+const esp_lvgl_bsp_ops_t *bsp = bsp_4848s040_get_ops();
+ESP_LOGI("APP", "Initializing BSP: %s...", bsp->board_name);
+lv_display_t *disp = bsp->init_display();
+bsp->init_touch(disp);
+
+// Backlight and screensaver power control:
+bsp->set_backlight(0);   // Blank display after 60s inactivity
+bsp->set_backlight(100); // Wake on touch
 ```
 
 ### CMake Integration with `esp_rust.cmake`

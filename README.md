@@ -186,13 +186,27 @@ idf.py -p /dev/ttyUSB0 monitor
 
 *(Press `Ctrl+]` to exit the serial monitor).*
 
+### Option C: Build the Minimal Starter Example (`examples/minimal`)
+
+To build the self-contained 3-widget starter project:
+
+```bash
+# 1. Compile the minimal Rust staticlib:
+cargo build --release --target xtensa-esp32s3-none-elf -p minimal-app
+
+# 2. Build and flash the minimal ESP-IDF project:
+cd examples/minimal
+idf.py -DIDF_TARGET=esp32s3 build
+idf.py -p /dev/ttyUSB0 -b 460800 flash monitor
+```
+
 ---
 
 ## 6. How It Works
 
 ### FFI Communication Protocol (Zero-Copy POD Structs)
 
-All communication between C (LVGL) and Rust (`SystemEngine`) uses Plain Old Data (POD) structs passed by value over FreeRTOS queues ([`main/include/bridge_protocol.h`](file:///home/thughes/git/esp32-rust-lvgl-framework/main/include/bridge_protocol.h) and [`crates/bridge-core/src/abi.rs`](file:///home/thughes/git/esp32-rust-lvgl-framework/crates/bridge-core/src/abi.rs)):
+All communication between C (LVGL) and Rust (`SystemEngine`) uses Plain Old Data (POD) structs passed by value over FreeRTOS queues ([`components/esp_lvgl_bridge/include/bridge_protocol.h`](file:///home/thughes/git/esp32-rust-lvgl-framework/components/esp_lvgl_bridge/include/bridge_protocol.h) and [`crates/bridge-core/src/abi.rs`](file:///home/thughes/git/esp32-rust-lvgl-framework/crates/bridge-core/src/abi.rs)):
 
 ```rust
 // Fixed-size Plain Old Data parameter value (no heap pointers!)
