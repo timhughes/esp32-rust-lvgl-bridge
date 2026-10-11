@@ -136,17 +136,20 @@ The **Everything** reference application showcases all 25 supported LVGL widgets
 3. **Anti-Jitter 3-Stage Arbitration:**
    * Monotonic sequence tickets (`seq_id`) protect interactive widgets during active touch dragging (`ARB_DRAGGING`) and temporal holdoff (`ARB_HOLDOFF`), completely eliminating telemetry rubber-banding and UI stutter.
 
-### Visual Showcase (All 6 Tabs)
+### Visual Showcase (All 7 Tabs)
 
-The reference application exercises all 25 supported LVGL widgets across 6 functional tabs, captured below from the headless test renderer:
+The reference application exercises all 34 supported LVGL widgets across 7 functional tabs, captured below from the headless test renderer:
 
 | Tab 0: Controls | Tab 1: Selectors | Tab 2: Inputs |
 |:---:|:---:|:---:|
 | <img src="artifacts/01_everything_tab0_controls.png" width="220" alt="Tab 0 Controls" /> | <img src="artifacts/02_everything_tab1_selectors.png" width="220" alt="Tab 1 Selectors" /> | <img src="artifacts/03_everything_tab2_inputs.png" width="220" alt="Tab 2 Inputs" /> |
-| `Switch`, `Slider`, `Arc`, `Bar`, `Led`, `Spinner`, `Button`, `Label` | `Checkbox`, `Dropdown`, `Roller`, `Spinbox`, `Scale` | `TextInput`, `TextArea`, `Keyboard`, `MsgBox` |
-| **Tab 3: Telemetry** | **Tab 4: Tools** | **Tab 5: System** |
-| <img src="artifacts/04_everything_tab3_telemetry.png" width="220" alt="Tab 3 Telemetry" /> | <img src="artifacts/05_everything_tab4_tools.png" width="220" alt="Tab 4 Tools" /> | <img src="artifacts/06_everything_tab5_system.png" width="220" alt="Tab 5 System" /> |
-| `Chart`, `Table`, `List` | `Calendar`, `ButtonMatrix`, `Canvas`, `Label` | `Menu`, `TileView` |
+| `Switch`, `Slider`, `Arc`, `ArcLabel`, `Bar`, `Led`, `Spinner`, `Button`, `ImageButton`, `Label` | `Checkbox`, `Dropdown`, `Roller`, `Spinbox`, `Scale`, `AnimImage` | `TextInput`, `TextArea`, `Keyboard`, `MsgBox`, `SpanGroup` |
+| **Tab 3: Telemetry** | **Tab 4: Tools** | **Tab 5: Media** |
+| <img src="artifacts/04_everything_tab3_telemetry.png" width="220" alt="Tab 3 Telemetry" /> | <img src="artifacts/05_everything_tab4_tools.png" width="220" alt="Tab 4 Tools" /> | <img src="artifacts/06_everything_tab5_media.png" width="220" alt="Tab 5 Media" /> |
+| `Chart`, `Line`, `Table`, `List` | `Calendar`, `ButtonMatrix`, `Canvas`, `Label` | `Win`, `Barcode`, `Image`, `Label` |
+| **Tab 6: System** | | |
+| <img src="artifacts/07_everything_tab6_system.png" width="220" alt="Tab 6 System" /> | | |
+| `Menu`, `QRCode`, `TileView` | | |
 
 ---
 

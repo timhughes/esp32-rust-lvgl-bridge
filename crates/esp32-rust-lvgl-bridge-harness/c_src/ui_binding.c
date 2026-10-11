@@ -1977,6 +1977,8 @@ void ui_engine_build_from_schema(const widget_descriptor_t *schema, size_t count
                 lv_arclabel_set_text(al, d->label_primary);
             }
             uint32_t radius = d->initial_val > 0 ? (uint32_t)d->initial_val : 70;
+            int32_t sz = (int32_t)(radius * 2 + 40);
+            lv_obj_set_size(al, d->width > 0 ? d->width : sz, d->height > 0 ? d->height : sz);
             lv_arclabel_set_radius(al, radius);
             if (d->min_val != 0 || d->max_val != 0) {
                 lv_arclabel_set_angle_start(al, d->min_val);

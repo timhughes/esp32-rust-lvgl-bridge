@@ -34,7 +34,7 @@ fn test_everything_covers_every_widget_type() {
 
     assert_eq!(WidgetType::ALL.len(), 34, "Expected 34 distinct supported widget types");
     assert_eq!(used_types.len(), 34, "EVERYTHING_SCHEMA must utilize all 34 widget types");
-    assert_eq!(EVERYTHING_SCHEMA.len(), 36, "EVERYTHING_SCHEMA contains 36 total descriptors");
+    assert_eq!(EVERYTHING_SCHEMA.len(), 37, "EVERYTHING_SCHEMA contains 37 total descriptors");
 }
 
 /// 2. Headless Scene Graph Construction & Lookup Test
@@ -211,14 +211,13 @@ fn test_tab2_inputs_and_keyboard() {
         Some("Line 1\nLine 2\nLine 3")
     );
 
-    // Test Keyboard, MsgBox, SpanGroup & Win exist in scene graph
+    // Test Keyboard, MsgBox & SpanGroup exist in scene graph
     assert!(harness.widget_exists(ParamId::Keyboard));
     assert!(harness.widget_exists(ParamId::AlertModal));
     assert!(harness.widget_exists(ParamId::FormattedSpan));
-    assert!(harness.widget_exists(ParamId::WindowModal));
 }
 
-/// 6. Tab 3 (Telemetry): Chart, Table, List
+/// 6. Tab 3 (Telemetry): Chart, Line, Table, List
 #[test]
 fn test_tab3_telemetry_streams() {
     let _guard = TEST_LOCK.lock().unwrap_or_else(|e| e.into_inner());
@@ -232,6 +231,7 @@ fn test_tab3_telemetry_streams() {
 
     // Verify widgets exist
     assert!(harness.widget_exists(ParamId::TelemetryChart));
+    assert!(harness.widget_exists(ParamId::LineGraph));
     assert!(harness.widget_exists(ParamId::DataTable));
     assert!(harness.widget_exists(ParamId::ItemList));
 
@@ -259,10 +259,9 @@ fn test_tab4_tools_keypad_and_canvas() {
     assert!(harness.set_active_tab(ParamId::NavTab, 4));
     assert_eq!(harness.get_active_tab(ParamId::NavTab), Some(4));
 
-    // Verify Calendar, Canvas & Barcode exist
+    // Verify Calendar & Canvas exist
     assert!(harness.widget_exists(ParamId::CalendarDate));
     assert!(harness.widget_exists(ParamId::CanvasDraw));
-    assert!(harness.widget_exists(ParamId::AssetBarcode));
 
     // Test ButtonMatrix (KeypadMatrix) click by button text
     assert!(harness.widget_exists(ParamId::KeypadMatrix));
@@ -273,9 +272,9 @@ fn test_tab4_tools_keypad_and_canvas() {
     assert_eq!(cmd.param_id, ParamId::KeypadMatrix);
 }
 
-/// 8. Tab 5 (System): Menu, TileView
+/// 8. Tab 5 (Media): WindowModal, AssetBarcode, ImagePreview
 #[test]
-fn test_tab5_system_navigation() {
+fn test_tab5_media_assets() {
     let _guard = TEST_LOCK.lock().unwrap_or_else(|e| e.into_inner());
     let mut harness = HeadlessHarness::new(480, 480);
     harness.build_schema(EVERYTHING_SCHEMA);
@@ -285,12 +284,31 @@ fn test_tab5_system_navigation() {
     assert!(harness.set_active_tab(ParamId::NavTab, 5));
     assert_eq!(harness.get_active_tab(ParamId::NavTab), Some(5));
 
-    // Verify Menu and TileView exist
+    // Verify WindowModal, AssetBarcode & ImagePreview exist
+    assert!(harness.widget_exists(ParamId::WindowModal));
+    assert!(harness.widget_exists(ParamId::AssetBarcode));
+    assert!(harness.widget_exists(ParamId::ImagePreview));
+}
+
+/// 9. Tab 6 (System): Menu, QRCode, TileView
+#[test]
+fn test_tab6_system_navigation() {
+    let _guard = TEST_LOCK.lock().unwrap_or_else(|e| e.into_inner());
+    let mut harness = HeadlessHarness::new(480, 480);
+    harness.build_schema(EVERYTHING_SCHEMA);
+    harness.step(50);
+
+    // Switch to Tab 6
+    assert!(harness.set_active_tab(ParamId::NavTab, 6));
+    assert_eq!(harness.get_active_tab(ParamId::NavTab), Some(6));
+
+    // Verify Menu, QRCode and TileView exist
     assert!(harness.widget_exists(ParamId::MenuNav));
+    assert!(harness.widget_exists(ParamId::QrWifiConfig));
     assert!(harness.widget_exists(ParamId::NavTile));
 }
 
-/// 9. Full Visual Regression Snapshot Suite
+/// 10. Full Visual Regression Snapshot Suite
 /// Renders every tab and saves high-resolution PNGs to the artifacts directory.
 #[test]
 fn test_visual_snapshots_all_tabs() {
@@ -306,10 +324,15 @@ fn test_visual_snapshots_all_tabs() {
         (2, "03_everything_tab2_inputs.png"),
         (3, "04_everything_tab3_telemetry.png"),
         (4, "05_everything_tab4_tools.png"),
-        (5, "06_everything_tab5_system.png"),
+        (5, "06_everything_tab5_media.png"),
+        (6, "07_everything_tab6_system.png"),
     ];
 
-    let dirs = ["artifacts", "../../../../artifacts"];
+    let dirs = [
+        "artifacts",
+        "../../../../artifacts",
+        "/home/thughes/.gemini/antigravity-cli/brain/f8a8e282-7ea5-46ba-8a7a-613e42b88b8b/artifacts",
+    ];
 
     for (tab_idx, filename) in tab_snapshots {
         assert!(harness.set_active_tab(ParamId::NavTab, tab_idx));

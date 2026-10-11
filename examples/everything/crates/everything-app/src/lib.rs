@@ -13,18 +13,19 @@
 //! ## Declarative UI Schemas
 //!
 //! Instead of procedural C UI assembly, UI layouts are declared as static data tables:
-//! - [`EVERYTHING_SCHEMA`]: Complete 27-descriptor suite covering all 25 supported LVGL widgets across 6 tabs.
-//! - [`TAB0_CONTROLS_SCHEMA`]: Tab 0 scalar controls (Switch, Slider, Arc, Bar, LED, Spinner, Button, Label).
-//! - [`TAB1_SELECTORS_SCHEMA`]: Tab 1 discrete selectors (Checkbox, Dropdown, Roller, Spinbox, Scale).
-//! - [`TAB2_INPUTS_SCHEMA`]: Tab 2 text & input controls (TextInput, TextArea, Keyboard, MsgBox modal).
-//! - [`TAB3_TELEMETRY_SCHEMA`]: Tab 3 streaming telemetry (Oscilloscope Chart, Diagnostics Table, List).
+//! - [`EVERYTHING_SCHEMA`]: Complete 37-descriptor suite covering all 34 supported LVGL widgets across 7 tabs.
+//! - [`TAB0_CONTROLS_SCHEMA`]: Tab 0 scalar controls (Switch, Slider, Arc, Bar, LED, Spinner, Button, Label, ArcLabel, ImageButton).
+//! - [`TAB1_SELECTORS_SCHEMA`]: Tab 1 discrete selectors (Checkbox, Dropdown, Roller, Spinbox, Scale, AnimImage).
+//! - [`TAB2_INPUTS_SCHEMA`]: Tab 2 text & input controls (TextInput, TextArea, Keyboard, MsgBox modal, SpanGroup).
+//! - [`TAB3_TELEMETRY_SCHEMA`]: Tab 3 streaming telemetry (Oscilloscope Chart, Line separator, Diagnostics Table, List).
 //! - [`TAB4_TOOLS_SCHEMA`]: Tab 4 interactive utilities (Calendar, ButtonMatrix keypad, Pixel Canvas).
-//! - [`TAB5_SYSTEM_SCHEMA`]: Tab 5 system configuration (Hierarchical Menu, Swipeable TileView).
+//! - [`TAB5_MEDIA_SCHEMA`]: Tab 5 rich media & assets (Window frame, Barcode tag, Image preview).
+//! - [`TAB6_SYSTEM_SCHEMA`]: Tab 6 system configuration (Hierarchical Menu, WiFi QR Code, Swipeable TileView).
 //!
 //! ## Exported C FFI Entry Points
 //! - [`rust_worker_init`]: Allocates and initializes the static state engine.
 //! - [`rust_worker_step`]: Advances the control loop by one tick (processes incoming commands, steps simulation).
-//! - [`rust_get_everything_schema`]: Provides C UI engine with the complete 27-widget descriptor table.
+//! - [`rust_get_everything_schema`]: Provides C UI engine with the complete 37-widget descriptor table.
 
 #![cfg_attr(target_os = "none", no_std)]
 #![allow(static_mut_refs)]
@@ -35,11 +36,11 @@ use bridge_core::abi::{
     DeviceTelemetry, ParamId, ParamVal, UiCommand, UiAlign, WidgetDescriptor,
 };
 
-/// Root Navigation Container: 6-Tab TabView across 480x480 display
+/// Root Navigation Container: 7-Tab TabView across 480x480 display
 pub static NAV_CONTAINER_SCHEMA: &[WidgetDescriptor] = &[
     WidgetDescriptor::tabview(
         ParamId::NavTab,
-        c"Controls\nSelectors\nInputs\nTelemetry\nTools\nSystem",
+        c"Controls\nSelectors\nInputs\nTelemetry\nTools\nMedia\nSystem",
         480,
         480,
     ),
@@ -73,7 +74,7 @@ pub static TAB0_CONTROLS_SCHEMA: &[WidgetDescriptor] = &[
         ParamId::ArcKnob,
         UiAlign::Center,
         0,
-        -55,
+        -45,
         0,
         100,
         50,
@@ -85,17 +86,17 @@ pub static TAB0_CONTROLS_SCHEMA: &[WidgetDescriptor] = &[
         ParamId::ArcLabelHeading,
         UiAlign::Center,
         0,
-        -55,
-        75,
-        135,
-        270,
+        -45,
+        82,
+        245,
+        50,
         c"POWER",
     ).with_parent(ParamId::NavTab, 0),
     WidgetDescriptor::bar(
         ParamId::ProgressBar,
         UiAlign::Center,
         0,
-        45,
+        36,
         0,
         100,
         25,
@@ -105,7 +106,7 @@ pub static TAB0_CONTROLS_SCHEMA: &[WidgetDescriptor] = &[
         ParamId::SetpointHz,
         UiAlign::Center,
         0,
-        95,
+        112,
         1,
         100,
         10,
@@ -242,15 +243,6 @@ pub static TAB2_INPUTS_SCHEMA: &[WidgetDescriptor] = &[
         35,
         c"Console: |Online |Speed: |High",
     ).with_parent(ParamId::NavTab, 2),
-    WidgetDescriptor::win(
-        ParamId::WindowModal,
-        UiAlign::Center,
-        0,
-        0,
-        320,
-        220,
-        c"Diagnostics Window",
-    ).with_parent(ParamId::NavTab, 2),
 ];
 
 /// Tab 3: Telemetry (Streaming waveforms, diagnostics table & list)
@@ -261,9 +253,9 @@ pub static TAB3_TELEMETRY_SCHEMA: &[WidgetDescriptor] = &[
         3,
         UiAlign::TopMid,
         0,
-        10,
-        420,
-        150,
+        8,
+        430,
+        120,
         0,
         100,
     ),
@@ -271,10 +263,10 @@ pub static TAB3_TELEMETRY_SCHEMA: &[WidgetDescriptor] = &[
         ParamId::LineGraph,
         UiAlign::TopMid,
         0,
-        95,
-        420,
-        2,
-        Some(c"0,0; 420,0"),
+        140,
+        430,
+        4,
+        Some(c"0,0; 430,0"),
     ).with_parent(ParamId::NavTab, 3),
     WidgetDescriptor::table(
         ParamId::DataTable,
@@ -282,9 +274,9 @@ pub static TAB3_TELEMETRY_SCHEMA: &[WidgetDescriptor] = &[
         3,
         UiAlign::Center,
         0,
-        35,
-        420,
-        120,
+        48,
+        430,
+        105,
         (4 << 16) | 2,
         c"Module;Status;Core 0;OK;Core 1;OK;PSRAM;8MB",
     ),
@@ -294,9 +286,9 @@ pub static TAB3_TELEMETRY_SCHEMA: &[WidgetDescriptor] = &[
         3,
         UiAlign::BottomMid,
         0,
-        -15,
-        420,
-        75,
+        -10,
+        430,
+        70,
         c"ST7701S RGB (Active)\nGT911 I2C (Ready)\nESP32-S3 (240MHz)",
     ),
 ];
@@ -329,36 +321,56 @@ pub static TAB4_TOOLS_SCHEMA: &[WidgetDescriptor] = &[
         UiAlign::BottomLeft,
         20,
         -20,
-        100,
-        100,
+        110,
+        110,
     ),
-    WidgetDescriptor::image(
-        ParamId::ImagePreview,
-        UiAlign::BottomRight,
-        -130,
-        -20,
-        c"\xEF\x80\xBE",
-    ).with_parent(ParamId::NavTab, 4),
-    WidgetDescriptor::barcode(
-        ParamId::AssetBarcode,
-        UiAlign::BottomMid,
-        0,
-        -20,
-        150,
-        50,
-        c"ESP32-S3-4848",
-    ).with_parent(ParamId::NavTab, 4),
     WidgetDescriptor::label(
         ParamId::CycleCount,
         UiAlign::BottomRight,
         -20,
-        -45,
+        -40,
         c"Calendar, Matrix & Canvas\nEngine Ticks: %lu",
     ).with_parent(ParamId::NavTab, 4),
 ];
 
-/// Tab 5: System (Settings menu, WiFi onboarding QR code & swipeable tileview)
-pub static TAB5_SYSTEM_SCHEMA: &[WidgetDescriptor] = &[
+/// Tab 5: Media (Diagnostics window, barcode asset tag & image preview)
+pub static TAB5_MEDIA_SCHEMA: &[WidgetDescriptor] = &[
+    WidgetDescriptor::win(
+        ParamId::WindowModal,
+        UiAlign::TopMid,
+        0,
+        10,
+        440,
+        180,
+        c"Diagnostics Window",
+    ).with_parent(ParamId::NavTab, 5),
+    WidgetDescriptor::barcode(
+        ParamId::AssetBarcode,
+        UiAlign::BottomLeft,
+        25,
+        -25,
+        180,
+        70,
+        c"ESP32-S3-4848",
+    ).with_parent(ParamId::NavTab, 5),
+    WidgetDescriptor::image(
+        ParamId::ImagePreview,
+        UiAlign::BottomMid,
+        50,
+        -40,
+        c"\xEF\x80\xBE",
+    ).with_parent(ParamId::NavTab, 5),
+    WidgetDescriptor::label(
+        ParamId::CycleCount,
+        UiAlign::BottomRight,
+        -20,
+        -35,
+        c"Asset Tag & Icons\nFrames: %lu",
+    ).with_parent(ParamId::NavTab, 5),
+];
+
+/// Tab 6: System (Settings menu, WiFi onboarding QR code & swipeable tileview)
+pub static TAB6_SYSTEM_SCHEMA: &[WidgetDescriptor] = &[
     WidgetDescriptor::menu(
         ParamId::MenuNav,
         UiAlign::TopLeft,
@@ -367,7 +379,7 @@ pub static TAB5_SYSTEM_SCHEMA: &[WidgetDescriptor] = &[
         250,
         180,
         c"System Settings",
-    ).with_parent(ParamId::NavTab, 5),
+    ).with_parent(ParamId::NavTab, 6),
     WidgetDescriptor::qr_code(
         ParamId::QrWifiConfig,
         UiAlign::TopRight,
@@ -375,7 +387,7 @@ pub static TAB5_SYSTEM_SCHEMA: &[WidgetDescriptor] = &[
         15,
         140,
         c"WIFI:S:ESP32-S3-LAB;T:WPA;P:lvgl_rust;;",
-    ).with_parent(ParamId::NavTab, 5),
+    ).with_parent(ParamId::NavTab, 6),
     WidgetDescriptor::tileview(
         ParamId::NavTile,
         UiAlign::BottomMid,
@@ -383,7 +395,7 @@ pub static TAB5_SYSTEM_SCHEMA: &[WidgetDescriptor] = &[
         -10,
         440,
         180,
-    ).with_parent(ParamId::NavTab, 5),
+    ).with_parent(ParamId::NavTab, 6),
 ];
 
 const fn concat_schemas<const N: usize>(tables: &[&'static [WidgetDescriptor]]) -> [WidgetDescriptor; N] {
@@ -403,17 +415,18 @@ const fn concat_schemas<const N: usize>(tables: &[&'static [WidgetDescriptor]]) 
     out
 }
 
-static EVERYTHING_SCHEMA_ARRAY: [WidgetDescriptor; 36] = concat_schemas(&[
+static EVERYTHING_SCHEMA_ARRAY: [WidgetDescriptor; 37] = concat_schemas(&[
     NAV_CONTAINER_SCHEMA,
     TAB0_CONTROLS_SCHEMA,
     TAB1_SELECTORS_SCHEMA,
     TAB2_INPUTS_SCHEMA,
     TAB3_TELEMETRY_SCHEMA,
     TAB4_TOOLS_SCHEMA,
-    TAB5_SYSTEM_SCHEMA,
+    TAB5_MEDIA_SCHEMA,
+    TAB6_SYSTEM_SCHEMA,
 ]);
 
-/// Complete 36-widget descriptor table joining all tab schemas and navigation container
+/// Complete 37-widget descriptor table joining all tab schemas and navigation container
 pub static EVERYTHING_SCHEMA: &[WidgetDescriptor] = &EVERYTHING_SCHEMA_ARRAY;
 
 #[no_mangle]
@@ -706,13 +719,14 @@ mod tests {
 
     #[test]
     fn test_schemas_integrity() {
-        assert_eq!(EVERYTHING_SCHEMA.len(), 36);
+        assert_eq!(EVERYTHING_SCHEMA.len(), 37);
         assert_eq!(TAB0_CONTROLS_SCHEMA.len(), 10);
         assert_eq!(TAB1_SELECTORS_SCHEMA.len(), 6);
-        assert_eq!(TAB2_INPUTS_SCHEMA.len(), 6);
+        assert_eq!(TAB2_INPUTS_SCHEMA.len(), 5);
         assert_eq!(TAB3_TELEMETRY_SCHEMA.len(), 4);
-        assert_eq!(TAB4_TOOLS_SCHEMA.len(), 6);
-        assert_eq!(TAB5_SYSTEM_SCHEMA.len(), 3);
+        assert_eq!(TAB4_TOOLS_SCHEMA.len(), 4);
+        assert_eq!(TAB5_MEDIA_SCHEMA.len(), 4);
+        assert_eq!(TAB6_SYSTEM_SCHEMA.len(), 3);
 
         // Root widget of EVERYTHING schema must be TabView
         assert_eq!(EVERYTHING_SCHEMA[0].widget_type, WidgetType::TabView);
