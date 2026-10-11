@@ -137,6 +137,26 @@ uint8_t harness_led_get_brightness(lv_obj_t *obj);
  */
 void harness_clean_screen(void);
 
+/**
+ * @brief Check if widget has LV_OBJ_FLAG_HIDDEN flag.
+ */
+bool harness_widget_is_hidden(lv_obj_t *obj);
+
+/**
+ * @brief Check if widget has LV_STATE_DISABLED state.
+ */
+bool harness_widget_is_disabled(lv_obj_t *obj);
+
+/**
+ * @brief Check if widget has LV_OBJ_FLAG_CLICKABLE flag.
+ */
+bool harness_widget_is_clickable(lv_obj_t *obj);
+
+/**
+ * @brief Get flex flow integer code (0=none, 1=row, 2=col, 3=row_wrap, etc.).
+ */
+int32_t harness_widget_get_flex_flow(lv_obj_t *obj);
+
 #ifdef __cplusplus
 }
 #endif

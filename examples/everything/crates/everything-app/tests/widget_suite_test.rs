@@ -322,3 +322,44 @@ fn test_visual_snapshots_all_tabs() {
         }
     }
 }
+
+/// 10. Phase 3: Runtime widget flags via telemetry
+#[test]
+fn test_runtime_widget_flags_via_telemetry() {
+    use bridge_core::abi::WidgetFlagOp as F;
+    let _guard = TEST_LOCK.lock().unwrap_or_else(|e| e.into_inner());
+    let mut harness = HeadlessHarness::new(480, 480);
+    harness.build_schema(EVERYTHING_SCHEMA);
+    harness.step(50);
+
+    let p = ParamId::TriggerReset;
+    assert_eq!(harness.is_widget_hidden(p), Some(false));
+    assert_eq!(harness.is_widget_disabled(p), Some(false));
+
+    harness.dispatch_telemetry(&DeviceTelemetry::widget_flag_update(p, F::Hidden as u32 | F::Disabled as u32));
+    assert_eq!(harness.is_widget_hidden(p), Some(true));
+    assert_eq!(harness.is_widget_disabled(p), Some(true));
+
+    harness.dispatch_telemetry(&DeviceTelemetry::widget_flag_update(p, F::Visible as u32 | F::Enabled as u32));
+    assert_eq!(harness.is_widget_hidden(p), Some(false));
+    assert_eq!(harness.is_widget_disabled(p), Some(false));
+
+    harness.dispatch_telemetry(&DeviceTelemetry::widget_flag_update(p, F::Unclickable as u32));
+    assert_eq!(harness.is_widget_clickable(p), Some(false));
+    harness.dispatch_telemetry(&DeviceTelemetry::widget_flag_update(p, F::Clickable as u32));
+    assert_eq!(harness.is_widget_clickable(p), Some(true));
+}
+
+/// 11. Phase 3: Declarative flex layout
+#[test]
+fn test_declarative_flex_layout() {
+    use bridge_core::abi::{LayoutFlow, UiAlign, WidgetDescriptor};
+    let _guard = TEST_LOCK.lock().unwrap_or_else(|e| e.into_inner());
+    let mut harness = HeadlessHarness::new(480, 480);
+    let schema = [WidgetDescriptor::win(
+        ParamId::WindowModal, UiAlign::Center, 0, 0, 300, 200, c"Flex",
+    ).with_layout(LayoutFlow::Column)];
+    harness.build_schema(&schema);
+    harness.step(20);
+    assert_eq!(harness.get_widget_flex_flow(ParamId::WindowModal), Some(LayoutFlow::Column));
+}

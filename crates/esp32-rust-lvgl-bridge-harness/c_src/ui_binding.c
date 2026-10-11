@@ -11,6 +11,23 @@ static inline void ui_set_obj_hidden(lv_obj_t *obj, bool hidden) {
     }
 }
 
+#if LV_USE_FLEX
+static void apply_layout_flow(lv_obj_t *obj, layout_flow_t flow_mode) {
+    if (!obj || flow_mode == LAYOUT_FLOW_NONE) return;
+    lv_flex_flow_t flow = LV_FLEX_FLOW_ROW;
+    switch (flow_mode) {
+    case LAYOUT_FLOW_ROW:            flow = LV_FLEX_FLOW_ROW; break;
+    case LAYOUT_FLOW_COLUMN:         flow = LV_FLEX_FLOW_COLUMN; break;
+    case LAYOUT_FLOW_ROW_WRAP:       flow = LV_FLEX_FLOW_ROW_WRAP; break;
+    case LAYOUT_FLOW_ROW_REVERSE:    flow = LV_FLEX_FLOW_ROW_REVERSE; break;
+    case LAYOUT_FLOW_COLUMN_WRAP:    flow = LV_FLEX_FLOW_COLUMN_WRAP; break;
+    case LAYOUT_FLOW_COLUMN_REVERSE: flow = LV_FLEX_FLOW_COLUMN_REVERSE; break;
+    default: return;
+    }
+    lv_obj_set_flex_flow(obj, flow);
+}
+#endif
+
 #define MAX_BINDINGS 16
 #define MAX_LABEL_BINDINGS 16
 #define MAX_PARAM_LOOKUPS 64
@@ -1188,6 +1205,33 @@ void ui_engine_dispatch_telemetry(const device_telemetry_t *telem) {
         }
     }
 #endif
+
+    // 25. Dynamic Runtime Widget Flags & States (Phase 3)
+    if (telem->param_id == PARAM_WIDGET_FLAGS) {
+        param_id_t target_id = (param_id_t)telem->ack_seq_id;
+        lv_obj_t *obj = ui_engine_get_widget_by_param(target_id);
+        if (obj) {
+            uint32_t flags = telem->value.u32_val;
+            if (flags & WIDGET_FLAG_HIDDEN) {
+                ui_set_obj_hidden(obj, true);
+            }
+            if (flags & WIDGET_FLAG_VISIBLE) {
+                ui_set_obj_hidden(obj, false);
+            }
+            if (flags & WIDGET_FLAG_DISABLED) {
+                lv_obj_add_state(obj, LV_STATE_DISABLED);
+            }
+            if (flags & WIDGET_FLAG_ENABLED) {
+                lv_obj_remove_state(obj, LV_STATE_DISABLED);
+            }
+            if (flags & WIDGET_FLAG_CLICKABLE) {
+                lv_obj_add_flag(obj, LV_OBJ_FLAG_CLICKABLE);
+            }
+            if (flags & WIDGET_FLAG_UNCLICKABLE) {
+                lv_obj_remove_flag(obj, LV_OBJ_FLAG_CLICKABLE);
+            }
+        }
+    }
 }
 
 void ui_engine_pump_telemetry(void) {
@@ -1672,7 +1716,11 @@ void ui_engine_build_from_schema(const widget_descriptor_t *schema, size_t count
                     buf[sizeof(buf) - 1] = '\0';
                     char *tok = strtok(buf, "\n");
                     while (tok && b->num_tabs < 8) {
-                        b->tabs[b->num_tabs++] = lv_tabview_add_tab(tv, tok);
+                        lv_obj_t *tab = lv_tabview_add_tab(tv, tok);
+#if LV_USE_FLEX
+                        apply_layout_flow(tab, d->layout_flow);
+#endif
+                        b->tabs[b->num_tabs++] = tab;
                         tok = strtok(NULL, "\n");
                     }
                 }
@@ -1984,6 +2032,9 @@ void ui_engine_build_from_schema(const widget_descriptor_t *schema, size_t count
                 ui_set_obj_hidden(win, true);
             }
             lv_obj_t *content = lv_win_get_content(win);
+#if LV_USE_FLEX
+            apply_layout_flow(content, d->layout_flow);
+#endif
 
             if (s_num_wins < MAX_BINDINGS) {
                 bound_win_t *b = &s_wins[s_num_wins++];
@@ -2108,5 +2159,14 @@ void ui_engine_build_from_schema(const widget_descriptor_t *schema, size_t count
         default:
             break;
         }
+
+#if LV_USE_FLEX
+        if (d->layout_flow != LAYOUT_FLOW_NONE) {
+            lv_obj_t *created_obj = ui_engine_get_widget_by_param(d->param_id);
+            if (created_obj) {
+                apply_layout_flow(created_obj, d->layout_flow);
+            }
+        }
+#endif
     }
 }

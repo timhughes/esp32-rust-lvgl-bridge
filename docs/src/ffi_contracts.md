@@ -212,3 +212,10 @@ The Rust domain logic calls these functions to communicate with the FreeRTOS que
 
 * `bool bridge_recv_command(ui_command_t *out_cmd, uint32_t timeout_ms)`: Pops an incoming command sent from LVGL touch events.
 * `bool bridge_send_telemetry(const device_telemetry_t *telem)`: Pushes an updated telemetry packet into the queue for LVGL to consume.
+
+---
+
+## Phase 3: Declarative Layouts & Runtime Widget Flags
+
+- `WidgetDescriptor::with_layout(LayoutFlow)` sets a flex flow (`Row`, `Column`, `RowWrap`, `RowReverse`, `ColumnWrap`, `ColumnReverse`) on the created widget (`layout_flow` field in `widget_descriptor_t`).
+- Runtime state changes use telemetry: `DeviceTelemetry::widget_flag_update(target, flags)` sends `PARAM_WIDGET_FLAGS` with `ack_seq_id = target param` and `u32_val` flags from `WidgetFlagOp` (`Hidden`, `Visible`, `Disabled`, `Enabled`, `Clickable`, `Unclickable`).

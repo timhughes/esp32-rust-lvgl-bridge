@@ -59,6 +59,10 @@ extern "C" {
     fn harness_click_buttonmatrix_by_text(bm: *mut c_void, text: *const c_char) -> bool;
     fn harness_click_buttonmatrix_by_id(bm: *mut c_void, btn_id: u32) -> bool;
     fn harness_clean_screen();
+    fn harness_widget_is_hidden(obj: *mut c_void) -> bool;
+    fn harness_widget_is_disabled(obj: *mut c_void) -> bool;
+    fn harness_widget_is_clickable(obj: *mut c_void) -> bool;
+    fn harness_widget_get_flex_flow(obj: *mut c_void) -> i32;
 }
 
 /// Headless LVGL test harness managing offscreen framebuffer and input injection.
@@ -334,6 +338,56 @@ impl HeadlessHarness {
             None
         } else {
             Some(unsafe { harness_led_get_brightness(widget) })
+        }
+    }
+
+    /// Check if a widget is currently hidden (`LV_OBJ_FLAG_HIDDEN`).
+    pub fn is_widget_hidden(&self, param_id: ParamId) -> Option<bool> {
+        let widget = unsafe { ui_engine_get_widget_by_param(param_id.0) };
+        if widget.is_null() {
+            None
+        } else {
+            Some(unsafe { harness_widget_is_hidden(widget) })
+        }
+    }
+
+    /// Check if a widget is currently disabled (`LV_STATE_DISABLED`).
+    pub fn is_widget_disabled(&self, param_id: ParamId) -> Option<bool> {
+        let widget = unsafe { ui_engine_get_widget_by_param(param_id.0) };
+        if widget.is_null() {
+            None
+        } else {
+            Some(unsafe { harness_widget_is_disabled(widget) })
+        }
+    }
+
+    /// Check if a widget is currently clickable (`LV_OBJ_FLAG_CLICKABLE`).
+    pub fn is_widget_clickable(&self, param_id: ParamId) -> Option<bool> {
+        let widget = unsafe { ui_engine_get_widget_by_param(param_id.0) };
+        if widget.is_null() {
+            None
+        } else {
+            Some(unsafe { harness_widget_is_clickable(widget) })
+        }
+    }
+
+    /// Query the flex layout flow of a widget.
+    pub fn get_widget_flex_flow(&self, param_id: ParamId) -> Option<esp32_rust_lvgl_bridge_core::abi::LayoutFlow> {
+        let widget = unsafe { ui_engine_get_widget_by_param(param_id.0) };
+        if widget.is_null() {
+            None
+        } else {
+            use esp32_rust_lvgl_bridge_core::abi::LayoutFlow;
+            let raw = unsafe { harness_widget_get_flex_flow(widget) };
+            match raw {
+                1 => Some(LayoutFlow::Row),
+                2 => Some(LayoutFlow::Column),
+                3 => Some(LayoutFlow::RowWrap),
+                4 => Some(LayoutFlow::RowReverse),
+                5 => Some(LayoutFlow::ColumnWrap),
+                6 => Some(LayoutFlow::ColumnReverse),
+                _ => Some(LayoutFlow::None),
+            }
         }
     }
 }

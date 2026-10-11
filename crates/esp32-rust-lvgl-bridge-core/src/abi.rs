@@ -55,6 +55,8 @@ impl ParamId {
     pub const FormattedSpan: Self = Self(33);
     pub const SpinnerAnim: Self = Self(34);
     pub const AssetBarcode: Self = Self(35);
+    // Phase 3: Engine Power & Modern LVGL Features
+    pub const WidgetFlags: Self = Self(36);
 
     /// Creates a custom application parameter ID.
     #[inline]
@@ -130,6 +132,17 @@ pub struct DeviceTelemetry {
     pub param_id: ParamId,
     pub ack_seq_id: u32,
     pub value: ParamVal,
+}
+
+impl DeviceTelemetry {
+    #[inline]
+    pub const fn widget_flag_update(target: ParamId, flags: u32) -> Self {
+        Self {
+            param_id: ParamId::WidgetFlags,
+            ack_seq_id: target.0,
+            value: ParamVal::from_u32(flags),
+        }
+    }
 }
 
 #[repr(u32)]
@@ -229,6 +242,31 @@ pub enum UiAlign {
     BottomRight = 7,
 }
 
+#[repr(u32)]
+#[derive(Copy, Clone, Debug, PartialEq, Eq, Hash)]
+pub enum WidgetFlagOp {
+    None = 0,
+    Hidden = 1 << 0,
+    Visible = 1 << 1,
+    Disabled = 1 << 2,
+    Enabled = 1 << 3,
+    Clickable = 1 << 4,
+    Unclickable = 1 << 5,
+}
+
+#[repr(u32)]
+#[derive(Copy, Clone, Debug, PartialEq, Eq, Hash, Default)]
+pub enum LayoutFlow {
+    #[default]
+    None = 0,
+    Row = 1,
+    Column = 2,
+    RowWrap = 3,
+    RowReverse = 4,
+    ColumnWrap = 5,
+    ColumnReverse = 6,
+}
+
 #[repr(C)]
 #[derive(Copy, Clone)]
 pub struct WidgetDescriptor {
@@ -247,6 +285,7 @@ pub struct WidgetDescriptor {
     pub width: i32,
     pub height: i32,
     pub tab_index: u32,
+    pub layout_flow: LayoutFlow,
 }
 
 unsafe impl Sync for WidgetDescriptor {}
@@ -281,6 +320,7 @@ impl WidgetDescriptor {
             width: 0,
             height: 0,
             tab_index: 0,
+            layout_flow: LayoutFlow::None,
         }
     }
 
@@ -312,6 +352,7 @@ impl WidgetDescriptor {
             width: 0,
             height: 0,
             tab_index: 0,
+            layout_flow: LayoutFlow::None,
         }
     }
 
@@ -339,6 +380,7 @@ impl WidgetDescriptor {
             width: 0,
             height: 0,
             tab_index: 0,
+            layout_flow: LayoutFlow::None,
         }
     }
 
@@ -365,6 +407,7 @@ impl WidgetDescriptor {
             width: 0,
             height: 0,
             tab_index: 0,
+            layout_flow: LayoutFlow::None,
         }
     }
 
@@ -396,6 +439,7 @@ impl WidgetDescriptor {
             width: 0,
             height: 0,
             tab_index: 0,
+            layout_flow: LayoutFlow::None,
         }
     }
 
@@ -425,6 +469,7 @@ impl WidgetDescriptor {
             width: 0,
             height: 0,
             tab_index: 0,
+            layout_flow: LayoutFlow::None,
         }
     }
 
@@ -452,6 +497,7 @@ impl WidgetDescriptor {
             width: 0,
             height: 0,
             tab_index: 0,
+            layout_flow: LayoutFlow::None,
         }
     }
 
@@ -478,6 +524,7 @@ impl WidgetDescriptor {
             width: 0,
             height: 0,
             tab_index: 0,
+            layout_flow: LayoutFlow::None,
         }
     }
 
@@ -504,6 +551,7 @@ impl WidgetDescriptor {
             width: 0,
             height: 0,
             tab_index: 0,
+            layout_flow: LayoutFlow::None,
         }
     }
 
@@ -531,6 +579,7 @@ impl WidgetDescriptor {
             width: 0,
             height: 0,
             tab_index: 0,
+            layout_flow: LayoutFlow::None,
         }
     }
 
@@ -558,6 +607,7 @@ impl WidgetDescriptor {
             width: 0,
             height: 0,
             tab_index: 0,
+            layout_flow: LayoutFlow::None,
         }
     }
 
@@ -586,6 +636,7 @@ impl WidgetDescriptor {
             width: 0,
             height: 0,
             tab_index: 0,
+            layout_flow: LayoutFlow::None,
         }
     }
 
@@ -624,6 +675,7 @@ impl WidgetDescriptor {
             width,
             height,
             tab_index: 0,
+            layout_flow: LayoutFlow::None,
         }
     }
 
@@ -677,6 +729,7 @@ impl WidgetDescriptor {
             width,
             height,
             tab_index: 0,
+            layout_flow: LayoutFlow::None,
         }
     }
 
@@ -705,6 +758,7 @@ impl WidgetDescriptor {
             width,
             height,
             tab_index: 0,
+            layout_flow: LayoutFlow::None,
         }
     }
 
@@ -730,6 +784,7 @@ impl WidgetDescriptor {
             width: 0,
             height: 0,
             tab_index: 0,
+            layout_flow: LayoutFlow::None,
         }
     }
 
@@ -760,6 +815,7 @@ impl WidgetDescriptor {
             width,
             height,
             tab_index: 0,
+            layout_flow: LayoutFlow::None,
         }
     }
 
@@ -789,6 +845,7 @@ impl WidgetDescriptor {
             width,
             height,
             tab_index: 0,
+            layout_flow: LayoutFlow::None,
         }
     }
 
@@ -816,6 +873,7 @@ impl WidgetDescriptor {
             width,
             height,
             tab_index: 0,
+            layout_flow: LayoutFlow::None,
         }
     }
 
@@ -844,6 +902,7 @@ impl WidgetDescriptor {
             width,
             height,
             tab_index: 0,
+            layout_flow: LayoutFlow::None,
         }
     }
 
@@ -874,6 +933,7 @@ impl WidgetDescriptor {
             width,
             height,
             tab_index,
+            layout_flow: LayoutFlow::None,
         }
     }
 
@@ -905,6 +965,7 @@ impl WidgetDescriptor {
             width,
             height,
             tab_index,
+            layout_flow: LayoutFlow::None,
         }
     }
 
@@ -936,6 +997,7 @@ impl WidgetDescriptor {
             width,
             height,
             tab_index,
+            layout_flow: LayoutFlow::None,
         }
     }
 
@@ -965,6 +1027,7 @@ impl WidgetDescriptor {
             width,
             height,
             tab_index,
+            layout_flow: LayoutFlow::None,
         }
     }
 
@@ -994,6 +1057,7 @@ impl WidgetDescriptor {
             width,
             height,
             tab_index,
+            layout_flow: LayoutFlow::None,
         }
     }
 
@@ -1027,6 +1091,7 @@ impl WidgetDescriptor {
             width: 0,
             height: 0,
             tab_index: 0,
+            layout_flow: LayoutFlow::None,
         }
     }
 
@@ -1062,6 +1127,7 @@ impl WidgetDescriptor {
             width,
             height,
             tab_index: 0,
+            layout_flow: LayoutFlow::None,
         }
     }
 
@@ -1094,6 +1160,7 @@ impl WidgetDescriptor {
             width: 0,
             height: 0,
             tab_index: 0,
+            layout_flow: LayoutFlow::None,
         }
     }
 
@@ -1124,6 +1191,7 @@ impl WidgetDescriptor {
             width: size,
             height: size,
             tab_index: 0,
+            layout_flow: LayoutFlow::None,
         }
     }
 
@@ -1157,6 +1225,7 @@ impl WidgetDescriptor {
             width,
             height,
             tab_index: 0,
+            layout_flow: LayoutFlow::None,
         }
     }
 
@@ -1185,6 +1254,7 @@ impl WidgetDescriptor {
             width: 0,
             height: 0,
             tab_index: 0,
+            layout_flow: LayoutFlow::None,
         }
     }
 
@@ -1216,6 +1286,7 @@ impl WidgetDescriptor {
             width,
             height,
             tab_index: 0,
+            layout_flow: LayoutFlow::None,
         }
     }
 
@@ -1243,6 +1314,7 @@ impl WidgetDescriptor {
             width: 0,
             height: 0,
             tab_index: 0,
+            layout_flow: LayoutFlow::None,
         }
     }
 
@@ -1272,12 +1344,18 @@ impl WidgetDescriptor {
             width,
             height,
             tab_index: 0,
+            layout_flow: LayoutFlow::None,
         }
     }
 
     pub const fn with_parent(mut self, parent_param_id: ParamId, tab_index: u32) -> Self {
         self.parent_param_id = parent_param_id;
         self.tab_index = tab_index;
+        self
+    }
+
+    pub const fn with_layout(mut self, layout_flow: LayoutFlow) -> Self {
+        self.layout_flow = layout_flow;
         self
     }
 }

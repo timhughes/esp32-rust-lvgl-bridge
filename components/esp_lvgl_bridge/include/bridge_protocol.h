@@ -49,7 +49,29 @@ typedef enum {
     PARAM_FORMATTED_SPAN = 33,// SpanGroup: str_val text
     PARAM_SPINNER_ANIM   = 34,// AnimImage: bool_val running
     PARAM_ASSET_BARCODE  = 35,// Barcode: str_val payload
+    // Phase 3: Engine Power & Modern LVGL Features
+    PARAM_WIDGET_FLAGS   = 36,// Telemetry: ack_seq_id=target_param_id, u32_val=flags
 } param_id_t;
+
+typedef enum {
+    WIDGET_FLAG_NONE        = 0,
+    WIDGET_FLAG_HIDDEN      = (1 << 0),
+    WIDGET_FLAG_VISIBLE     = (1 << 1),
+    WIDGET_FLAG_DISABLED    = (1 << 2),
+    WIDGET_FLAG_ENABLED     = (1 << 3),
+    WIDGET_FLAG_CLICKABLE   = (1 << 4),
+    WIDGET_FLAG_UNCLICKABLE = (1 << 5),
+} widget_flag_op_t;
+
+typedef enum {
+    LAYOUT_FLOW_NONE           = 0,
+    LAYOUT_FLOW_ROW            = 1,
+    LAYOUT_FLOW_COLUMN         = 2,
+    LAYOUT_FLOW_ROW_WRAP       = 3,
+    LAYOUT_FLOW_ROW_REVERSE    = 4,
+    LAYOUT_FLOW_COLUMN_WRAP    = 5,
+    LAYOUT_FLOW_COLUMN_REVERSE = 6,
+} layout_flow_t;
 
 
 typedef union {
@@ -153,6 +175,7 @@ typedef struct {
     int32_t       width;
     int32_t       height;
     uint32_t      tab_index;
+    layout_flow_t layout_flow;
 } widget_descriptor_t;
 
 // Rust Worker Lifecycle Entry Points (implemented in Rust staticlib)

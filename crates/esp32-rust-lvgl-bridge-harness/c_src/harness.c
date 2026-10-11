@@ -293,3 +293,36 @@ void harness_clean_screen(void) {
     ui_engine_init();
 }
 
+bool harness_widget_is_hidden(lv_obj_t *obj) {
+    if (!obj) return false;
+    return lv_obj_has_flag(obj, LV_OBJ_FLAG_HIDDEN);
+}
+
+bool harness_widget_is_disabled(lv_obj_t *obj) {
+    if (!obj) return false;
+    return lv_obj_has_state(obj, LV_STATE_DISABLED);
+}
+
+bool harness_widget_is_clickable(lv_obj_t *obj) {
+    if (!obj) return false;
+    return lv_obj_has_flag(obj, LV_OBJ_FLAG_CLICKABLE);
+}
+
+int32_t harness_widget_get_flex_flow(lv_obj_t *obj) {
+    if (!obj) return 0;
+#if LV_USE_FLEX
+    lv_flex_flow_t flow = lv_obj_get_style_flex_flow(obj, LV_PART_MAIN);
+    switch (flow) {
+    case LV_FLEX_FLOW_ROW:            return 1;
+    case LV_FLEX_FLOW_COLUMN:         return 2;
+    case LV_FLEX_FLOW_ROW_WRAP:       return 3;
+    case LV_FLEX_FLOW_ROW_REVERSE:    return 4;
+    case LV_FLEX_FLOW_COLUMN_WRAP:    return 5;
+    case LV_FLEX_FLOW_COLUMN_REVERSE: return 6;
+    default: return 0;
+    }
+#else
+    return 0;
+#endif
+}
+
