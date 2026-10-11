@@ -15,21 +15,35 @@ make clean && make run
 ```
 
 ## Test Execution Workflow
-The test suite executes 11 discrete scenarios sequentially against the in-memory display engine:
-1. **Scenarios 1–6 (Baseline Interactive Pipeline)**: Exercises the 3-stage arbitration engine (`TRACKING` $\rightarrow$ `DRAGGING` $\rightarrow$ `HOLDOFF`), verifying sequence ID tracking, temporal leases, and atomic counter reset.
-2. **Scenario 7 (Tier 1 Showcase)**: Instantiates and binds all 12 scalar/discrete widgets on a single 480×480 screen.
-3. **Scenario 8 (Tier 2 Showcase)**: Tests text input, keyboard focus, button matrices, analog dial scales, and modal alert dialogs.
-4. **Scenarios 9–11 (Tier 3 Multi-Tab Container & Streams)**: Validates hierarchical container routing across a 3-tab `TabView`, cycling active tabs via synthetic touch and updating real-time streaming charts, diagnostic tables, date pickers, item lists, and canvas graphics.
+The test suite executes 4 structured testing phases:
+1. **Phase 1: Headless Protocol & Engine Unit Assertions**:
+   - `test_ffi_protocol`: Verifies POD struct sizing, union value conversions, string buffer safety, and ring buffer queue operations.
+   - `test_p4_c6_link`: Verifies P4 <-> C6 loopback mock, packet framing, CRC16 checksum calculation, and sequence tracking.
+   - `test_rust_state_engine`: Verifies closed-loop simulation (halted when stopped, incrementing when enabled, frequency scaling, and atomic resets).
+   - `test_arbitration_engine`: Verifies 3-stage arbitration lease (`ARB_TRACKING` $\rightarrow$ `ARB_DRAGGING` $\rightarrow$ `ARB_HOLDOFF`), rejecting telemetry during drags and stale tickets during holdoffs.
+2. **Phase 2: Flagship S3-4848 6-Tab Application Journey (480×480)**:
+   - Exercises the complete 27-widget production application across all 6 tabs (Controls, Selectors, Inputs, Telemetry, Tools, System).
+   - Injects virtual keyboard keystrokes, verifies dynamic focus retargeting between single-line and multi-line text fields.
+   - Streams live sine waveform oscilloscope data into the chart and updates diagnostic tables.
+3. **Phase 3: Power Management & Inactivity Lifecycle**:
+   - Verifies 60-second inactivity blanking (`bsp_backlight_set(0)`).
+   - Verifies wake-on-touch restoration and blind first-tap suppression (ignoring the wake tap to prevent accidental clicks).
+4. **Phase 4: Standalone Widget Catalog Smoke Tests (800×480)**:
+   - Regression smoke tests covering isolated Tier 1, Tier 2, and Tier 3 showcase layouts.
 
-## Generated Artifacts (`test_harness/artifacts/`)
-* **`01_initial_state.png`**: System stopped, slider at default 10 Hz, cycle counter at 0.
-* **`02_switch_toggled.png`**: Switch toggled to RUNNING, background worker begins stepping.
-* **`03_slider_dragging.png`**: Touch injected dragging slider to 60 Hz (`60 Hz (Setting)`).
-* **`04_slider_released.png`**: Touch lifted; 500ms holdoff lease active suppressing intermediate telemetry.
-* **`05_slider_telemetry_settled.png`**: Holdoff expired; label confirms `60 Hz (Actual)`, cycles incrementing.
-* **`06_counter_reset.png`**: Push button clicked; cycle count atomically clears to 0 and resumes.
-* **`07_tier1_showcase.png`**: 480×480 screen with all Tier 1 widgets active (Arc, Switch, LED, Bar, Spinner, Checkbox, Dropdown, Roller, Spinbox).
-* **`08_tier2_showcase.png`**: 480×480 screen with Tier 2 widgets active (TextArea pre-filled, On-Screen Keyboard, Numeric/Keypad ButtonMatrix, Analog Speedometer Scale, MsgBox alert overlay).
-* **`09_tier3_telemetry.png`**: Tier 3 TabView with Tab 0 ("Telemetry") active: real-time streaming waveform Chart, interactive Arc knob, and system status Bar.
-* **`10_tier3_diagnostics.png`**: Tier 3 TabView with Tab 1 ("Diagnostics") active: multi-row system status Table (`Module`, `Status`, `Core 0`, `Core 1`, `PSRAM`) and scrollable Item List.
-* **`11_tier3_config.png`**: Tier 3 TabView with Tab 2 ("Config") active: interactive Calendar date picker and raw-pixel graphics Canvas.
+## Generated Visual Artifacts (`test_harness/artifacts/`)
+
+| Scenario | Snapshot | Description |
+|---|---|---|
+| **01** | `01_s3_tab0_controls_init.png` | S3-4848 Tab 0 (Controls): Initial stopped state, 10 Hz slider, 0 cycles |
+| **02** | `02_s3_tab0_controls_running.png` | S3-4848 Tab 0 (Controls): RUNNING state, slider dragged to 60 Hz, active cycles |
+| **03** | `03_s3_tab1_selectors.png` | S3-4848 Tab 1 (Selectors): Dropdown, Roller, Spinbox & illuminated Aux LED |
+| **04** | `04_s3_tab2_inputs_typing.png` | S3-4848 Tab 2 (Inputs): Virtual Keyboard focus retargeting & character entry |
+| **05** | `05_s3_tab3_telemetry_waveforms.png` | S3-4848 Tab 3 (Telemetry): Real-time waveform oscilloscope & table registers |
+| **06** | `06_s3_tab4_tools.png` | S3-4848 Tab 4 (Tools): Maintenance Calendar, 4×3 PIN Keypad & Canvas |
+| **07** | `07_s3_tab5_system.png` | S3-4848 Tab 5 (System): Hierarchical Settings Menu & swipeable TileView |
+| **08** | `08_s3_screen_blanked.png` | Power Management: 60-second inactivity timeout blanking display backlight |
+| **09** | `09_s3_screen_woken.png` | Power Management: Wake-on-touch restoration with blind first-tap suppression |
+| **10** | `10_tier1_showcase.png` | Isolated Showcase: All 12 Tier 1 scalar widgets active simultaneously |
+| **11** | `11_tier2_showcase.png` | Isolated Showcase: Tier 2 inputs, virtual keyboard, button matrix & scale |
+| **12** | `12_tier3_showcase.png` | Isolated Showcase: Tier 3 multi-tab container with charts, tables & lists |
