@@ -142,7 +142,7 @@ impl HeadlessHarness {
 
     /// Simulate a touch press and release (click) on a widget bound to `param_id`.
     pub fn click(&mut self, param_id: ParamId) -> bool {
-        let widget = unsafe { ui_engine_get_widget_by_param(param_id.0) };
+        let widget = unsafe { ui_engine_get_widget_by_param(param_id.as_u32()) };
         if widget.is_null() {
             return false;
         }
@@ -152,7 +152,7 @@ impl HeadlessHarness {
 
     /// Simulate dragging a slider bound to `param_id` to `target_val`.
     pub fn drag_slider(&mut self, param_id: ParamId, target_val: i32) -> bool {
-        let widget = unsafe { ui_engine_get_widget_by_param(param_id.0) };
+        let widget = unsafe { ui_engine_get_widget_by_param(param_id.as_u32()) };
         if widget.is_null() {
             return false;
         }
@@ -184,7 +184,7 @@ impl HeadlessHarness {
 
     /// Query the current value of a slider widget.
     pub fn get_slider_value(&self, param_id: ParamId) -> Option<i32> {
-        let widget = unsafe { ui_engine_get_widget_by_param(param_id.0) };
+        let widget = unsafe { ui_engine_get_widget_by_param(param_id.as_u32()) };
         if widget.is_null() {
             None
         } else {
@@ -194,7 +194,7 @@ impl HeadlessHarness {
 
     /// Query the checked/toggled state of a switch or checkbox (LV_STATE_CHECKED = 1).
     pub fn get_checked_state(&self, param_id: ParamId) -> Option<bool> {
-        let widget = unsafe { ui_engine_get_widget_by_param(param_id.0) };
+        let widget = unsafe { ui_engine_get_widget_by_param(param_id.as_u32()) };
         if widget.is_null() {
             None
         } else {
@@ -204,7 +204,7 @@ impl HeadlessHarness {
 
     /// Query the current selected index of a dropdown widget.
     pub fn get_dropdown_selected(&self, param_id: ParamId) -> Option<u32> {
-        let widget = unsafe { ui_engine_get_widget_by_param(param_id.0) };
+        let widget = unsafe { ui_engine_get_widget_by_param(param_id.as_u32()) };
         if widget.is_null() {
             None
         } else {
@@ -214,7 +214,7 @@ impl HeadlessHarness {
 
     /// Query the current selected index of a roller widget.
     pub fn get_roller_selected(&self, param_id: ParamId) -> Option<u32> {
-        let widget = unsafe { ui_engine_get_widget_by_param(param_id.0) };
+        let widget = unsafe { ui_engine_get_widget_by_param(param_id.as_u32()) };
         if widget.is_null() {
             None
         } else {
@@ -224,7 +224,7 @@ impl HeadlessHarness {
 
     /// Query the current value of an arc widget.
     pub fn get_arc_value(&self, param_id: ParamId) -> Option<i32> {
-        let widget = unsafe { ui_engine_get_widget_by_param(param_id.0) };
+        let widget = unsafe { ui_engine_get_widget_by_param(param_id.as_u32()) };
         if widget.is_null() {
             None
         } else {
@@ -234,7 +234,7 @@ impl HeadlessHarness {
 
     /// Query the current value of a spinbox widget.
     pub fn get_spinbox_value(&self, param_id: ParamId) -> Option<i32> {
-        let widget = unsafe { ui_engine_get_widget_by_param(param_id.0) };
+        let widget = unsafe { ui_engine_get_widget_by_param(param_id.as_u32()) };
         if widget.is_null() {
             None
         } else {
@@ -249,7 +249,7 @@ impl HeadlessHarness {
 
     /// Check whether a widget bound to `param_id` exists in the active scene graph.
     pub fn widget_exists(&self, param_id: ParamId) -> bool {
-        unsafe { harness_widget_exists(param_id.0) }
+        unsafe { harness_widget_exists(param_id.as_u32()) }
     }
 
     /// Clear the active screen and re-initialize the UI engine.
@@ -259,7 +259,7 @@ impl HeadlessHarness {
 
     /// Switch active tab of a TabView widget.
     pub fn set_active_tab(&mut self, param_id: ParamId, tab_idx: u32) -> bool {
-        let widget = unsafe { ui_engine_get_widget_by_param(param_id.0) };
+        let widget = unsafe { ui_engine_get_widget_by_param(param_id.as_u32()) };
         if widget.is_null() {
             return false;
         }
@@ -268,7 +268,7 @@ impl HeadlessHarness {
 
     /// Get current active tab index of a TabView widget.
     pub fn get_active_tab(&self, param_id: ParamId) -> Option<u32> {
-        let widget = unsafe { ui_engine_get_widget_by_param(param_id.0) };
+        let widget = unsafe { ui_engine_get_widget_by_param(param_id.as_u32()) };
         if widget.is_null() {
             None
         } else {
@@ -278,7 +278,7 @@ impl HeadlessHarness {
 
     /// Query the current value of a bar widget.
     pub fn get_bar_value(&self, param_id: ParamId) -> Option<i32> {
-        let widget = unsafe { ui_engine_get_widget_by_param(param_id.0) };
+        let widget = unsafe { ui_engine_get_widget_by_param(param_id.as_u32()) };
         if widget.is_null() {
             None
         } else {
@@ -288,7 +288,7 @@ impl HeadlessHarness {
 
     /// Query the text content of a label widget.
     pub fn get_label_text(&self, param_id: ParamId) -> Option<String> {
-        let widget = unsafe { ui_engine_get_widget_by_param(param_id.0) };
+        let widget = unsafe { ui_engine_get_widget_by_param(param_id.as_u32()) };
         if widget.is_null() {
             return None;
         }
@@ -302,7 +302,7 @@ impl HeadlessHarness {
 
     /// Query the current text of a text area or text input widget.
     pub fn get_textarea_text(&self, param_id: ParamId) -> Option<String> {
-        let widget = unsafe { ui_engine_get_widget_by_param(param_id.0) };
+        let widget = unsafe { ui_engine_get_widget_by_param(param_id.as_u32()) };
         if widget.is_null() {
             return None;
         }
@@ -316,7 +316,7 @@ impl HeadlessHarness {
 
     /// Set text in a text area or text input widget.
     pub fn set_textarea_text(&mut self, param_id: ParamId, text: &str) -> bool {
-        let widget = unsafe { ui_engine_get_widget_by_param(param_id.0) };
+        let widget = unsafe { ui_engine_get_widget_by_param(param_id.as_u32()) };
         if widget.is_null() {
             return false;
         }
@@ -329,7 +329,7 @@ impl HeadlessHarness {
 
     /// Click a button matrix button by its label text (e.g. "5" on keypad).
     pub fn click_button_matrix_text(&mut self, param_id: ParamId, text: &str) -> bool {
-        let widget = unsafe { ui_engine_get_widget_by_param(param_id.0) };
+        let widget = unsafe { ui_engine_get_widget_by_param(param_id.as_u32()) };
         if widget.is_null() {
             return false;
         }
@@ -342,7 +342,7 @@ impl HeadlessHarness {
 
     /// Click a button matrix button by its button index.
     pub fn click_button_matrix_id(&mut self, param_id: ParamId, btn_id: u32) -> bool {
-        let widget = unsafe { ui_engine_get_widget_by_param(param_id.0) };
+        let widget = unsafe { ui_engine_get_widget_by_param(param_id.as_u32()) };
         if widget.is_null() {
             return false;
         }
@@ -351,7 +351,7 @@ impl HeadlessHarness {
 
     /// Query the brightness of an LED widget (0 to 255).
     pub fn get_led_brightness(&self, param_id: ParamId) -> Option<u8> {
-        let widget = unsafe { ui_engine_get_widget_by_param(param_id.0) };
+        let widget = unsafe { ui_engine_get_widget_by_param(param_id.as_u32()) };
         if widget.is_null() {
             None
         } else {
@@ -361,7 +361,7 @@ impl HeadlessHarness {
 
     /// Check if a widget is currently hidden (`LV_OBJ_FLAG_HIDDEN`).
     pub fn is_widget_hidden(&self, param_id: ParamId) -> Option<bool> {
-        let widget = unsafe { ui_engine_get_widget_by_param(param_id.0) };
+        let widget = unsafe { ui_engine_get_widget_by_param(param_id.as_u32()) };
         if widget.is_null() {
             None
         } else {
@@ -371,7 +371,7 @@ impl HeadlessHarness {
 
     /// Check if a widget is currently disabled (`LV_STATE_DISABLED`).
     pub fn is_widget_disabled(&self, param_id: ParamId) -> Option<bool> {
-        let widget = unsafe { ui_engine_get_widget_by_param(param_id.0) };
+        let widget = unsafe { ui_engine_get_widget_by_param(param_id.as_u32()) };
         if widget.is_null() {
             None
         } else {
@@ -381,7 +381,7 @@ impl HeadlessHarness {
 
     /// Check if a widget is currently clickable (`LV_OBJ_FLAG_CLICKABLE`).
     pub fn is_widget_clickable(&self, param_id: ParamId) -> Option<bool> {
-        let widget = unsafe { ui_engine_get_widget_by_param(param_id.0) };
+        let widget = unsafe { ui_engine_get_widget_by_param(param_id.as_u32()) };
         if widget.is_null() {
             None
         } else {
@@ -391,7 +391,7 @@ impl HeadlessHarness {
 
     /// Query the flex layout flow of a widget.
     pub fn get_widget_flex_flow(&self, param_id: ParamId) -> Option<esp32_rust_lvgl_bridge_core::abi::LayoutFlow> {
-        let widget = unsafe { ui_engine_get_widget_by_param(param_id.0) };
+        let widget = unsafe { ui_engine_get_widget_by_param(param_id.as_u32()) };
         if widget.is_null() {
             None
         } else {

@@ -235,7 +235,7 @@ fn test_bridge_transport_command_and_telemetry_queues() {
     assert!(unsafe { bridge_send_command_from_ui(&send_cmd) });
 
     let mut recv_cmd = UiCommand {
-        param_id: ParamId::new(0),
+        param_id: ParamId::NONE,
         seq_id: 0,
         value: ParamVal::from_i32(0),
     };
@@ -256,7 +256,7 @@ fn test_bridge_transport_command_and_telemetry_queues() {
     assert!(unsafe { bridge_send_telemetry(&send_telem) });
 
     let mut recv_telem = DeviceTelemetry {
-        param_id: ParamId::new(0),
+        param_id: ParamId::NONE,
         ack_seq_id: 0,
         value: ParamVal::from_bool(false),
     };

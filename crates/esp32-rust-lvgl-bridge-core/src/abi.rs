@@ -11,7 +11,7 @@
 /// for standard framework widgets.
 #[repr(transparent)]
 #[derive(Copy, Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash, Default)]
-pub struct ParamId(pub u32);
+pub struct ParamId(pub(crate) u32);
 
 #[allow(non_upper_case_globals)]
 impl ParamId {
@@ -19,14 +19,42 @@ impl ParamId {
     pub const NONE: Self = Self(0);
     pub const None: Self = Self(0);
 
+    /// Start of the reserved framework protocol block (`0xFFFF_0000..=u32::MAX`, top 64K IDs).
+    pub const PROTOCOL_RESERVED_START: u32 = 0xFFFF_0000;
+
     /// Special framework protocol parameter ID for dynamic runtime widget flag updates.
     pub const WIDGET_FLAGS: Self = Self(u32::MAX);
     pub const WidgetFlags: Self = Self(u32::MAX);
 
+    /// Returns `true` if `id` falls into the framework-reserved space (`0` or `>= 0xFFFF_0000`).
+    #[inline]
+    pub const fn is_reserved_id(id: u32) -> bool {
+        id == 0 || id >= Self::PROTOCOL_RESERVED_START
+    }
+
     /// Creates a custom application parameter ID.
+    ///
+    /// # Panics
+    /// Panics at compile-time (or runtime) if `id` is 0 ([`ParamId::NONE`]) or falls within
+    /// the reserved framework protocol block (`0xFFFF_0000..=u32::MAX`).
     #[inline]
     pub const fn new(id: u32) -> Self {
+        assert!(id != 0, "ParamId 0 is reserved for ParamId::NONE");
+        assert!(
+            id < Self::PROTOCOL_RESERVED_START,
+            "ParamId in 0xFFFF_0000..=u32::MAX is reserved for framework protocol messages"
+        );
         Self(id)
+    }
+
+    /// Fallible constructor returning `None` if `id` is 0 or within the reserved protocol block.
+    #[inline]
+    pub const fn try_new(id: u32) -> Option<Self> {
+        if Self::is_reserved_id(id) {
+            None
+        } else {
+            Some(Self(id))
+        }
     }
 
     /// Returns the underlying raw 32-bit identifier.
@@ -34,12 +62,33 @@ impl ParamId {
     pub const fn as_u32(self) -> u32 {
         self.0
     }
+
+    /// Returns `true` if this identifier is [`ParamId::NONE`].
+    #[inline]
+    pub const fn is_none(self) -> bool {
+        self.0 == Self::NONE.0
+    }
+
+    /// Returns `true` if this identifier is in the framework-reserved protocol space.
+    #[inline]
+    pub const fn is_reserved(self) -> bool {
+        Self::is_reserved_id(self.0)
+    }
+    /// Constructs a `ParamId` directly from a raw 32-bit integer without validation.
+    ///
+    /// Intended for low-level protocol deserialization and internal FFI wrappers.
+    #[inline]
+    pub const fn from_raw(raw: u32) -> Self {
+        Self(raw)
+    }
 }
 
-impl From<u32> for ParamId {
+impl TryFrom<u32> for ParamId {
+    type Error = &'static str;
+
     #[inline]
-    fn from(val: u32) -> Self {
-        Self(val)
+    fn try_from(val: u32) -> Result<Self, Self::Error> {
+        Self::try_new(val).ok_or("parameter ID is in the reserved protocol range")
     }
 }
 
@@ -1371,7 +1420,7 @@ mod tests {
     fn test_param_id_conversions_and_constants() {
         let p = ParamId::new(42);
         assert_eq!(p.as_u32(), 42);
-        assert_eq!(ParamId::from(100u32), ParamId(100));
+        assert_eq!(ParamId::from_raw(100u32), ParamId(100));
         assert_eq!(u32::from(ParamId(200)), 200u32);
 
         assert_eq!(ParamId::NONE, ParamId(0));
@@ -1379,12 +1428,51 @@ mod tests {
         assert_eq!(ParamId::WIDGET_FLAGS, ParamId(u32::MAX));
         assert_eq!(ParamId::WidgetFlags, ParamId(u32::MAX));
 
+        // Reservation checks
+        assert!(ParamId::NONE.is_none());
+        assert!(!ParamId::new(1).is_none());
+        assert!(ParamId::NONE.is_reserved());
+        assert!(ParamId::WIDGET_FLAGS.is_reserved());
+        assert!(!ParamId::new(1).is_reserved());
+        assert!(ParamId::is_reserved_id(0));
+        assert!(ParamId::is_reserved_id(0xFFFF_0000));
+        assert!(ParamId::is_reserved_id(u32::MAX));
+        assert!(!ParamId::is_reserved_id(1));
+        assert!(!ParamId::is_reserved_id(0xFFFE_FFFF));
+
+        // try_new and TryFrom
+        assert_eq!(ParamId::try_new(42), Some(ParamId(42)));
+        assert_eq!(ParamId::try_new(0), None);
+        assert_eq!(ParamId::try_new(0xFFFF_0000), None);
+        assert_eq!(ParamId::try_new(u32::MAX), None);
+        assert_eq!(ParamId::try_from(42u32), Ok(ParamId(42)));
+        assert!(ParamId::try_from(0u32).is_err());
+        assert!(ParamId::try_from(u32::MAX).is_err());
+
         // Test Hash and Eq in a HashSet
         let mut set = HashSet::new();
         set.insert(ParamId(1));
         set.insert(ParamId(2));
         set.insert(ParamId(1));
         assert_eq!(set.len(), 2);
+    }
+
+    #[test]
+    #[should_panic(expected = "ParamId 0 is reserved")]
+    fn test_param_id_new_zero_panics() {
+        let _ = ParamId::new(0);
+    }
+
+    #[test]
+    #[should_panic(expected = "ParamId in 0xFFFF_0000..=u32::MAX is reserved")]
+    fn test_param_id_new_reserved_range_panics() {
+        let _ = ParamId::new(0xFFFF_0000);
+    }
+
+    #[test]
+    #[should_panic(expected = "ParamId in 0xFFFF_0000..=u32::MAX is reserved")]
+    fn test_param_id_new_max_panics() {
+        let _ = ParamId::new(u32::MAX);
     }
 
     #[test]
