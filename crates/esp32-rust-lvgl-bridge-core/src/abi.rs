@@ -44,6 +44,11 @@ impl ParamId {
     pub const CalendarDate: Self = Self(24);
     pub const CanvasDraw: Self = Self(25);
     pub const TextArea: Self = Self(26);
+    // Phase 1: Visuals & IoT Core
+    pub const ImagePreview: Self = Self(27);
+    pub const LineGraph: Self = Self(28);
+    pub const ArcLabelHeading: Self = Self(29);
+    pub const QrWifiConfig: Self = Self(30);
 
     /// Creates a custom application parameter ID.
     #[inline]
@@ -151,10 +156,15 @@ pub enum WidgetType {
     Table = 23,
     Calendar = 24,
     Canvas = 25,
+    // Phase 1: Visuals & IoT Core
+    Image = 26,
+    Line = 27,
+    ArcLabel = 28,
+    QRCode = 29,
 }
 
 impl WidgetType {
-    /// Array containing all 25 supported LVGL widget types.
+    /// Array containing all 29 supported LVGL widget types.
     pub const ALL: &'static [WidgetType] = &[
         WidgetType::Switch,
         WidgetType::Slider,
@@ -181,6 +191,11 @@ impl WidgetType {
         WidgetType::Table,
         WidgetType::Calendar,
         WidgetType::Canvas,
+        // Phase 1
+        WidgetType::Image,
+        WidgetType::Line,
+        WidgetType::ArcLabel,
+        WidgetType::QRCode,
     ];
 }
 
@@ -964,6 +979,136 @@ impl WidgetDescriptor {
         }
     }
 
+    // -------------------------------------------------------------------------
+    // Phase 1 Constructors: Visuals & IoT Core
+    // -------------------------------------------------------------------------
+
+    /// Declarative constructor for an `lv_image` widget.
+    ///
+    /// Accepts a symbol string (e.g. `LV_SYMBOL_IMAGE`), file path, or image asset.
+    pub const fn image(
+        param_id: ParamId,
+        align: UiAlign,
+        offset_x: i32,
+        offset_y: i32,
+        src: &'static core::ffi::CStr,
+    ) -> Self {
+        Self {
+            widget_type: WidgetType::Image,
+            param_id,
+            align,
+            offset_x,
+            offset_y,
+            min_val: 0,
+            max_val: 0,
+            initial_val: 0,
+            holdoff_ms: 0,
+            label_primary: src.as_ptr(),
+            label_secondary: core::ptr::null(),
+            parent_param_id: ParamId::None,
+            width: 0,
+            height: 0,
+            tab_index: 0,
+        }
+    }
+
+    /// Declarative constructor for an `lv_line` widget.
+    ///
+    /// Coordinates can be specified as a semicolon-separated string of "x,y" pairs
+    /// (e.g., `c"0,20; 50,0; 100,20"`), or `None` to generate a default segment using width and height.
+    pub const fn line(
+        param_id: ParamId,
+        align: UiAlign,
+        offset_x: i32,
+        offset_y: i32,
+        width: i32,
+        height: i32,
+        points: Option<&'static core::ffi::CStr>,
+    ) -> Self {
+        Self {
+            widget_type: WidgetType::Line,
+            param_id,
+            align,
+            offset_x,
+            offset_y,
+            min_val: 0,
+            max_val: 0,
+            initial_val: 0,
+            holdoff_ms: 0,
+            label_primary: match points {
+                Some(p) => p.as_ptr(),
+                None => core::ptr::null(),
+            },
+            label_secondary: core::ptr::null(),
+            parent_param_id: ParamId::None,
+            width,
+            height,
+            tab_index: 0,
+        }
+    }
+
+    /// Declarative constructor for an `lv_arclabel` widget.
+    ///
+    /// Curves label text along a circular arc trajectory.
+    pub const fn arc_label(
+        param_id: ParamId,
+        align: UiAlign,
+        offset_x: i32,
+        offset_y: i32,
+        radius: u32,
+        angle_start: i32,
+        angle_size: i32,
+        text: &'static core::ffi::CStr,
+    ) -> Self {
+        Self {
+            widget_type: WidgetType::ArcLabel,
+            param_id,
+            align,
+            offset_x,
+            offset_y,
+            min_val: angle_start,
+            max_val: angle_size,
+            initial_val: radius as i32,
+            holdoff_ms: 0,
+            label_primary: text.as_ptr(),
+            label_secondary: core::ptr::null(),
+            parent_param_id: ParamId::None,
+            width: 0,
+            height: 0,
+            tab_index: 0,
+        }
+    }
+
+    /// Declarative constructor for an `lv_qrcode` widget.
+    ///
+    /// Renders a QR code encoded via the built-in LVGL QR engine.
+    pub const fn qr_code(
+        param_id: ParamId,
+        align: UiAlign,
+        offset_x: i32,
+        offset_y: i32,
+        size: i32,
+        payload: &'static core::ffi::CStr,
+    ) -> Self {
+        Self {
+            widget_type: WidgetType::QRCode,
+            param_id,
+            align,
+            offset_x,
+            offset_y,
+            min_val: 0,
+            max_val: 0,
+            initial_val: 0,
+            holdoff_ms: 0,
+            label_primary: payload.as_ptr(),
+            label_secondary: core::ptr::null(),
+            parent_param_id: ParamId::None,
+            width: size,
+            height: size,
+            tab_index: 0,
+        }
+    }
+
     pub const fn with_parent(mut self, parent_param_id: ParamId, tab_index: u32) -> Self {
         self.parent_param_id = parent_param_id;
         self.tab_index = tab_index;
@@ -1011,6 +1156,10 @@ mod tests {
         assert_eq!(ParamId::CalendarDate, ParamId(24));
         assert_eq!(ParamId::CanvasDraw, ParamId(25));
         assert_eq!(ParamId::TextArea, ParamId(26));
+        assert_eq!(ParamId::ImagePreview, ParamId(27));
+        assert_eq!(ParamId::LineGraph, ParamId(28));
+        assert_eq!(ParamId::ArcLabelHeading, ParamId(29));
+        assert_eq!(ParamId::QrWifiConfig, ParamId(30));
 
         // Test Hash and Eq in a HashSet
         let mut set = HashSet::new();
@@ -1312,6 +1461,60 @@ mod tests {
         ).with_parent(ParamId(18), 2);
         assert_eq!(chained.parent_param_id, ParamId(18));
         assert_eq!(chained.tab_index, 2);
+
+        // Phase 1 widgets
+        let img = WidgetDescriptor::image(
+            ParamId(27),
+            UiAlign::Center,
+            0,
+            0,
+            c"F:test.png",
+        );
+        assert_eq!(img.widget_type, WidgetType::Image);
+        assert_eq!(unsafe { CStr::from_ptr(img.label_primary).to_str().unwrap() }, "F:test.png");
+
+        let ln = WidgetDescriptor::line(
+            ParamId(28),
+            UiAlign::TopLeft,
+            10,
+            20,
+            100,
+            50,
+            Some(c"0,0; 50,25; 100,50"),
+        );
+        assert_eq!(ln.widget_type, WidgetType::Line);
+        assert_eq!(ln.width, 100);
+        assert_eq!(ln.height, 50);
+        assert_eq!(unsafe { CStr::from_ptr(ln.label_primary).to_str().unwrap() }, "0,0; 50,25; 100,50");
+
+        let al = WidgetDescriptor::arc_label(
+            ParamId(29),
+            UiAlign::Center,
+            0,
+            0,
+            75,
+            135,
+            270,
+            c"SPEED",
+        );
+        assert_eq!(al.widget_type, WidgetType::ArcLabel);
+        assert_eq!(al.initial_val, 75);
+        assert_eq!(al.min_val, 135);
+        assert_eq!(al.max_val, 270);
+        assert_eq!(unsafe { CStr::from_ptr(al.label_primary).to_str().unwrap() }, "SPEED");
+
+        let qr = WidgetDescriptor::qr_code(
+            ParamId(30),
+            UiAlign::Center,
+            0,
+            0,
+            120,
+            c"https://lvgl.io",
+        );
+        assert_eq!(qr.widget_type, WidgetType::QRCode);
+        assert_eq!(qr.width, 120);
+        assert_eq!(qr.height, 120);
+        assert_eq!(unsafe { CStr::from_ptr(qr.label_primary).to_str().unwrap() }, "https://lvgl.io");
     }
 }
 

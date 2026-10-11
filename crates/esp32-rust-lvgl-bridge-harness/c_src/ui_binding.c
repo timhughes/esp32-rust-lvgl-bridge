@@ -179,6 +179,29 @@ typedef struct {
     uint8_t *cbuf;
 } bound_canvas_t;
 
+// Phase 1 Widgets
+typedef struct {
+    param_id_t param_id;
+    lv_obj_t *image;
+} bound_image_t;
+
+typedef struct {
+    param_id_t param_id;
+    lv_obj_t *line;
+    lv_point_precise_t points[16];
+    uint32_t point_cnt;
+} bound_line_t;
+
+typedef struct {
+    param_id_t param_id;
+    lv_obj_t *arclabel;
+} bound_arclabel_t;
+
+typedef struct {
+    param_id_t param_id;
+    lv_obj_t *qrcode;
+} bound_qrcode_t;
+
 typedef struct {
     param_id_t param_id;
     lv_obj_t *obj;
@@ -261,6 +284,19 @@ static size_t s_num_calendars = 0;
 
 static bound_canvas_t s_canvases[MAX_BINDINGS];
 static size_t s_num_canvases = 0;
+
+// Phase 1
+static bound_image_t s_images[MAX_BINDINGS];
+static size_t s_num_images = 0;
+
+static bound_line_t s_lines[MAX_BINDINGS];
+static size_t s_num_lines = 0;
+
+static bound_arclabel_t s_arclabels[MAX_BINDINGS];
+static size_t s_num_arclabels = 0;
+
+static bound_qrcode_t s_qrcodes[MAX_BINDINGS];
+static size_t s_num_qrcodes = 0;
 
 // Button matrix map storage
 static char s_btnmatrix_str_bufs[MAX_BINDINGS][256];
@@ -656,6 +692,25 @@ static const char **parse_btnmatrix_map(size_t idx, const char *raw) {
     return s_btnmatrix_maps[idx];
 }
 
+static uint32_t parse_line_points(const char *str, lv_point_precise_t *points, uint32_t max_points) {
+    if (!str || !points || max_points == 0) return 0;
+    uint32_t count = 0;
+    const char *p = str;
+    while (*p && count < max_points) {
+        while (*p == ' ' || *p == ';' || *p == '\n') p++;
+        if (!*p) break;
+        int x = 0, y = 0;
+        if (sscanf(p, "%d,%d", &x, &y) == 2) {
+            points[count].x = (lv_value_precise_t)x;
+            points[count].y = (lv_value_precise_t)y;
+            count++;
+        }
+        while (*p && *p != ';' && *p != '\n') p++;
+        if (*p) p++;
+    }
+    return count;
+}
+
 // ----------------------------------------------------------------------
 // Engine Initialization & Direct Binding APIs
 // ----------------------------------------------------------------------
@@ -687,6 +742,11 @@ void ui_engine_init(void) {
     s_num_tables = 0;
     s_num_calendars = 0;
     s_num_canvases = 0;
+    // Phase 1
+    s_num_images = 0;
+    s_num_lines = 0;
+    s_num_arclabels = 0;
+    s_num_qrcodes = 0;
 
     s_num_lookups = 0;
     s_global_seq = 0;
@@ -965,6 +1025,38 @@ void ui_engine_dispatch_telemetry(const device_telemetry_t *telem) {
             lv_chart_refresh(b->chart);
         }
     }
+
+    // 17. Images (Phase 1)
+    for (size_t i = 0; i < s_num_images; i++) {
+        bound_image_t *b = &s_images[i];
+        if (b->param_id == telem->param_id && telem->value.str_val[0] != '\0') {
+            lv_image_set_src(b->image, telem->value.str_val);
+        }
+    }
+
+    // 18. ArcLabels (Phase 1)
+#if LV_USE_ARCLABEL
+    for (size_t i = 0; i < s_num_arclabels; i++) {
+        bound_arclabel_t *b = &s_arclabels[i];
+        if (b->param_id == telem->param_id) {
+            if (telem->value.str_val[0] != '\0') {
+                lv_arclabel_set_text(b->arclabel, telem->value.str_val);
+            } else if (telem->value.i32_val != 0) {
+                lv_arclabel_set_angle_start(b->arclabel, telem->value.i32_val);
+            }
+        }
+    }
+#endif
+
+    // 19. QRCodes (Phase 1)
+#if LV_USE_QRCODE
+    for (size_t i = 0; i < s_num_qrcodes; i++) {
+        bound_qrcode_t *b = &s_qrcodes[i];
+        if (b->param_id == telem->param_id && telem->value.str_val[0] != '\0') {
+            lv_qrcode_set_data(b->qrcode, telem->value.str_val);
+        }
+    }
+#endif
 }
 
 void ui_engine_pump_telemetry(void) {
@@ -1636,6 +1728,102 @@ void ui_engine_build_from_schema(const widget_descriptor_t *schema, size_t count
                 b->cbuf = s_canvas_buffers[c_idx];
             }
             register_lookup(d->param_id, cv);
+            break;
+        }
+
+        // --- Phase 1: Visuals & IoT Core ---
+        case WIDGET_TYPE_IMAGE: {
+            lv_obj_t *img = lv_image_create(parent_obj);
+            if (d->label_primary) {
+                lv_image_set_src(img, d->label_primary);
+            }
+            if (d->width > 0 && d->height > 0) {
+                lv_obj_set_size(img, d->width, d->height);
+            }
+            lv_obj_align(img, align, d->offset_x, d->offset_y);
+
+            if (s_num_images < MAX_BINDINGS) {
+                bound_image_t *b = &s_images[s_num_images++];
+                b->param_id = d->param_id;
+                b->image = img;
+            }
+            register_lookup(d->param_id, img);
+            break;
+        }
+
+        case WIDGET_TYPE_LINE: {
+            lv_obj_t *line = lv_line_create(parent_obj);
+            lv_obj_align(line, align, d->offset_x, d->offset_y);
+            lv_obj_set_style_line_width(line, 4, 0);
+            lv_obj_set_style_line_color(line, lv_palette_main(LV_PALETTE_TEAL), 0);
+            lv_obj_set_style_line_rounded(line, true, 0);
+
+            if (s_num_lines < MAX_BINDINGS) {
+                bound_line_t *b = &s_lines[s_num_lines++];
+                b->param_id = d->param_id;
+                b->line = line;
+                b->point_cnt = 0;
+
+                if (d->label_primary) {
+                    b->point_cnt = parse_line_points(d->label_primary, b->points, 16);
+                }
+                if (b->point_cnt == 0) {
+                    int32_t w = d->width > 0 ? d->width : 100;
+                    int32_t h = d->height > 0 ? d->height : 20;
+                    b->points[0].x = 0;     b->points[0].y = h;
+                    b->points[1].x = w / 2; b->points[1].y = 0;
+                    b->points[2].x = w;     b->points[2].y = h;
+                    b->point_cnt = 3;
+                }
+                lv_line_set_points(line, b->points, b->point_cnt);
+            }
+            register_lookup(d->param_id, line);
+            break;
+        }
+
+        case WIDGET_TYPE_ARCLABEL: {
+#if LV_USE_ARCLABEL
+            lv_obj_t *al = lv_arclabel_create(parent_obj);
+            if (d->label_primary) {
+                lv_arclabel_set_text(al, d->label_primary);
+            }
+            uint32_t radius = d->initial_val > 0 ? (uint32_t)d->initial_val : 70;
+            lv_arclabel_set_radius(al, radius);
+            if (d->min_val != 0 || d->max_val != 0) {
+                lv_arclabel_set_angle_start(al, d->min_val);
+                lv_arclabel_set_angle_size(al, d->max_val > 0 ? d->max_val : 180);
+            }
+            lv_obj_align(al, align, d->offset_x, d->offset_y);
+
+            if (s_num_arclabels < MAX_BINDINGS) {
+                bound_arclabel_t *b = &s_arclabels[s_num_arclabels++];
+                b->param_id = d->param_id;
+                b->arclabel = al;
+            }
+            register_lookup(d->param_id, al);
+#endif
+            break;
+        }
+
+        case WIDGET_TYPE_QRCODE: {
+#if LV_USE_QRCODE
+            int32_t size = d->width > 0 ? d->width : 120;
+            lv_obj_t *qr = lv_qrcode_create(parent_obj);
+            lv_qrcode_set_size(qr, size);
+            lv_qrcode_set_dark_color(qr, lv_color_black());
+            lv_qrcode_set_light_color(qr, lv_color_white());
+            if (d->label_primary) {
+                lv_qrcode_set_data(qr, d->label_primary);
+            }
+            lv_obj_align(qr, align, d->offset_x, d->offset_y);
+
+            if (s_num_qrcodes < MAX_BINDINGS) {
+                bound_qrcode_t *b = &s_qrcodes[s_num_qrcodes++];
+                b->param_id = d->param_id;
+                b->qrcode = qr;
+            }
+            register_lookup(d->param_id, qr);
+#endif
             break;
         }
 

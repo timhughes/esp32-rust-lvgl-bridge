@@ -81,6 +81,16 @@ pub static TAB0_CONTROLS_SCHEMA: &[WidgetDescriptor] = &[
         c"%ld%% (Setting)",
         c"%ld%% (Actual)",
     ).with_parent(ParamId::NavTab, 0),
+    WidgetDescriptor::arc_label(
+        ParamId::ArcLabelHeading,
+        UiAlign::Center,
+        0,
+        -55,
+        75,
+        135,
+        270,
+        c"POWER",
+    ).with_parent(ParamId::NavTab, 0),
     WidgetDescriptor::bar(
         ParamId::ProgressBar,
         UiAlign::Center,
@@ -224,6 +234,15 @@ pub static TAB3_TELEMETRY_SCHEMA: &[WidgetDescriptor] = &[
         0,
         100,
     ),
+    WidgetDescriptor::line(
+        ParamId::LineGraph,
+        UiAlign::TopMid,
+        0,
+        95,
+        420,
+        2,
+        Some(c"0,0; 420,0"),
+    ).with_parent(ParamId::NavTab, 3),
     WidgetDescriptor::table(
         ParamId::DataTable,
         ParamId::NavTab,
@@ -280,6 +299,13 @@ pub static TAB4_TOOLS_SCHEMA: &[WidgetDescriptor] = &[
         100,
         100,
     ),
+    WidgetDescriptor::image(
+        ParamId::ImagePreview,
+        UiAlign::BottomRight,
+        -130,
+        -20,
+        c"\xEF\x80\xBE",
+    ).with_parent(ParamId::NavTab, 4),
     WidgetDescriptor::label(
         ParamId::CycleCount,
         UiAlign::BottomRight,
@@ -289,16 +315,24 @@ pub static TAB4_TOOLS_SCHEMA: &[WidgetDescriptor] = &[
     ).with_parent(ParamId::NavTab, 4),
 ];
 
-/// Tab 5: System (Settings menu & swipeable tileview)
+/// Tab 5: System (Settings menu, WiFi onboarding QR code & swipeable tileview)
 pub static TAB5_SYSTEM_SCHEMA: &[WidgetDescriptor] = &[
     WidgetDescriptor::menu(
         ParamId::MenuNav,
-        UiAlign::TopMid,
-        0,
+        UiAlign::TopLeft,
+        15,
         10,
-        440,
+        250,
         180,
         c"System Settings",
+    ).with_parent(ParamId::NavTab, 5),
+    WidgetDescriptor::qr_code(
+        ParamId::QrWifiConfig,
+        UiAlign::TopRight,
+        -15,
+        15,
+        140,
+        c"WIFI:S:ESP32-S3-LAB;T:WPA;P:lvgl_rust;;",
     ).with_parent(ParamId::NavTab, 5),
     WidgetDescriptor::tileview(
         ParamId::NavTile,
@@ -327,7 +361,7 @@ const fn concat_schemas<const N: usize>(tables: &[&'static [WidgetDescriptor]]) 
     out
 }
 
-static EVERYTHING_SCHEMA_ARRAY: [WidgetDescriptor; 27] = concat_schemas(&[
+static EVERYTHING_SCHEMA_ARRAY: [WidgetDescriptor; 31] = concat_schemas(&[
     NAV_CONTAINER_SCHEMA,
     TAB0_CONTROLS_SCHEMA,
     TAB1_SELECTORS_SCHEMA,
@@ -337,7 +371,7 @@ static EVERYTHING_SCHEMA_ARRAY: [WidgetDescriptor; 27] = concat_schemas(&[
     TAB5_SYSTEM_SCHEMA,
 ]);
 
-/// Complete 27-widget descriptor table joining all tab schemas and navigation container
+/// Complete 31-widget descriptor table joining all tab schemas and navigation container
 pub static EVERYTHING_SCHEMA: &[WidgetDescriptor] = &EVERYTHING_SCHEMA_ARRAY;
 
 #[no_mangle]
@@ -630,13 +664,13 @@ mod tests {
 
     #[test]
     fn test_schemas_integrity() {
-        assert_eq!(EVERYTHING_SCHEMA.len(), 27);
-        assert_eq!(TAB0_CONTROLS_SCHEMA.len(), 8);
+        assert_eq!(EVERYTHING_SCHEMA.len(), 31);
+        assert_eq!(TAB0_CONTROLS_SCHEMA.len(), 9);
         assert_eq!(TAB1_SELECTORS_SCHEMA.len(), 5);
         assert_eq!(TAB2_INPUTS_SCHEMA.len(), 4);
-        assert_eq!(TAB3_TELEMETRY_SCHEMA.len(), 3);
-        assert_eq!(TAB4_TOOLS_SCHEMA.len(), 4);
-        assert_eq!(TAB5_SYSTEM_SCHEMA.len(), 2);
+        assert_eq!(TAB3_TELEMETRY_SCHEMA.len(), 4);
+        assert_eq!(TAB4_TOOLS_SCHEMA.len(), 5);
+        assert_eq!(TAB5_SYSTEM_SCHEMA.len(), 3);
 
         // Root widget of EVERYTHING schema must be TabView
         assert_eq!(EVERYTHING_SCHEMA[0].widget_type, WidgetType::TabView);

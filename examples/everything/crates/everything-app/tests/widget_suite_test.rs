@@ -18,12 +18,12 @@ use std::sync::Mutex;
 static TEST_LOCK: Mutex<()> = Mutex::new(());
 
 /// 1. Comprehensive Widget Coverage Assertion
-/// Verifies that EVERY single widget type in `WidgetType::ALL` (all 25 widgets) is present in `EVERYTHING_SCHEMA`.
+/// Verifies that EVERY single widget type in `WidgetType::ALL` (all 29 widgets) is present in `EVERYTHING_SCHEMA`.
 #[test]
 fn test_everything_covers_every_widget_type() {
     let used_types: HashSet<WidgetType> = EVERYTHING_SCHEMA.iter().map(|w| w.widget_type).collect();
 
-    // Verify all 25 variants are accounted for
+    // Verify all 29 variants are accounted for
     for &expected_type in WidgetType::ALL {
         assert!(
             used_types.contains(&expected_type),
@@ -32,9 +32,9 @@ fn test_everything_covers_every_widget_type() {
         );
     }
 
-    assert_eq!(WidgetType::ALL.len(), 25, "Expected 25 distinct supported widget types");
-    assert_eq!(used_types.len(), 25, "EVERYTHING_SCHEMA must utilize all 25 widget types");
-    assert_eq!(EVERYTHING_SCHEMA.len(), 27, "EVERYTHING_SCHEMA contains 27 total descriptors");
+    assert_eq!(WidgetType::ALL.len(), 29, "Expected 29 distinct supported widget types");
+    assert_eq!(used_types.len(), 29, "EVERYTHING_SCHEMA must utilize all 29 widget types");
+    assert_eq!(EVERYTHING_SCHEMA.len(), 31, "EVERYTHING_SCHEMA contains 31 total descriptors");
 }
 
 /// 2. Headless Scene Graph Construction & Lookup Test

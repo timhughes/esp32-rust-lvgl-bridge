@@ -38,6 +38,11 @@ typedef enum {
     PARAM_DATA_TABLE     = 23,// Table: i32_val/str_val
     PARAM_CANVAS_DRAW    = 25,// Canvas
     PARAM_TEXT_AREA      = 26,// TextArea (multiline): str_val buffer
+    // Phase 1: Visuals & IoT Core
+    PARAM_IMAGE_PREVIEW  = 27,// Image: str_val src
+    PARAM_LINE_GRAPH     = 28,// Line
+    PARAM_ARCLABEL_TITLE = 29,// ArcLabel: str_val text / i32_val angle
+    PARAM_QR_WIFI_CONFIG = 30,// QRCode: str_val payload
 } param_id_t;
 
 
@@ -103,6 +108,11 @@ typedef enum {
     WIDGET_TYPE_TABLE         = 23,
     WIDGET_TYPE_CALENDAR      = 24,
     WIDGET_TYPE_CANVAS        = 25,
+    // Phase 1: Visuals & IoT Core
+    WIDGET_TYPE_IMAGE         = 26,
+    WIDGET_TYPE_LINE          = 27,
+    WIDGET_TYPE_ARCLABEL      = 28,
+    WIDGET_TYPE_QRCODE        = 29,
 } widget_type_t;
 
 typedef enum {
