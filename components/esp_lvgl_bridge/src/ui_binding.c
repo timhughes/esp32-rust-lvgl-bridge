@@ -202,6 +202,35 @@ typedef struct {
     lv_obj_t *qrcode;
 } bound_qrcode_t;
 
+// Phase 2 Widgets
+typedef struct {
+    param_id_t param_id;
+    lv_obj_t *win;
+    lv_obj_t *content;
+} bound_win_t;
+
+typedef struct {
+    param_id_t param_id;
+    lv_obj_t *imgbtn;
+    uint32_t current_seq;
+    uint32_t command_val;
+} bound_imagebutton_t;
+
+typedef struct {
+    param_id_t param_id;
+    lv_obj_t *spangroup;
+} bound_spangroup_t;
+
+typedef struct {
+    param_id_t param_id;
+    lv_obj_t *animimg;
+} bound_animimage_t;
+
+typedef struct {
+    param_id_t param_id;
+    lv_obj_t *barcode;
+} bound_barcode_t;
+
 typedef struct {
     param_id_t param_id;
     lv_obj_t *obj;
@@ -297,6 +326,22 @@ static size_t s_num_arclabels = 0;
 
 static bound_qrcode_t s_qrcodes[MAX_BINDINGS];
 static size_t s_num_qrcodes = 0;
+
+// Phase 2
+static bound_win_t s_wins[MAX_BINDINGS];
+static size_t s_num_wins = 0;
+
+static bound_imagebutton_t s_imgbtns[MAX_BINDINGS];
+static size_t s_num_imgbtns = 0;
+
+static bound_spangroup_t s_spangroups[MAX_BINDINGS];
+static size_t s_num_spangroups = 0;
+
+static bound_animimage_t s_animimages[MAX_BINDINGS];
+static size_t s_num_animimages = 0;
+
+static bound_barcode_t s_barcodes[MAX_BINDINGS];
+static size_t s_num_barcodes = 0;
 
 // Button matrix map storage
 static char s_btnmatrix_str_bufs[MAX_BINDINGS][256];
@@ -607,6 +652,31 @@ static void on_msgbox_ok_clicked(lv_event_t *e) {
     ui_set_obj_hidden(b->msgbox, true);
 }
 
+static void on_win_close_clicked(lv_event_t *e) {
+    bound_win_t *b = (bound_win_t *)lv_event_get_user_data(e);
+    if (!b) return;
+
+    ui_command_t cmd = {
+        .param_id = b->param_id,
+        .seq_id = ++s_global_seq,
+        .value.bool_val = false,
+    };
+    bridge_send_command_from_ui(&cmd);
+    ui_set_obj_hidden(b->win, true);
+}
+
+static void on_imgbtn_event_clicked(lv_event_t *e) {
+    bound_imagebutton_t *b = (bound_imagebutton_t *)lv_event_get_user_data(e);
+    if (!b) return;
+
+    ui_command_t cmd = {
+        .param_id = b->param_id,
+        .seq_id = ++b->current_seq,
+        .value = { .u32_val = b->command_val ? b->command_val : 1 },
+    };
+    bridge_send_command_from_ui(&cmd);
+}
+
 // ----------------------------------------------------------------------
 // Tier 3 Callbacks: TabView, Calendar, List
 // ----------------------------------------------------------------------
@@ -747,6 +817,12 @@ void ui_engine_init(void) {
     s_num_lines = 0;
     s_num_arclabels = 0;
     s_num_qrcodes = 0;
+    // Phase 2
+    s_num_wins = 0;
+    s_num_imgbtns = 0;
+    s_num_spangroups = 0;
+    s_num_animimages = 0;
+    s_num_barcodes = 0;
 
     s_num_lookups = 0;
     s_global_seq = 0;
@@ -1057,6 +1133,61 @@ void ui_engine_dispatch_telemetry(const device_telemetry_t *telem) {
         }
     }
 #endif
+
+    // 20. Wins (Phase 2)
+#if LV_USE_WIN
+    for (size_t i = 0; i < s_num_wins; i++) {
+        bound_win_t *b = &s_wins[i];
+        if (b->param_id == telem->param_id) {
+            ui_set_obj_hidden(b->win, !telem->value.bool_val);
+        }
+    }
+#endif
+
+    // 21. ImageButtons (Phase 2)
+#if LV_USE_IMAGEBUTTON
+    for (size_t i = 0; i < s_num_imgbtns; i++) {
+        bound_imagebutton_t *b = &s_imgbtns[i];
+        if (b->param_id == telem->param_id && telem->value.str_val[0] != '\0') {
+            lv_imagebutton_set_src(b->imgbtn, LV_IMAGEBUTTON_STATE_RELEASED, NULL, telem->value.str_val, NULL);
+        }
+    }
+#endif
+
+    // 22. SpanGroups (Phase 2)
+#if LV_USE_SPAN
+    for (size_t i = 0; i < s_num_spangroups; i++) {
+        bound_spangroup_t *b = &s_spangroups[i];
+        if (b->param_id == telem->param_id && telem->value.str_val[0] != '\0') {
+            lv_span_t *s = lv_spangroup_get_child(b->spangroup, 0);
+            if (s) {
+                lv_span_set_text(s, telem->value.str_val);
+            }
+        }
+    }
+#endif
+
+    // 23. AnimImages (Phase 2)
+#if LV_USE_ANIMIMG
+    for (size_t i = 0; i < s_num_animimages; i++) {
+        bound_animimage_t *b = &s_animimages[i];
+        if (b->param_id == telem->param_id) {
+            if (telem->value.bool_val) {
+                lv_animimg_start(b->animimg);
+            }
+        }
+    }
+#endif
+
+    // 24. Barcodes (Phase 2)
+#if LV_USE_BARCODE
+    for (size_t i = 0; i < s_num_barcodes; i++) {
+        bound_barcode_t *b = &s_barcodes[i];
+        if (b->param_id == telem->param_id && telem->value.str_val[0] != '\0') {
+            lv_barcode_update(b->barcode, telem->value.str_val);
+        }
+    }
+#endif
 }
 
 void ui_engine_pump_telemetry(void) {
@@ -1105,7 +1236,17 @@ void ui_engine_build_from_schema(const widget_descriptor_t *schema, size_t count
             }
             if (parent_obj == scr && d->widget_type != WIDGET_TYPE_KEYBOARD) {
                 lv_obj_t *found = ui_engine_get_widget_by_param(d->parent_param_id);
-                if (found) parent_obj = found;
+                if (found) {
+#if LV_USE_WIN
+                    for (size_t w = 0; w < s_num_wins; w++) {
+                        if (s_wins[w].param_id == d->parent_param_id) {
+                            found = s_wins[w].content;
+                            break;
+                        }
+                    }
+#endif
+                    parent_obj = found;
+                }
             }
         }
 
@@ -1823,6 +1964,143 @@ void ui_engine_build_from_schema(const widget_descriptor_t *schema, size_t count
                 b->qrcode = qr;
             }
             register_lookup(d->param_id, qr);
+#endif
+            break;
+        }
+
+        // --- Phase 2: Complex UI & Rich Media ---
+        case WIDGET_TYPE_WIN: {
+#if LV_USE_WIN
+            lv_obj_t *win = lv_win_create(parent_obj);
+            if (d->width > 0 && d->height > 0) {
+                lv_obj_set_size(win, d->width, d->height);
+            }
+            lv_obj_align(win, align, d->offset_x, d->offset_y);
+            if (d->label_primary) {
+                lv_win_add_title(win, d->label_primary);
+            }
+            lv_obj_t *close_btn = lv_win_add_button(win, LV_SYMBOL_CLOSE, 30);
+            if (d->initial_val == 0) {
+                ui_set_obj_hidden(win, true);
+            }
+            lv_obj_t *content = lv_win_get_content(win);
+
+            if (s_num_wins < MAX_BINDINGS) {
+                bound_win_t *b = &s_wins[s_num_wins++];
+                b->param_id = d->param_id;
+                b->win = win;
+                b->content = content;
+                if (close_btn) {
+                    lv_obj_add_event_cb(close_btn, on_win_close_clicked, LV_EVENT_CLICKED, b);
+                }
+            }
+            register_lookup(d->param_id, win);
+#endif
+            break;
+        }
+
+        case WIDGET_TYPE_IMAGEBUTTON: {
+#if LV_USE_IMAGEBUTTON
+            lv_obj_t *ib = lv_imagebutton_create(parent_obj);
+            lv_obj_align(ib, align, d->offset_x, d->offset_y);
+            if (d->label_primary) {
+                lv_imagebutton_set_src(ib, LV_IMAGEBUTTON_STATE_RELEASED, NULL, d->label_primary, NULL);
+            }
+
+            if (s_num_imgbtns < MAX_BINDINGS) {
+                bound_imagebutton_t *b = &s_imgbtns[s_num_imgbtns++];
+                b->param_id = d->param_id;
+                b->imgbtn = ib;
+                b->current_seq = 0;
+                b->command_val = (uint32_t)d->initial_val;
+
+                lv_obj_add_event_cb(ib, on_imgbtn_event_clicked, LV_EVENT_CLICKED, b);
+            }
+            register_lookup(d->param_id, ib);
+#endif
+            break;
+        }
+
+        case WIDGET_TYPE_SPAN_GROUP: {
+#if LV_USE_SPAN
+            lv_obj_t *sg = lv_spangroup_create(parent_obj);
+            if (d->width > 0 && d->height > 0) {
+                lv_obj_set_size(sg, d->width, d->height);
+            }
+            lv_obj_align(sg, align, d->offset_x, d->offset_y);
+
+            if (d->label_primary) {
+                char buf[256];
+                strncpy(buf, d->label_primary, sizeof(buf) - 1);
+                buf[sizeof(buf) - 1] = '\0';
+                char *tok = strtok(buf, "|\n");
+                uint32_t span_idx = 0;
+                while (tok) {
+                    lv_span_t *s = lv_spangroup_add_span(sg);
+                    lv_span_set_text(s, tok);
+                    if (span_idx % 2 == 1) {
+                        lv_style_set_text_color(lv_span_get_style(s), lv_palette_main(LV_PALETTE_TEAL));
+                    }
+                    tok = strtok(NULL, "|\n");
+                    span_idx++;
+                }
+            }
+
+            if (s_num_spangroups < MAX_BINDINGS) {
+                bound_spangroup_t *b = &s_spangroups[s_num_spangroups++];
+                b->param_id = d->param_id;
+                b->spangroup = sg;
+            }
+            register_lookup(d->param_id, sg);
+#endif
+            break;
+        }
+
+        case WIDGET_TYPE_ANIMIMAGE: {
+#if LV_USE_ANIMIMG
+            lv_obj_t *ai = lv_animimg_create(parent_obj);
+            lv_obj_align(ai, align, d->offset_x, d->offset_y);
+            static const void *s_default_anim_imgs[] = {
+                LV_SYMBOL_REFRESH,
+                LV_SYMBOL_SETTINGS,
+                LV_SYMBOL_WIFI,
+                LV_SYMBOL_OK,
+            };
+            lv_animimg_set_src(ai, s_default_anim_imgs, 4);
+            uint32_t dur = d->initial_val > 0 ? (uint32_t)d->initial_val : 1200;
+            lv_animimg_set_duration(ai, dur);
+            lv_animimg_set_repeat_count(ai, LV_ANIM_REPEAT_INFINITE);
+            lv_animimg_start(ai);
+
+            if (s_num_animimages < MAX_BINDINGS) {
+                bound_animimage_t *b = &s_animimages[s_num_animimages++];
+                b->param_id = d->param_id;
+                b->animimg = ai;
+            }
+            register_lookup(d->param_id, ai);
+#endif
+            break;
+        }
+
+        case WIDGET_TYPE_BARCODE: {
+#if LV_USE_BARCODE
+            int32_t w = d->width > 0 ? d->width : 150;
+            int32_t h = d->height > 0 ? d->height : 50;
+            lv_obj_t *bc = lv_barcode_create(parent_obj);
+            lv_obj_set_size(bc, w, h);
+            lv_barcode_set_dark_color(bc, lv_color_black());
+            lv_barcode_set_light_color(bc, lv_color_white());
+            if (d->label_primary) {
+                lv_barcode_update(bc, d->label_primary);
+            }
+            lv_obj_align(bc, align, d->offset_x, d->offset_y);
+
+            if (s_num_barcodes < MAX_BINDINGS) {
+                bound_barcode_t *b = &s_barcodes[s_num_barcodes++];
+                b->param_id = d->param_id;
+                b->barcode = bc;
+            }
+            register_lookup(d->param_id, bc);
 #endif
             break;
         }

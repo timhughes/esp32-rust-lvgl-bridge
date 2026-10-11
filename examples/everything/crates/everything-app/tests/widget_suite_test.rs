@@ -18,12 +18,12 @@ use std::sync::Mutex;
 static TEST_LOCK: Mutex<()> = Mutex::new(());
 
 /// 1. Comprehensive Widget Coverage Assertion
-/// Verifies that EVERY single widget type in `WidgetType::ALL` (all 29 widgets) is present in `EVERYTHING_SCHEMA`.
+/// Verifies that EVERY single widget type in `WidgetType::ALL` (all 34 widgets) is present in `EVERYTHING_SCHEMA`.
 #[test]
 fn test_everything_covers_every_widget_type() {
     let used_types: HashSet<WidgetType> = EVERYTHING_SCHEMA.iter().map(|w| w.widget_type).collect();
 
-    // Verify all 29 variants are accounted for
+    // Verify all 34 variants are accounted for
     for &expected_type in WidgetType::ALL {
         assert!(
             used_types.contains(&expected_type),
@@ -32,13 +32,13 @@ fn test_everything_covers_every_widget_type() {
         );
     }
 
-    assert_eq!(WidgetType::ALL.len(), 29, "Expected 29 distinct supported widget types");
-    assert_eq!(used_types.len(), 29, "EVERYTHING_SCHEMA must utilize all 29 widget types");
-    assert_eq!(EVERYTHING_SCHEMA.len(), 31, "EVERYTHING_SCHEMA contains 31 total descriptors");
+    assert_eq!(WidgetType::ALL.len(), 34, "Expected 34 distinct supported widget types");
+    assert_eq!(used_types.len(), 34, "EVERYTHING_SCHEMA must utilize all 34 widget types");
+    assert_eq!(EVERYTHING_SCHEMA.len(), 36, "EVERYTHING_SCHEMA contains 36 total descriptors");
 }
 
 /// 2. Headless Scene Graph Construction & Lookup Test
-/// Verifies that all 27 descriptors are successfully instantiated by LVGL and findable by ParamId.
+/// Verifies that all 36 descriptors are successfully instantiated by LVGL and findable by ParamId.
 #[test]
 fn test_everything_headless_scene_graph_and_lookups() {
     let _guard = TEST_LOCK.lock().unwrap_or_else(|e| e.into_inner());
@@ -134,9 +134,12 @@ fn test_tab0_controls_interaction_and_telemetry() {
         "CycleCount label should reflect dispatched telemetry: {}",
         label_txt
     );
+
+    // Test ImageButton (ImageTrigger) exists
+    assert!(harness.widget_exists(ParamId::ImageTrigger));
 }
 
-/// 4. Tab 1 (Selectors): Checkbox, Dropdown, Roller, Spinbox, Scale
+/// 4. Tab 1 (Selectors): Checkbox, Dropdown, Roller, Spinbox, Scale, AnimImage
 #[test]
 fn test_tab1_selectors_interaction() {
     let _guard = TEST_LOCK.lock().unwrap_or_else(|e| e.into_inner());
@@ -167,11 +170,12 @@ fn test_tab1_selectors_interaction() {
     // Test Spinbox (PrecisionStep)
     assert_eq!(harness.get_spinbox_value(ParamId::PrecisionStep), Some(1250));
 
-    // Test Scale (GaugeScale) exists
+    // Test Scale (GaugeScale) and AnimImage (SpinnerAnim) exist
     assert!(harness.widget_exists(ParamId::GaugeScale));
+    assert!(harness.widget_exists(ParamId::SpinnerAnim));
 }
 
-/// 5. Tab 2 (Inputs): TextInput, TextArea, Keyboard, MsgBox
+/// 5. Tab 2 (Inputs): TextInput, TextArea, Keyboard, MsgBox, SpanGroup, Win
 #[test]
 fn test_tab2_inputs_and_keyboard() {
     let _guard = TEST_LOCK.lock().unwrap_or_else(|e| e.into_inner());
@@ -207,9 +211,11 @@ fn test_tab2_inputs_and_keyboard() {
         Some("Line 1\nLine 2\nLine 3")
     );
 
-    // Test Keyboard & MsgBox exist in scene graph
+    // Test Keyboard, MsgBox, SpanGroup & Win exist in scene graph
     assert!(harness.widget_exists(ParamId::Keyboard));
     assert!(harness.widget_exists(ParamId::AlertModal));
+    assert!(harness.widget_exists(ParamId::FormattedSpan));
+    assert!(harness.widget_exists(ParamId::WindowModal));
 }
 
 /// 6. Tab 3 (Telemetry): Chart, Table, List
@@ -253,9 +259,10 @@ fn test_tab4_tools_keypad_and_canvas() {
     assert!(harness.set_active_tab(ParamId::NavTab, 4));
     assert_eq!(harness.get_active_tab(ParamId::NavTab), Some(4));
 
-    // Verify Calendar & Canvas exist
+    // Verify Calendar, Canvas & Barcode exist
     assert!(harness.widget_exists(ParamId::CalendarDate));
     assert!(harness.widget_exists(ParamId::CanvasDraw));
+    assert!(harness.widget_exists(ParamId::AssetBarcode));
 
     // Test ButtonMatrix (KeypadMatrix) click by button text
     assert!(harness.widget_exists(ParamId::KeypadMatrix));

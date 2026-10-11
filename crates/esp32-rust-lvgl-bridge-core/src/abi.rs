@@ -49,6 +49,12 @@ impl ParamId {
     pub const LineGraph: Self = Self(28);
     pub const ArcLabelHeading: Self = Self(29);
     pub const QrWifiConfig: Self = Self(30);
+    // Phase 2: Complex UI & Rich Media
+    pub const WindowModal: Self = Self(31);
+    pub const ImageTrigger: Self = Self(32);
+    pub const FormattedSpan: Self = Self(33);
+    pub const SpinnerAnim: Self = Self(34);
+    pub const AssetBarcode: Self = Self(35);
 
     /// Creates a custom application parameter ID.
     #[inline]
@@ -161,10 +167,16 @@ pub enum WidgetType {
     Line = 27,
     ArcLabel = 28,
     QRCode = 29,
+    // Phase 2: Complex UI & Rich Media
+    Win = 30,
+    ImageButton = 31,
+    SpanGroup = 32,
+    AnimImage = 33,
+    Barcode = 34,
 }
 
 impl WidgetType {
-    /// Array containing all 29 supported LVGL widget types.
+    /// Array containing all 34 supported LVGL widget types.
     pub const ALL: &'static [WidgetType] = &[
         WidgetType::Switch,
         WidgetType::Slider,
@@ -196,6 +208,12 @@ impl WidgetType {
         WidgetType::Line,
         WidgetType::ArcLabel,
         WidgetType::QRCode,
+        // Phase 2
+        WidgetType::Win,
+        WidgetType::ImageButton,
+        WidgetType::SpanGroup,
+        WidgetType::AnimImage,
+        WidgetType::Barcode,
     ];
 }
 
@@ -1109,6 +1127,154 @@ impl WidgetDescriptor {
         }
     }
 
+    // -------------------------------------------------------------------------
+    // Phase 2 Constructors: Complex UI & Rich Media
+    // -------------------------------------------------------------------------
+
+    /// Declarative constructor for an `lv_win` window widget.
+    pub const fn win(
+        param_id: ParamId,
+        align: UiAlign,
+        offset_x: i32,
+        offset_y: i32,
+        width: i32,
+        height: i32,
+        title: &'static core::ffi::CStr,
+    ) -> Self {
+        Self {
+            widget_type: WidgetType::Win,
+            param_id,
+            align,
+            offset_x,
+            offset_y,
+            min_val: 0,
+            max_val: 0,
+            initial_val: 1, // 1 = visible, 0 = hidden
+            holdoff_ms: 0,
+            label_primary: title.as_ptr(),
+            label_secondary: core::ptr::null(),
+            parent_param_id: ParamId::None,
+            width,
+            height,
+            tab_index: 0,
+        }
+    }
+
+    /// Declarative constructor for an `lv_imagebutton` widget.
+    pub const fn image_button(
+        param_id: ParamId,
+        align: UiAlign,
+        offset_x: i32,
+        offset_y: i32,
+        src: &'static core::ffi::CStr,
+        command_val: u32,
+    ) -> Self {
+        Self {
+            widget_type: WidgetType::ImageButton,
+            param_id,
+            align,
+            offset_x,
+            offset_y,
+            min_val: 0,
+            max_val: 0,
+            initial_val: command_val as i32,
+            holdoff_ms: 0,
+            label_primary: src.as_ptr(),
+            label_secondary: core::ptr::null(),
+            parent_param_id: ParamId::None,
+            width: 0,
+            height: 0,
+            tab_index: 0,
+        }
+    }
+
+    /// Declarative constructor for an `lv_spangroup` rich-text widget.
+    ///
+    /// Multiple text spans can be delimited by `|` to allow multi-style styling.
+    pub const fn span_group(
+        param_id: ParamId,
+        align: UiAlign,
+        offset_x: i32,
+        offset_y: i32,
+        width: i32,
+        height: i32,
+        spans_text: &'static core::ffi::CStr,
+    ) -> Self {
+        Self {
+            widget_type: WidgetType::SpanGroup,
+            param_id,
+            align,
+            offset_x,
+            offset_y,
+            min_val: 0,
+            max_val: 0,
+            initial_val: 0,
+            holdoff_ms: 0,
+            label_primary: spans_text.as_ptr(),
+            label_secondary: core::ptr::null(),
+            parent_param_id: ParamId::None,
+            width,
+            height,
+            tab_index: 0,
+        }
+    }
+
+    /// Declarative constructor for an `lv_animimage` animated sequence widget.
+    pub const fn anim_image(
+        param_id: ParamId,
+        align: UiAlign,
+        offset_x: i32,
+        offset_y: i32,
+        duration_ms: u32,
+    ) -> Self {
+        Self {
+            widget_type: WidgetType::AnimImage,
+            param_id,
+            align,
+            offset_x,
+            offset_y,
+            min_val: 0,
+            max_val: 0,
+            initial_val: duration_ms as i32,
+            holdoff_ms: 0,
+            label_primary: core::ptr::null(),
+            label_secondary: core::ptr::null(),
+            parent_param_id: ParamId::None,
+            width: 0,
+            height: 0,
+            tab_index: 0,
+        }
+    }
+
+    /// Declarative constructor for an `lv_barcode` widget.
+    pub const fn barcode(
+        param_id: ParamId,
+        align: UiAlign,
+        offset_x: i32,
+        offset_y: i32,
+        width: i32,
+        height: i32,
+        data: &'static core::ffi::CStr,
+    ) -> Self {
+        Self {
+            widget_type: WidgetType::Barcode,
+            param_id,
+            align,
+            offset_x,
+            offset_y,
+            min_val: 0,
+            max_val: 0,
+            initial_val: 0,
+            holdoff_ms: 0,
+            label_primary: data.as_ptr(),
+            label_secondary: core::ptr::null(),
+            parent_param_id: ParamId::None,
+            width,
+            height,
+            tab_index: 0,
+        }
+    }
+
     pub const fn with_parent(mut self, parent_param_id: ParamId, tab_index: u32) -> Self {
         self.parent_param_id = parent_param_id;
         self.tab_index = tab_index;
@@ -1160,6 +1326,11 @@ mod tests {
         assert_eq!(ParamId::LineGraph, ParamId(28));
         assert_eq!(ParamId::ArcLabelHeading, ParamId(29));
         assert_eq!(ParamId::QrWifiConfig, ParamId(30));
+        assert_eq!(ParamId::WindowModal, ParamId(31));
+        assert_eq!(ParamId::ImageTrigger, ParamId(32));
+        assert_eq!(ParamId::FormattedSpan, ParamId(33));
+        assert_eq!(ParamId::SpinnerAnim, ParamId(34));
+        assert_eq!(ParamId::AssetBarcode, ParamId(35));
 
         // Test Hash and Eq in a HashSet
         let mut set = HashSet::new();
@@ -1515,6 +1686,69 @@ mod tests {
         assert_eq!(qr.width, 120);
         assert_eq!(qr.height, 120);
         assert_eq!(unsafe { CStr::from_ptr(qr.label_primary).to_str().unwrap() }, "https://lvgl.io");
+
+        // Phase 2 widgets
+        let w = WidgetDescriptor::win(
+            ParamId(31),
+            UiAlign::Center,
+            0,
+            0,
+            300,
+            200,
+            c"Diagnostic Window",
+        );
+        assert_eq!(w.widget_type, WidgetType::Win);
+        assert_eq!(w.width, 300);
+        assert_eq!(w.height, 200);
+        assert_eq!(unsafe { CStr::from_ptr(w.label_primary).to_str().unwrap() }, "Diagnostic Window");
+
+        let ib = WidgetDescriptor::image_button(
+            ParamId(32),
+            UiAlign::TopLeft,
+            10,
+            10,
+            c"\xEF\x80\x91",
+            42,
+        );
+        assert_eq!(ib.widget_type, WidgetType::ImageButton);
+        assert_eq!(ib.initial_val, 42);
+
+        let sg = WidgetDescriptor::span_group(
+            ParamId(33),
+            UiAlign::Center,
+            0,
+            0,
+            200,
+            60,
+            c"Status: |ONLINE",
+        );
+        assert_eq!(sg.widget_type, WidgetType::SpanGroup);
+        assert_eq!(sg.width, 200);
+        assert_eq!(unsafe { CStr::from_ptr(sg.label_primary).to_str().unwrap() }, "Status: |ONLINE");
+
+        let ai = WidgetDescriptor::anim_image(
+            ParamId(34),
+            UiAlign::Center,
+            0,
+            0,
+            1000,
+        );
+        assert_eq!(ai.widget_type, WidgetType::AnimImage);
+        assert_eq!(ai.initial_val, 1000);
+
+        let bc = WidgetDescriptor::barcode(
+            ParamId(35),
+            UiAlign::Center,
+            0,
+            0,
+            150,
+            50,
+            c"ESP32-S3-SN12345",
+        );
+        assert_eq!(bc.widget_type, WidgetType::Barcode);
+        assert_eq!(bc.width, 150);
+        assert_eq!(bc.height, 50);
+        assert_eq!(unsafe { CStr::from_ptr(bc.label_primary).to_str().unwrap() }, "ESP32-S3-SN12345");
     }
 }
 

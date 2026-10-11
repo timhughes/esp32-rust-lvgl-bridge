@@ -121,6 +121,14 @@ pub static TAB0_CONTROLS_SCHEMA: &[WidgetDescriptor] = &[
         c"Reset Counter",
         1,
     ).with_parent(ParamId::NavTab, 0),
+    WidgetDescriptor::image_button(
+        ParamId::ImageTrigger,
+        UiAlign::BottomMid,
+        0,
+        -15,
+        c"\xEF\x80\x91",
+        1,
+    ).with_parent(ParamId::NavTab, 0),
     WidgetDescriptor::label(
         ParamId::CycleCount,
         UiAlign::BottomRight,
@@ -176,6 +184,13 @@ pub static TAB1_SELECTORS_SCHEMA: &[WidgetDescriptor] = &[
         100,
         65,
     ).with_parent(ParamId::NavTab, 1),
+    WidgetDescriptor::anim_image(
+        ParamId::SpinnerAnim,
+        UiAlign::TopRight,
+        -35,
+        20,
+        1000,
+    ).with_parent(ParamId::NavTab, 1),
 ];
 
 /// Tab 2: Inputs (Text inputs, virtual keyboard & alert modal)
@@ -218,6 +233,24 @@ pub static TAB2_INPUTS_SCHEMA: &[WidgetDescriptor] = &[
         c"Hardware calibrated.",
         false,
     ),
+    WidgetDescriptor::span_group(
+        ParamId::FormattedSpan,
+        UiAlign::TopMid,
+        0,
+        140,
+        440,
+        35,
+        c"Console: |Online |Speed: |High",
+    ).with_parent(ParamId::NavTab, 2),
+    WidgetDescriptor::win(
+        ParamId::WindowModal,
+        UiAlign::Center,
+        0,
+        0,
+        320,
+        220,
+        c"Diagnostics Window",
+    ).with_parent(ParamId::NavTab, 2),
 ];
 
 /// Tab 3: Telemetry (Streaming waveforms, diagnostics table & list)
@@ -306,6 +339,15 @@ pub static TAB4_TOOLS_SCHEMA: &[WidgetDescriptor] = &[
         -20,
         c"\xEF\x80\xBE",
     ).with_parent(ParamId::NavTab, 4),
+    WidgetDescriptor::barcode(
+        ParamId::AssetBarcode,
+        UiAlign::BottomMid,
+        0,
+        -20,
+        150,
+        50,
+        c"ESP32-S3-4848",
+    ).with_parent(ParamId::NavTab, 4),
     WidgetDescriptor::label(
         ParamId::CycleCount,
         UiAlign::BottomRight,
@@ -361,7 +403,7 @@ const fn concat_schemas<const N: usize>(tables: &[&'static [WidgetDescriptor]]) 
     out
 }
 
-static EVERYTHING_SCHEMA_ARRAY: [WidgetDescriptor; 31] = concat_schemas(&[
+static EVERYTHING_SCHEMA_ARRAY: [WidgetDescriptor; 36] = concat_schemas(&[
     NAV_CONTAINER_SCHEMA,
     TAB0_CONTROLS_SCHEMA,
     TAB1_SELECTORS_SCHEMA,
@@ -371,7 +413,7 @@ static EVERYTHING_SCHEMA_ARRAY: [WidgetDescriptor; 31] = concat_schemas(&[
     TAB5_SYSTEM_SCHEMA,
 ]);
 
-/// Complete 31-widget descriptor table joining all tab schemas and navigation container
+/// Complete 36-widget descriptor table joining all tab schemas and navigation container
 pub static EVERYTHING_SCHEMA: &[WidgetDescriptor] = &EVERYTHING_SCHEMA_ARRAY;
 
 #[no_mangle]
@@ -664,12 +706,12 @@ mod tests {
 
     #[test]
     fn test_schemas_integrity() {
-        assert_eq!(EVERYTHING_SCHEMA.len(), 31);
-        assert_eq!(TAB0_CONTROLS_SCHEMA.len(), 9);
-        assert_eq!(TAB1_SELECTORS_SCHEMA.len(), 5);
-        assert_eq!(TAB2_INPUTS_SCHEMA.len(), 4);
+        assert_eq!(EVERYTHING_SCHEMA.len(), 36);
+        assert_eq!(TAB0_CONTROLS_SCHEMA.len(), 10);
+        assert_eq!(TAB1_SELECTORS_SCHEMA.len(), 6);
+        assert_eq!(TAB2_INPUTS_SCHEMA.len(), 6);
         assert_eq!(TAB3_TELEMETRY_SCHEMA.len(), 4);
-        assert_eq!(TAB4_TOOLS_SCHEMA.len(), 5);
+        assert_eq!(TAB4_TOOLS_SCHEMA.len(), 6);
         assert_eq!(TAB5_SYSTEM_SCHEMA.len(), 3);
 
         // Root widget of EVERYTHING schema must be TabView

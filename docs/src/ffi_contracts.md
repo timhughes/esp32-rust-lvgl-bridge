@@ -151,6 +151,17 @@ typedef enum {
     WIDGET_TYPE_TABLE         = 23,
     WIDGET_TYPE_CALENDAR      = 24,
     WIDGET_TYPE_CANVAS        = 25,
+    // Phase 1: Visuals & IoT Core
+    WIDGET_TYPE_IMAGE         = 26,
+    WIDGET_TYPE_LINE          = 27,
+    WIDGET_TYPE_ARC_LABEL     = 28,
+    WIDGET_TYPE_QR_CODE       = 29,
+    // Phase 2: Complex UI & Rich Media
+    WIDGET_TYPE_WIN           = 30,
+    WIDGET_TYPE_IMAGEBUTTON   = 31,
+    WIDGET_TYPE_SPAN_GROUP    = 32,
+    WIDGET_TYPE_ANIMIMAGE     = 33,
+    WIDGET_TYPE_BARCODE       = 34,
 } widget_type_t;
 ```
 

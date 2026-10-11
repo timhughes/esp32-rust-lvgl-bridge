@@ -43,6 +43,12 @@ typedef enum {
     PARAM_LINE_GRAPH     = 28,// Line
     PARAM_ARCLABEL_TITLE = 29,// ArcLabel: str_val text / i32_val angle
     PARAM_QR_WIFI_CONFIG = 30,// QRCode: str_val payload
+    // Phase 2: Complex UI & Rich Media
+    PARAM_WINDOW_MODAL   = 31,// Win: bool_val visibility
+    PARAM_IMAGE_TRIGGER  = 32,// ImageButton: momentary command trigger
+    PARAM_FORMATTED_SPAN = 33,// SpanGroup: str_val text
+    PARAM_SPINNER_ANIM   = 34,// AnimImage: bool_val running
+    PARAM_ASSET_BARCODE  = 35,// Barcode: str_val payload
 } param_id_t;
 
 
@@ -113,6 +119,12 @@ typedef enum {
     WIDGET_TYPE_LINE          = 27,
     WIDGET_TYPE_ARCLABEL      = 28,
     WIDGET_TYPE_QRCODE        = 29,
+    // Phase 2: Complex UI & Rich Media
+    WIDGET_TYPE_WIN           = 30,
+    WIDGET_TYPE_IMAGEBUTTON   = 31,
+    WIDGET_TYPE_SPAN_GROUP    = 32,
+    WIDGET_TYPE_ANIMIMAGE     = 33,
+    WIDGET_TYPE_BARCODE       = 34,
 } widget_type_t;
 
 typedef enum {
