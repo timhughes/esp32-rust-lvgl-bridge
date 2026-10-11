@@ -1,0 +1,14 @@
+version: "0.1.0"
+description: "Board Support Package for Guition ESP32-S3-4848S040 (ST7701S RGB parallel display & GT911 touch)"
+url: "https://github.com/timhughes/esp32-rust-lvgl-framework"
+dependencies:
+  idf:
+    version: ">=5.1"
+  lvgl/lvgl:
+    version: "^9.4.0"
+  espressif/esp_lcd_st7701:
+    version: "^1.1.3"
+  espressif/esp_lcd_touch_gt911:
+    version: "^1.1.3"
+  espressif/esp_lcd_panel_io_additions:
+    version: "^1.0.1"

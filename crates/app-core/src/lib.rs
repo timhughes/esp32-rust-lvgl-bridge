@@ -730,7 +730,8 @@ impl SystemEngine {
             | ParamId::ItemList
             | ParamId::TelemetryChart
             | ParamId::DataTable
-            | ParamId::CanvasDraw => {}
+            | ParamId::CanvasDraw
+            | _ => {}
         }
     }
 

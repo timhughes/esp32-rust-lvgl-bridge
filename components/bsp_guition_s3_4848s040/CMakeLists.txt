@@ -1,0 +1,14 @@
+idf_component_register(
+    SRCS
+        "src/bsp_4848s040.c"
+    INCLUDE_DIRS
+        "include"
+    REQUIRES
+        lvgl
+        esp_lcd
+        espressif__esp_lcd_st7701
+        espressif__esp_lcd_touch_gt911
+        espressif__esp_lcd_panel_io_additions
+        driver
+        esp_timer
+)

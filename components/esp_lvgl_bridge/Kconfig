@@ -1,0 +1,31 @@
+menu "ESP LVGL Bridge Configuration"
+
+    config LVGL_BRIDGE_CMD_QUEUE_DEPTH
+        int "UI Command Queue Depth"
+        default 128
+        help
+            Maximum depth of FreeRTOS queue passing user interaction events
+            (touch, button, slider) from LVGL UI to the Rust worker.
+
+    config LVGL_BRIDGE_TELEM_QUEUE_DEPTH
+        int "Device Telemetry Queue Depth"
+        default 256
+        help
+            Maximum depth of FreeRTOS queue passing status and telemetry updates
+            from the Rust domain worker to the LVGL scene graph.
+
+    config LVGL_BRIDGE_ARBITRATION_HOLDOFF_MS
+        int "Arbitration Holdoff Duration (ms)"
+        default 500
+        help
+            Duration in milliseconds that incoming device telemetry is suppressed
+            after touch release to prevent UI control jitter.
+
+    config LVGL_BRIDGE_INACTIVITY_TIMEOUT_SEC
+        int "Screen Inactivity Blanking Timeout (seconds)"
+        default 60
+        help
+            Inactivity duration in seconds before blanking the display backlight.
+            Set to 0 to disable automatic blanking.
+
+endmenu

@@ -34,5 +34,42 @@ When running on dual-core Espressif SoCs (ESP32-S3 and ESP32-P4), the applicatio
 ### Core 1: LVGL UI Task (`lvgl_ui_task`)
 * Priority: 5, Stack: 8 KB
 * Drives LVGL v9 display rendering and touch input reading.
-* Invokes `pump_incoming_telemetry()` on each loop tick to apply pending updates to data-bound widgets.
+* Invokes `ui_engine_pump_telemetry()` on each loop tick to apply pending updates to data-bound widgets.
 * Handles touch events, debouncing, and holdoff leases to prevent UI stutter while dragging controls.
+
+---
+
+## Modular Component & Library Architecture
+
+The framework is organized as reusable, decoupled libraries suitable for direct integration into third-party projects:
+
+```text
+components/
+├── esp_lvgl_bridge/          # Core ESP-IDF component (C engine)
+│   ├── include/
+│   │   ├── esp_lvgl_bridge.h # Umbrella public header
+│   │   ├── bridge_protocol.h # FFI contracts & POD structs
+│   │   ├── ui_binding.h      # Declarative schema parser & arbitration engine
+│   │   └── p4_c6_link.h      # High-speed co-processor link
+│   ├── cmake/
+│   │   └── esp_rust.cmake    # Reusable CMake helper for building & linking Rust
+│   └── Kconfig               # Menuconfig settings (queue depths, holdoff, timeouts)
+└── bsp_guition_s3_4848s040/  # Pluggable Board Support Package component
+    ├── include/bsp_4848s040.h # Display, touch, and backlight HAL interface
+    └── src/bsp_4848s040.c     # ST7701S RGB parallel bus & GT911 touch driver
+
+crates/
+├── bridge-core/              # no_std Rust crate: ABI contracts & open ParamId newtype
+└── app-core/                 # Application staticlib: state machine & declarative schemas
+```
+
+### CMake Integration with `esp_rust.cmake`
+Any user project can link a Rust crate to its ESP-IDF component using the framework's helper:
+```cmake
+include(${ESP_LVGL_BRIDGE_DIR}/cmake/esp_rust.cmake)
+esp_rust_link_staticlib(
+    COMPONENT ${COMPONENT_LIB}
+    CRATE_NAME "my-rust-crate"
+    CRATE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/rust"
+)
+```

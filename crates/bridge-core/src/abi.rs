@@ -4,38 +4,72 @@
 //! declarative widget constructors shared between ESP-IDF FreeRTOS C tasks and
 //! the Rust domain logic.
 
-#[repr(u32)]
-#[derive(Copy, Clone, Debug, PartialEq, Eq)]
-pub enum ParamId {
-    None = 0,
-    SetpointHz = 1,
-    SystemEnable = 2,
-    TriggerReset = 3,
-    CycleCount = 4,
-    ArcKnob = 5,
-    ProgressBar = 6,
-    AuxCheckbox = 7,
-    StatusLed = 8,
-    BusySpinner = 9,
-    ModeDropdown = 10,
-    SpeedRoller = 11,
-    PrecisionStep = 12,
+/// Parameter identifier bridging Rust domain logic and C LVGL widget bindings.
+///
+/// Encapsulated as an open `u32` newtype with C ABI transparency (`#[repr(transparent)]`),
+/// allowing applications to declare custom parameter IDs while retaining predefined constants
+/// for standard framework widgets.
+#[repr(transparent)]
+#[derive(Copy, Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash, Default)]
+pub struct ParamId(pub u32);
+
+#[allow(non_upper_case_globals)]
+impl ParamId {
+    pub const None: Self = Self(0);
+    pub const SetpointHz: Self = Self(1);
+    pub const SystemEnable: Self = Self(2);
+    pub const TriggerReset: Self = Self(3);
+    pub const CycleCount: Self = Self(4);
+    pub const ArcKnob: Self = Self(5);
+    pub const ProgressBar: Self = Self(6);
+    pub const AuxCheckbox: Self = Self(7);
+    pub const StatusLed: Self = Self(8);
+    pub const BusySpinner: Self = Self(9);
+    pub const ModeDropdown: Self = Self(10);
+    pub const SpeedRoller: Self = Self(11);
+    pub const PrecisionStep: Self = Self(12);
     // Tier 2: Text, Keypads, Modals & Gauges
-    TextInput = 13,
-    Keyboard = 14,
-    KeypadMatrix = 15,
-    AlertModal = 16,
-    GaugeScale = 17,
+    pub const TextInput: Self = Self(13);
+    pub const Keyboard: Self = Self(14);
+    pub const KeypadMatrix: Self = Self(15);
+    pub const AlertModal: Self = Self(16);
+    pub const GaugeScale: Self = Self(17);
     // Tier 3: Containers, Navigation & Data Streams
-    NavTab = 18,
-    NavTile = 19,
-    MenuNav = 20,
-    ItemList = 21,
-    TelemetryChart = 22,
-    DataTable = 23,
-    CalendarDate = 24,
-    CanvasDraw = 25,
-    TextArea = 26,
+    pub const NavTab: Self = Self(18);
+    pub const NavTile: Self = Self(19);
+    pub const MenuNav: Self = Self(20);
+    pub const ItemList: Self = Self(21);
+    pub const TelemetryChart: Self = Self(22);
+    pub const DataTable: Self = Self(23);
+    pub const CalendarDate: Self = Self(24);
+    pub const CanvasDraw: Self = Self(25);
+    pub const TextArea: Self = Self(26);
+
+    /// Creates a custom application parameter ID.
+    #[inline]
+    pub const fn new(id: u32) -> Self {
+        Self(id)
+    }
+
+    /// Returns the underlying raw 32-bit identifier.
+    #[inline]
+    pub const fn as_u32(self) -> u32 {
+        self.0
+    }
+}
+
+impl From<u32> for ParamId {
+    #[inline]
+    fn from(val: u32) -> Self {
+        Self(val)
+    }
+}
+
+impl From<ParamId> for u32 {
+    #[inline]
+    fn from(param: ParamId) -> Self {
+        param.0
+    }
 }
 
 
@@ -571,7 +605,7 @@ impl WidgetDescriptor {
             offset_y,
             min_val: 0,
             max_val: 0,
-            initial_val: target_textarea as i32,
+            initial_val: target_textarea.0 as i32,
             holdoff_ms: 0,
             label_primary: core::ptr::null(),
             label_secondary: core::ptr::null(),

@@ -1,0 +1,12 @@
+idf_component_register(
+    SRCS
+        "src/bridge_transport.c"
+        "src/ui_binding.c"
+        "src/p4_c6_link.c"
+    INCLUDE_DIRS
+        "include"
+    REQUIRES
+        lvgl
+        esp_timer
+        driver
+)

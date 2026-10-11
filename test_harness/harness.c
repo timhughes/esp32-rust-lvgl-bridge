@@ -239,3 +239,31 @@ bool harness_save_png(const char *filename) {
 const uint8_t *harness_get_framebuffer(void) {
     return s_framebuffer;
 }
+
+#include "app_ui.h"
+#include "ui_binding.h"
+#include "bridge_protocol.h"
+
+static ui_context_t s_ui;
+
+ui_context_t *get_test_ui(void) {
+    return &s_ui;
+}
+
+void pump_incoming_telemetry(void) {
+    ui_engine_pump_telemetry();
+}
+
+void setup_test_ui(void) {
+    ui_engine_init();
+
+    size_t count = 0;
+    const widget_descriptor_t *schema = rust_get_ui_schema(&count);
+    ui_engine_build_from_schema(schema, count);
+
+    s_ui.power_switch = ui_engine_get_widget_by_param(PARAM_SYSTEM_ENABLE);
+    s_ui.slider       = ui_engine_get_widget_by_param(PARAM_SETPOINT_HZ);
+    s_ui.reset_btn    = ui_engine_get_widget_by_param(PARAM_TRIGGER_RESET);
+    s_ui.counter_label= ui_engine_get_widget_by_param(PARAM_CYCLE_COUNT);
+}
+

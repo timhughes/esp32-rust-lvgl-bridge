@@ -12,7 +12,8 @@ RUST_ROOT = ..
 RUST_LIB = $(RUST_ROOT)/target/release/libapp_core.a
 
 INCLUDES = -I. \
-           -I../main/include \
+           -I../components/esp_lvgl_bridge/include \
+           -I../components/bsp_guition_s3_4848s040/include \
            -I$(LVGL_DIR) \
            -I$(LVGL_DIR)/src \
            -DLV_CONF_INCLUDE_SIMPLE
@@ -20,9 +21,8 @@ INCLUDES = -I. \
 SRCS = main_test.c \
        harness.c \
        host_transport.c \
-       ../main/ui_binding.c \
-       ../main/p4_c6_link.c \
-       ../main/main.c \
+       ../components/esp_lvgl_bridge/src/ui_binding.c \
+       ../components/esp_lvgl_bridge/src/p4_c6_link.c \
        $(shell find $(LVGL_DIR)/src -name "*.c" 2>/dev/null)
 
 OBJS = $(SRCS:.c=.o)

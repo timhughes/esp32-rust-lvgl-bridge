@@ -320,13 +320,11 @@ The framework includes complete implementations for all 26 widget types:
 
 Here is how to add a new parameter and bind it from Rust to the display in 4 simple steps:
 
-### Step 1: Add a Parameter ID
-In [`crates/bridge-core/src/abi.rs`](file:///home/thughes/git/esp32-rust-lvgl-framework/crates/bridge-core/src/abi.rs) and [`main/include/bridge_protocol.h`](file:///home/thughes/git/esp32-rust-lvgl-framework/main/include/bridge_protocol.h):
+### Step 1: Declare a Parameter ID
+In your application (e.g. [`crates/app-core/src/lib.rs`](file:///home/thughes/git/esp32-rust-lvgl-framework/crates/app-core/src/lib.rs)):
 ```rust
-pub enum ParamId {
-    // ... existing parameters
-    TargetTemperature = 27,
-}
+// Any application can declare custom parameter IDs:
+pub const TARGET_TEMPERATURE: ParamId = ParamId::new(101);
 ```
 
 ### Step 2: Declare the Widget in Your Schema
@@ -442,25 +440,40 @@ make run
 ---
 
 ## 11. Repository Structure
-
+ 
 ```text
 esp32-rust-lvgl-framework/
 ├── CMakeLists.txt              # Top-level ESP-IDF CMake orchestration
 ├── .cargo/config.toml          # Xtensa Windowed ABI & bare-metal targets
 ├── Cargo.toml                  # Workspace definition (bridge-core, app-core)
+├── components/                 # Reusable Modular ESP-IDF Components
+│   ├── esp_lvgl_bridge/        # Core Bridge Engine Library Component
+│   │   ├── CMakeLists.txt      # ESP-IDF component registration
+│   │   ├── Kconfig             # Menuconfig settings (queue depth, holdoff, timeout)
+│   │   ├── idf_component.yml   # ESP Component Registry manifest
+│   │   ├── cmake/
+│   │   │   └── esp_rust.cmake  # Reusable CMake helper for building & linking Rust staticlibs
+│   │   ├── include/
+│   │   │   ├── esp_lvgl_bridge.h # Umbrella public header
+│   │   │   ├── bridge_protocol.h # C FFI mirror of bridge-core ABI
+│   │   │   ├── ui_binding.h    # 26-widget schema parser & arbitration engine
+│   │   │   └── p4_c6_link.h    # P4 <-> C6 co-processor link
+│   │   └── src/
+│   │       ├── bridge_transport.c # FreeRTOS ring queue message passing
+│   │       ├── ui_binding.c    # Scene graph builder & arbitration engine
+│   │       └── p4_c6_link.c    # SDIO 3.0 / High-Speed SPI driver
+│   └── bsp_guition_s3_4848s040/ # Board Support Package Component
+│       ├── CMakeLists.txt      # Registers ST7701S & GT911 dependencies
+│       ├── idf_component.yml   # Managed component dependencies
+│       ├── include/
+│       │   └── bsp_4848s040.h  # Board HAL interface
+│       └── src/
+│           └── bsp_4848s040.c  # ST7701S RGB parallel bus & GT911 touch driver
 ├── crates/
-│   ├── bridge-core/            # no_std ABI contracts (ParamId, UiCommand, WidgetDescriptor)
+│   ├── bridge-core/            # no_std Rust crate: ABI contracts & open ParamId newtype
 │   └── app-core/               # Domain state machine & declarative UI schemas (staticlib)
-├── main/                       # ESP-IDF C application component
-│   ├── include/
-│   │   ├── bridge_protocol.h   # C FFI mirror of bridge-core ABI
-│   │   ├── ui_binding.h        # Declarative widget binding engine header
-│   │   ├── bsp_4848s040.h      # Guition 4848S040 board support package header
-│   │   └── p4_c6_link.h        # P4 <-> C6 high-speed co-processor link
-│   ├── ui_binding.c            # 26-widget scene graph builder & arbitration engine
-│   ├── bsp_4848s040.c          # ST7701S RGB parallel bus & GT911 touch driver
-│   ├── bridge_transport.c      # FreeRTOS ring queue wrappers
-│   ├── p4_c6_link.c            # SDIO 3.0 / High-Speed SPI driver
+├── main/                       # Application layer (consumes components)
+│   ├── CMakeLists.txt          # Links esp_lvgl_bridge, BSP, and Rust via esp_rust.cmake
 │   └── main.c                  # FreeRTOS dual-core task spawners & screensaver timer
 ├── docs/                       # Architecture specifications & mdBook guides
 │   └── src/
@@ -469,7 +482,7 @@ esp32-rust-lvgl-framework/
 └── test_harness/               # Host-native headless visual test pipeline
     ├── Makefile                # Native host build (make run)
     ├── harness.c               # Offscreen RGB888 canvas & mock touch injector
-    ├── main_test.c             # 13-scenario automated test runner
+    ├── main_test.c             # 12-scenario automated visual test runner
     └── artifacts/              # Generated visual PNG snapshots
 ```
 

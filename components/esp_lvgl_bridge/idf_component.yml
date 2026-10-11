@@ -1,0 +1,8 @@
+version: "0.1.0"
+description: "Zero-heap FreeRTOS bridge and declarative LVGL v9 UI engine for Rust on ESP32"
+url: "https://github.com/timhughes/esp32-rust-lvgl-framework"
+dependencies:
+  idf:
+    version: ">=5.1"
+  lvgl/lvgl:
+    version: "^9.4.0"

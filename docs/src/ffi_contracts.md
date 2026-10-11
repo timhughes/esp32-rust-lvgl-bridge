@@ -42,7 +42,31 @@ typedef enum {
     PARAM_DATA_TABLE     = 23, // Table: i32_val / str_val
     PARAM_CALENDAR_DATE  = 24, // Calendar: u32_val encoded YYYYMMDD
     PARAM_CANVAS_DRAW    = 25, // Canvas: custom pixel draw trigger
+    PARAM_TEXT_AREA      = 26, // TextArea: str_val multiline buffer
 } param_id_t;
+```
+
+In Rust (`crates/bridge-core/src/abi.rs`), `ParamId` is defined as an open `#[repr(transparent)]` `u32` newtype:
+
+```rust
+#[repr(transparent)]
+#[derive(Copy, Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash, Default)]
+pub struct ParamId(pub u32);
+
+impl ParamId {
+    pub const None: Self = Self(0);
+    pub const SetpointHz: Self = Self(1);
+    // ... predefined framework constants ...
+
+    pub const fn new(id: u32) -> Self { Self(id) }
+    pub const fn as_u32(self) -> u32 { self.0 }
+}
+```
+
+This allows custom user applications to define domain-specific parameters without modifying the core bridge library:
+```rust
+pub const TARGET_TEMPERATURE: ParamId = ParamId::new(101);
+pub const FAN_SPEED: ParamId = ParamId::new(102);
 ```
 
 ---
