@@ -42,8 +42,8 @@ static void lvgl_ui_task(void *pvParams) {
     s_bsp->init_touch(disp);
 
     size_t count = 0;
-    const widget_descriptor_t *schema = rust_get_s3_schema(&count);
-    ESP_LOGI("APP", "Building UI from Rust S3 schema (%d widgets)...", (int)count);
+    const widget_descriptor_t *schema = rust_get_everything_schema(&count);
+    ESP_LOGI("APP", "Building UI from Rust Everything schema (%d widgets)...", (int)count);
     ui_engine_init();
     ui_engine_build_from_schema(schema, count);
     ESP_LOGI("APP", "UI schema construction complete!");
@@ -52,7 +52,10 @@ static void lvgl_ui_task(void *pvParams) {
     lv_timer_create(screen_saver_timer_cb, 1000, disp);
     ESP_LOGI("APP", "Registered 60-second screen timeout timer.");
 #else
-    setup_test_ui();
+    size_t count = 0;
+    const widget_descriptor_t *schema = rust_get_everything_schema(&count);
+    ui_engine_init();
+    ui_engine_build_from_schema(schema, count);
 #endif
 
     while (1) {

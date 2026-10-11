@@ -136,11 +136,8 @@ typedef struct {
 // Rust Worker Lifecycle Entry Points (implemented in Rust staticlib)
 void rust_worker_init(void);
 void rust_worker_step(void);
-const widget_descriptor_t *rust_get_ui_schema(size_t *out_count);
-const widget_descriptor_t *rust_get_tier1_schema(size_t *out_count);
-const widget_descriptor_t *rust_get_tier2_schema(size_t *out_count);
-const widget_descriptor_t *rust_get_tier3_schema(size_t *out_count);
-const widget_descriptor_t *rust_get_s3_schema(size_t *out_count);
+const widget_descriptor_t *rust_get_minimal_schema(size_t *out_count);
+const widget_descriptor_t *rust_get_everything_schema(size_t *out_count);
 
 #ifdef __cplusplus
 }

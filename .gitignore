@@ -23,6 +23,8 @@ dependencies.lock
 # Test artifacts
 artifacts/
 **/artifacts/
+!docs/src/artifacts/
+!docs/src/artifacts/**
 
 # IDE and OS
 .vscode/

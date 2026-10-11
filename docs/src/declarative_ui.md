@@ -90,56 +90,40 @@ ui_engine_build_from_schema(schema, count);
 
 ## Example Rust Schema Definitions
 
-### Multi-Tab Container (`TIER3_SHOWCASE_SCHEMA`)
+### Modular Tab Schemas (`TAB3_TELEMETRY_SCHEMA`)
 
 ```rust
-pub static TIER3_SHOWCASE_SCHEMA: &[WidgetDescriptor] = &[
-    // 1. Root Navigation Container
-    WidgetDescriptor::tabview(
-        ParamId::NavTab,
-        c"Telemetry\nDiagnostics\nConfig",
-        760,
-        460,
-    ),
-    // 2. Tab 0 (Telemetry): Real-Time Waveform Chart
+pub static TAB3_TELEMETRY_SCHEMA: &[WidgetDescriptor] = &[
+    // 1. Real-Time Waveform Oscilloscope Chart
     WidgetDescriptor::chart(
         ParamId::TelemetryChart,
         ParamId::NavTab,
-        0, // Mounted in Tab 0
-        UiAlign::Center,
-        0, -70,
-        640, 220,
+        3, // Mounted in Tab 3
+        UiAlign::TopMid,
+        0, 10,
+        420, 150,
         0, 100,
     ),
-    // 3. Tab 0 (Telemetry): Channel Status List
-    WidgetDescriptor::list(
-        ParamId::ItemList,
-        ParamId::NavTab,
-        0, // Mounted in Tab 0
-        UiAlign::BottomMid,
-        0, -15,
-        640, 110,
-        c"Channel A (Active)\nChannel B (Standby)\nBus Voltage (3.3V)",
-    ),
-    // 4. Tab 1 (Diagnostics): Status Table
+    // 2. Multi-Row System Diagnostics Status Table
     WidgetDescriptor::table(
         ParamId::DataTable,
         ParamId::NavTab,
-        1, // Mounted in Tab 1
+        3, // Mounted in Tab 3
         UiAlign::Center,
-        0, 0,
-        500, 240,
+        0, 35,
+        420, 120,
         (4 << 16) | 2, // 4 rows, 2 columns
         c"Module;Status;Core 0;OK;Core 1;OK;PSRAM;8MB",
     ),
-    // 5. Tab 2 (Config): Interactive Calendar
-    WidgetDescriptor::calendar(
-        ParamId::CalendarDate,
+    // 3. Hardware Peripheral List
+    WidgetDescriptor::list(
+        ParamId::ItemList,
         ParamId::NavTab,
-        2, // Mounted in Tab 2
-        UiAlign::Center,
-        0, 0,
-        320, 280,
+        3, // Mounted in Tab 3
+        UiAlign::BottomMid,
+        0, -15,
+        420, 75,
+        c"ST7701S RGB (Active)\nGT911 I2C (Ready)\nESP32-S3 (240MHz)",
     ),
 ];
 ```
@@ -196,9 +180,9 @@ Rather than hardcoding a keyboard to a single input field forever:
 
 ---
 
-### ESP32-S3-4848S040 Complete Widget Suite (`S3_4848_SCHEMA`)
+### Complete 25-Widget Suite (`EVERYTHING_SCHEMA`)
 
-The dedicated Guition ESP32-S3-4848S040 demo integrates **all 26 widget types** across 6 dedicated functional tabs in a 480×480 layout:
+The **Everything** application integrates **all 25 widget types** across 6 dedicated functional tabs in a 480×480 layout:
 
 | Tab | Name | Contained Widgets |
 |---|---|---|

@@ -1,5 +1,5 @@
 [package]
-name = "widget-cookbook"
+name = "everything-app"
 version = "0.1.0"
 edition = "2021"
 
@@ -8,4 +8,7 @@ crate-type = ["staticlib", "rlib"]
 
 [dependencies]
 bridge-core = { package = "esp32-rust-lvgl-bridge-core", path = "../../../../crates/esp32-rust-lvgl-bridge-core" }
+
+[dev-dependencies]
+bridge-harness = { package = "esp32-rust-lvgl-bridge-harness", path = "../../../../crates/esp32-rust-lvgl-bridge-harness" }
 

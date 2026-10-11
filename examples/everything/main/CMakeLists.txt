@@ -7,6 +7,6 @@ idf_component_register(
 include(${CMAKE_CURRENT_LIST_DIR}/../../../components/esp_lvgl_bridge/cmake/esp_rust.cmake)
 esp_rust_link_staticlib(
     COMPONENT ${COMPONENT_LIB}
-    CRATE_NAME "s3-flagship-app"
+    CRATE_NAME "everything-app"
     CRATE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/../../.."
 )

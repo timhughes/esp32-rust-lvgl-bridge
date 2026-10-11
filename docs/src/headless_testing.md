@@ -22,29 +22,27 @@ The test suite executes 4 structured testing phases:
    - `test_p4_c6_link`: Verifies P4 <-> C6 loopback mock, packet framing, CRC16 checksum calculation, and sequence tracking.
    - `test_rust_state_engine`: Verifies closed-loop simulation (halted when stopped, incrementing when enabled, frequency scaling, and atomic resets).
    - `test_arbitration_engine`: Verifies 3-stage arbitration lease (`ARB_TRACKING` $\rightarrow$ `ARB_DRAGGING` $\rightarrow$ `ARB_HOLDOFF`), rejecting telemetry during drags and stale tickets during holdoffs.
-2. **Phase 2: Flagship S3-4848 6-Tab Application Journey (480×480)**:
-   - Exercises the complete 27-widget production application across all 6 tabs (Controls, Selectors, Inputs, Telemetry, Tools, System).
-   - Injects virtual keyboard keystrokes, verifies dynamic focus retargeting between single-line and multi-line text fields.
-   - Streams live sine waveform oscilloscope data into the chart and updates diagnostic tables.
+2. **Phase 2: Everything 6-Tab Application Journey (`examples/everything`)**:
+   - Programmatically asserts that all 25 supported LVGL widget types (`WidgetType::ALL`) are present in `EVERYTHING_SCHEMA`.
+   - Exercises all 27 widgets across all 6 tabs (Controls, Selectors, Inputs, Telemetry, Tools, System).
+   - Injects touch clicks on switches, checkboxes, buttons, and button matrices.
+   - Drags sliders with 3-stage arbitration, streams real-time telemetry into progress bars, charts, and diagnostic tables.
+   - Tests text entry into single-line and multi-line text areas.
+   - Dumps high-resolution 480×480 PNG snapshots for every tab to `artifacts/`.
 3. **Phase 3: Power Management & Inactivity Lifecycle**:
-   - Verifies 60-second inactivity blanking (`bsp_backlight_set(0)`).
+   - Verifies 60-second inactivity blanking (`bsp->set_backlight(0)`).
    - Verifies wake-on-touch restoration and blind first-tap suppression (ignoring the wake tap to prevent accidental clicks).
-4. **Phase 4: Standalone Widget Catalog Smoke Tests (800×480)**:
-   - Regression smoke tests covering isolated Tier 1, Tier 2, and Tier 3 showcase layouts.
 
-## Generated Visual Artifacts (`test_harness/artifacts/`)
+## Generated Visual Artifacts (artifacts/)
 
-| Scenario | Snapshot | Description |
-|---|---|---|
-| **01** | `01_s3_tab0_controls_init.png` | S3-4848 Tab 0 (Controls): Initial stopped state, 10 Hz slider, 0 cycles |
-| **02** | `02_s3_tab0_controls_running.png` | S3-4848 Tab 0 (Controls): RUNNING state, slider dragged to 60 Hz, active cycles |
-| **03** | `03_s3_tab1_selectors.png` | S3-4848 Tab 1 (Selectors): Dropdown, Roller, Spinbox & illuminated Aux LED |
-| **04** | `04_s3_tab2_inputs_typing.png` | S3-4848 Tab 2 (Inputs): Virtual Keyboard focus retargeting & character entry |
-| **05** | `05_s3_tab3_telemetry_waveforms.png` | S3-4848 Tab 3 (Telemetry): Real-time waveform oscilloscope & table registers |
-| **06** | `06_s3_tab4_tools.png` | S3-4848 Tab 4 (Tools): Maintenance Calendar, 4×3 PIN Keypad & Canvas |
-| **07** | `07_s3_tab5_system.png` | S3-4848 Tab 5 (System): Hierarchical Settings Menu & swipeable TileView |
-| **08** | `08_s3_screen_blanked.png` | Power Management: 60-second inactivity timeout blanking display backlight |
-| **09** | `09_s3_screen_woken.png` | Power Management: Wake-on-touch restoration with blind first-tap suppression |
-| **10** | `10_tier1_showcase.png` | Isolated Showcase: All 12 Tier 1 scalar widgets active simultaneously |
-| **11** | `11_tier2_showcase.png` | Isolated Showcase: Tier 2 inputs, virtual keyboard, button matrix & scale |
-| **12** | `12_tier3_showcase.png` | Isolated Showcase: Tier 3 multi-tab container with charts, tables & lists |
+The headless test suite generates pixel-perfect 480×480 RGB888 snapshots for each of the 6 tabs in the **Everything** showcase application. These images are captured directly offscreen via `stb_image_write`:
+
+| Snapshot | Tab | Widgets Covered |
+|:---:|---|---|
+| <img src="artifacts/01_everything_tab0_controls.png" width="180" alt="Tab 0 Controls" /> | **Tab 0: Controls** | `Switch`, `Slider`, `Arc` (dial), `Bar` (progress), `Led`, `Spinner`, `Button`, `Label` |
+| <img src="artifacts/02_everything_tab1_selectors.png" width="180" alt="Tab 1 Selectors" /> | **Tab 1: Selectors** | `Checkbox`, `Dropdown`, `Roller`, `Spinbox`, `Scale` (analog needle gauge) |
+| <img src="artifacts/03_everything_tab2_inputs.png" width="180" alt="Tab 2 Inputs" /> | **Tab 2: Inputs** | `TextInput`, `TextArea`, `Keyboard` (auto-focusing QWERTY), `MsgBox` (modal) |
+| <img src="artifacts/04_everything_tab3_telemetry.png" width="180" alt="Tab 3 Telemetry" /> | **Tab 3: Telemetry** | `Chart` (streaming waveform), `Table` (diagnostics matrix), `List` (interactive items) |
+| <img src="artifacts/05_everything_tab4_tools.png" width="180" alt="Tab 4 Tools" /> | **Tab 4: Tools** | `Calendar` (date picker), `ButtonMatrix` (4×3 keypad), `Canvas` (procedural graphics) |
+| <img src="artifacts/06_everything_tab5_system.png" width="180" alt="Tab 5 System" /> | **Tab 5: System** | `Menu` (hierarchical settings drilldown), `TileView` (2D swipeable navigation) |
+

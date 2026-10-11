@@ -97,6 +97,46 @@ void harness_register_screensaver(uint32_t timeout_ms);
  */
 const uint8_t *harness_get_framebuffer(void);
 
+/**
+ * @brief Check if a widget with the given param_id exists in the active scene graph.
+ */
+bool harness_widget_exists(uint32_t param_id);
+
+/**
+ * @brief Switch active tab in a TabView widget.
+ */
+bool harness_tabview_set_active(lv_obj_t *tv, uint32_t tab_idx);
+
+/**
+ * @brief Get the active tab index of a TabView widget.
+ */
+uint32_t harness_tabview_get_active(lv_obj_t *tv);
+
+/**
+ * @brief Get label text from an LVGL label widget.
+ */
+const char *harness_label_get_text(lv_obj_t *obj);
+
+/**
+ * @brief Get text from an LVGL textarea or textinput widget.
+ */
+const char *harness_textarea_get_text(lv_obj_t *obj);
+
+/**
+ * @brief Set text on an LVGL textarea or textinput widget.
+ */
+bool harness_textarea_set_text(lv_obj_t *obj, const char *text);
+
+/**
+ * @brief Get brightness of an LVGL LED widget (0 to 255).
+ */
+uint8_t harness_led_get_brightness(lv_obj_t *obj);
+
+/**
+ * @brief Clear active screen and reset UI engine.
+ */
+void harness_clean_screen(void);
+
 #ifdef __cplusplus
 }
 #endif

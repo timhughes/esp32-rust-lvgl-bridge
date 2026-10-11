@@ -5,6 +5,8 @@
 #include <stdlib.h>
 #include <string.h>
 #include "widgets/buttonmatrix/lv_buttonmatrix_private.h"
+#include "bridge_protocol.h"
+#include "ui_binding.h"
 
 #define HARNESS_MAX_HOR_RES 800
 #define HARNESS_MAX_VER_RES 480
@@ -70,6 +72,14 @@ static void harness_touch_read_cb(lv_indev_t *indev, lv_indev_data_t *data) {
 }
 
 void harness_init(void) {
+    if (s_disp) {
+        lv_obj_clean(lv_screen_active());
+        s_backlight_on = true;
+        s_touch_pressed = false;
+        harness_step(50);
+        return;
+    }
+
     lv_init();
 
     // Create offscreen display with RGB888 buffer
@@ -240,30 +250,46 @@ const uint8_t *harness_get_framebuffer(void) {
     return s_framebuffer;
 }
 
-#include "app_ui.h"
-#include "ui_binding.h"
-#include "bridge_protocol.h"
-
-static ui_context_t s_ui;
-
-ui_context_t *get_test_ui(void) {
-    return &s_ui;
+bool harness_widget_exists(uint32_t param_id) {
+    return ui_engine_get_widget_by_param((param_id_t)param_id) != NULL;
 }
 
-void pump_incoming_telemetry(void) {
-    ui_engine_pump_telemetry();
+bool harness_tabview_set_active(lv_obj_t *tv, uint32_t tab_idx) {
+    if (!tv) return false;
+    lv_tabview_set_active(tv, tab_idx, LV_ANIM_OFF);
+    harness_step(50);
+    return true;
 }
 
-void setup_test_ui(void) {
+uint32_t harness_tabview_get_active(lv_obj_t *tv) {
+    if (!tv) return 0;
+    return lv_tabview_get_tab_active(tv);
+}
+
+const char *harness_label_get_text(lv_obj_t *obj) {
+    if (!obj) return NULL;
+    return lv_label_get_text(obj);
+}
+
+const char *harness_textarea_get_text(lv_obj_t *obj) {
+    if (!obj) return NULL;
+    return lv_textarea_get_text(obj);
+}
+
+bool harness_textarea_set_text(lv_obj_t *obj, const char *text) {
+    if (!obj || !text) return false;
+    lv_textarea_set_text(obj, text);
+    harness_step(20);
+    return true;
+}
+
+uint8_t harness_led_get_brightness(lv_obj_t *obj) {
+    if (!obj) return 0;
+    return lv_led_get_brightness(obj);
+}
+
+void harness_clean_screen(void) {
+    lv_obj_clean(lv_screen_active());
     ui_engine_init();
-
-    size_t count = 0;
-    const widget_descriptor_t *schema = rust_get_ui_schema(&count);
-    ui_engine_build_from_schema(schema, count);
-
-    s_ui.power_switch = ui_engine_get_widget_by_param(PARAM_SYSTEM_ENABLE);
-    s_ui.slider       = ui_engine_get_widget_by_param(PARAM_SETPOINT_HZ);
-    s_ui.reset_btn    = ui_engine_get_widget_by_param(PARAM_TRIGGER_RESET);
-    s_ui.counter_label= ui_engine_get_widget_by_param(PARAM_CYCLE_COUNT);
 }
 

@@ -122,7 +122,7 @@ pub struct DeviceTelemetry {
 }
 
 #[repr(u32)]
-#[derive(Copy, Clone, Debug, PartialEq, Eq)]
+#[derive(Copy, Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub enum WidgetType {
     Switch = 1,
     Slider = 2,
@@ -151,6 +151,37 @@ pub enum WidgetType {
     Table = 23,
     Calendar = 24,
     Canvas = 25,
+}
+
+impl WidgetType {
+    /// Array containing all 25 supported LVGL widget types.
+    pub const ALL: &'static [WidgetType] = &[
+        WidgetType::Switch,
+        WidgetType::Slider,
+        WidgetType::Button,
+        WidgetType::Label,
+        WidgetType::Arc,
+        WidgetType::Bar,
+        WidgetType::Checkbox,
+        WidgetType::Led,
+        WidgetType::Spinner,
+        WidgetType::Dropdown,
+        WidgetType::Roller,
+        WidgetType::Spinbox,
+        WidgetType::TextArea,
+        WidgetType::Keyboard,
+        WidgetType::ButtonMatrix,
+        WidgetType::MsgBox,
+        WidgetType::Scale,
+        WidgetType::TabView,
+        WidgetType::TileView,
+        WidgetType::Menu,
+        WidgetType::List,
+        WidgetType::Chart,
+        WidgetType::Table,
+        WidgetType::Calendar,
+        WidgetType::Canvas,
+    ];
 }
 
 #[repr(u32)]

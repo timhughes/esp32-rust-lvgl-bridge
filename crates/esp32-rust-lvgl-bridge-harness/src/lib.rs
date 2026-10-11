@@ -48,6 +48,17 @@ extern "C" {
     fn lv_spinbox_get_value(obj: *const c_void) -> i32;
     fn lv_arc_get_value(obj: *const c_void) -> i32;
     fn lv_bar_get_value(obj: *const c_void) -> i32;
+
+    fn harness_widget_exists(param_id: u32) -> bool;
+    fn harness_tabview_set_active(tv: *mut c_void, tab_idx: u32) -> bool;
+    fn harness_tabview_get_active(tv: *mut c_void) -> u32;
+    fn harness_label_get_text(obj: *mut c_void) -> *const c_char;
+    fn harness_textarea_get_text(obj: *mut c_void) -> *const c_char;
+    fn harness_textarea_set_text(obj: *mut c_void, text: *const c_char) -> bool;
+    fn harness_led_get_brightness(obj: *mut c_void) -> u8;
+    fn harness_click_buttonmatrix_by_text(bm: *mut c_void, text: *const c_char) -> bool;
+    fn harness_click_buttonmatrix_by_id(bm: *mut c_void, btn_id: u32) -> bool;
+    fn harness_clean_screen();
 }
 
 /// Headless LVGL test harness managing offscreen framebuffer and input injection.
@@ -212,6 +223,118 @@ impl HeadlessHarness {
     /// Check if the simulated display backlight is currently active.
     pub fn backlight_is_on(&self) -> bool {
         unsafe { bsp_backlight_is_on() }
+    }
+
+    /// Check whether a widget bound to `param_id` exists in the active scene graph.
+    pub fn widget_exists(&self, param_id: ParamId) -> bool {
+        unsafe { harness_widget_exists(param_id.0) }
+    }
+
+    /// Clear the active screen and re-initialize the UI engine.
+    pub fn clean_screen(&mut self) {
+        unsafe { harness_clean_screen() };
+    }
+
+    /// Switch active tab of a TabView widget.
+    pub fn set_active_tab(&mut self, param_id: ParamId, tab_idx: u32) -> bool {
+        let widget = unsafe { ui_engine_get_widget_by_param(param_id.0) };
+        if widget.is_null() {
+            return false;
+        }
+        unsafe { harness_tabview_set_active(widget, tab_idx) }
+    }
+
+    /// Get current active tab index of a TabView widget.
+    pub fn get_active_tab(&self, param_id: ParamId) -> Option<u32> {
+        let widget = unsafe { ui_engine_get_widget_by_param(param_id.0) };
+        if widget.is_null() {
+            None
+        } else {
+            Some(unsafe { harness_tabview_get_active(widget) })
+        }
+    }
+
+    /// Query the current value of a bar widget.
+    pub fn get_bar_value(&self, param_id: ParamId) -> Option<i32> {
+        let widget = unsafe { ui_engine_get_widget_by_param(param_id.0) };
+        if widget.is_null() {
+            None
+        } else {
+            Some(unsafe { lv_bar_get_value(widget) })
+        }
+    }
+
+    /// Query the text content of a label widget.
+    pub fn get_label_text(&self, param_id: ParamId) -> Option<String> {
+        let widget = unsafe { ui_engine_get_widget_by_param(param_id.0) };
+        if widget.is_null() {
+            return None;
+        }
+        let ptr = unsafe { harness_label_get_text(widget) };
+        if ptr.is_null() {
+            None
+        } else {
+            Some(unsafe { std::ffi::CStr::from_ptr(ptr) }.to_string_lossy().into_owned())
+        }
+    }
+
+    /// Query the current text of a text area or text input widget.
+    pub fn get_textarea_text(&self, param_id: ParamId) -> Option<String> {
+        let widget = unsafe { ui_engine_get_widget_by_param(param_id.0) };
+        if widget.is_null() {
+            return None;
+        }
+        let ptr = unsafe { harness_textarea_get_text(widget) };
+        if ptr.is_null() {
+            None
+        } else {
+            Some(unsafe { std::ffi::CStr::from_ptr(ptr) }.to_string_lossy().into_owned())
+        }
+    }
+
+    /// Set text in a text area or text input widget.
+    pub fn set_textarea_text(&mut self, param_id: ParamId, text: &str) -> bool {
+        let widget = unsafe { ui_engine_get_widget_by_param(param_id.0) };
+        if widget.is_null() {
+            return false;
+        }
+        let c_text = match CString::new(text) {
+            Ok(c) => c,
+            Err(_) => return false,
+        };
+        unsafe { harness_textarea_set_text(widget, c_text.as_ptr()) }
+    }
+
+    /// Click a button matrix button by its label text (e.g. "5" on keypad).
+    pub fn click_button_matrix_text(&mut self, param_id: ParamId, text: &str) -> bool {
+        let widget = unsafe { ui_engine_get_widget_by_param(param_id.0) };
+        if widget.is_null() {
+            return false;
+        }
+        let c_text = match CString::new(text) {
+            Ok(c) => c,
+            Err(_) => return false,
+        };
+        unsafe { harness_click_buttonmatrix_by_text(widget, c_text.as_ptr()) }
+    }
+
+    /// Click a button matrix button by its button index.
+    pub fn click_button_matrix_id(&mut self, param_id: ParamId, btn_id: u32) -> bool {
+        let widget = unsafe { ui_engine_get_widget_by_param(param_id.0) };
+        if widget.is_null() {
+            return false;
+        }
+        unsafe { harness_click_buttonmatrix_by_id(widget, btn_id) }
+    }
+
+    /// Query the brightness of an LED widget (0 to 255).
+    pub fn get_led_brightness(&self, param_id: ParamId) -> Option<u8> {
+        let widget = unsafe { ui_engine_get_widget_by_param(param_id.0) };
+        if widget.is_null() {
+            None
+        } else {
+            Some(unsafe { harness_led_get_brightness(widget) })
+        }
     }
 }
 

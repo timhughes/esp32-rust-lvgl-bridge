@@ -1,22 +1,22 @@
-# Flagship S3-4848 Demonstration Application
+# Everything Demonstration Application
 
-The **Flagship S3-4848** application is the reference implementation of the **ESP32 Rust/LVGL Framework** deployed on the **Guition ESP32-S3-4848S040** 4.0-inch 480×480 smart display.
+The **Everything** application is the complete showcase of all 25 supported LVGL widgets in the **ESP32 Rust/LVGL Framework**, configured for the **Guition ESP32-S3-4848S040** 4.0-inch 480×480 smart display (and compatible with any ESP32-S3).
 
 ---
 
 ## Features Demonstrated
 
-1. **Complete 26-Widget LVGL Suite Across 6 Tabs:**
-   * **Tab 0 (Controls):** System Enable switch, frequency setpoint slider with 3-stage arbitration, reset button, and cycle readout.
-   * **Tab 1 (Selectors):** Mode dropdown, speed roller, precision spinbox, and auxiliary status LED.
+1. **Complete 25-Widget LVGL Suite Across 6 Tabs:**
+   * **Tab 0 (Controls):** System Enable switch, LED indicator, activity spinner, arc knob, load progress bar, setpoint frequency slider with 3-stage arbitration, reset button, and cycle readout.
+   * **Tab 1 (Selectors):** Mode dropdown, speed roller, and precision spinbox.
    * **Tab 2 (Inputs):** Dynamic virtual on-screen QWERTY keyboard with automatic focus retargeting between single-line command fields and multi-line notes areas.
    * **Tab 3 (Telemetry):** Real-time sine waveform streaming oscilloscope chart and multi-row system diagnostics status table (`Module`, `Status`, `Core 0`, `Core 1`, `PSRAM`).
    * **Tab 4 (Tools):** Maintenance Calendar date picker, 4×3 PIN security keypad matrix, and raw-pixel graphics Canvas.
    * **Tab 5 (System):** Hierarchical settings menu and swipeable tileview navigation.
 
 2. **Power Management & Inactivity Lifecycle:**
-   * **Automatic 60s Blanking:** Blanks the display backlight (`bsp_backlight_set(0)`) after 60 seconds without touch interaction to prevent panel burn-in.
-   * **Wake-on-Touch:** Tapping the dark screen restores full backlight (`bsp_backlight_set(100)`).
+   * **Automatic 60s Blanking:** Blanks the display backlight (`bsp->set_backlight(0)`) after 60 seconds without touch interaction to prevent panel burn-in.
+   * **Wake-on-Touch:** Tapping the dark screen restores full backlight (`bsp->set_backlight(100)`).
    * **Blind First-Tap Suppression:** Swallows the initial wake touch to prevent accidental button activation.
 
 3. **Anti-Jitter 3-Stage Arbitration:**
@@ -36,16 +36,16 @@ The **Flagship S3-4848** application is the reference implementation of the **ES
 ## Project Structure
 
 ```text
-examples/s3_4848_flagship/
+examples/everything/
 ├── CMakeLists.txt              # Standalone ESP-IDF project configuration
 ├── README.md                   # This guide
 ├── main/
-│   ├── CMakeLists.txt          # Links esp_lvgl_bridge, BSP, and s3-flagship-app
+│   ├── CMakeLists.txt          # Links esp_lvgl_bridge, BSP, and everything-app
 │   └── main.c                  # C task initialization, screensaver timer & scene graph
 └── crates/
-    └── s3-flagship-app/        # no_std Rust application logic
+    └── everything-app/         # no_std Rust application logic
         ├── Cargo.toml
-        └── src/lib.rs          # 27-widget S3 schema, SystemEngine & virtual keyboard wiring
+        └── src/lib.rs          # 25-widget Everything schema, SystemEngine & virtual keyboard wiring
 ```
 
 ---
@@ -53,11 +53,16 @@ examples/s3_4848_flagship/
 ## How to Build & Flash
 
 ```bash
-# 1. Build the Rust s3-flagship-app staticlib for Xtensa LX7:
-cargo build --release --target xtensa-esp32s3-none-elf -p s3-flagship-app
+# Using Makefile shortcut from repository root:
+make build-everything
+make flash-everything
 
-# 2. Build and flash the standalone flagship project:
-cd examples/s3_4848_flagship
+# Or manually:
+# 1. Build the Rust everything-app staticlib for Xtensa LX7:
+cargo build --release --target xtensa-esp32s3-none-elf -p everything-app
+
+# 2. Build and flash the ESP-IDF project:
+cd examples/everything
 idf.py -DIDF_TARGET=esp32s3 build
 idf.py -p /dev/ttyUSB0 -b 460800 flash monitor
 ```

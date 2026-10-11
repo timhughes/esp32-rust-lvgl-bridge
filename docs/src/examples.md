@@ -4,9 +4,8 @@ The framework includes reference applications and starter templates under the [`
 
 | Example | Path | Key Highlights | Target |
 |---|---|---|---|
-| **Minimal Starter** | [`examples/minimal/`](file:///home/thughes/git/esp32-rust-lvgl-framework/examples/minimal) | Cleanest starting point for a new project. 2 widgets, custom `ParamId`s, minimal worker loop. | Any ESP32 SoC |
-| **Flagship S3-4848** | [`examples/s3_4848_flagship/`](file:///home/thughes/git/esp32-rust-lvgl-framework/examples/s3_4848_flagship) | Complete 27-widget reference app across 6 tabs with virtual keyboard, oscilloscope charts, and 60s screensaver timeout. | Guition ESP32-S3-4848S040 |
-| **Widget Cookbook** | [`examples/widget_cookbook/`](file:///home/thughes/git/esp32-rust-lvgl-framework/examples/widget_cookbook) | Reference recipe catalog covering all 27 supported LVGL widgets across Tiers 1, 2, and 3. | Any ESP32 SoC |
+| **Minimal Starter** | [`examples/minimal/`](file:///home/thughes/git/esp32-rust-lvgl-framework/examples/minimal) | Cleanest starting point for a new project. 3 widgets, custom `ParamId`s, minimal worker loop. | Any ESP32 SoC |
+| **Everything Example** | [`examples/everything/`](file:///home/thughes/git/esp32-rust-lvgl-framework/examples/everything) | Complete showcase covering all 25 supported LVGL widgets across 6 tabs with virtual keyboard, oscilloscope charts, calendar, keypad matrix, canvas, and 60s screensaver timeout. | Guition ESP32-S3-4848S040 |
 
 ---
 
@@ -52,6 +51,15 @@ pub static MINIMAL_SCHEMA: &[WidgetDescriptor] = &[
 ];
 ```
 
+### Visual Layout
+The minimal starter application initializes a clean 3-widget control loop on the display:
+
+<div align="center">
+  <img src="artifacts/00_minimal_starter.png" width="220" alt="Minimal Starter Example (480x480)" />
+  <p><em>Minimal Starter Layout: Power Switch (TopMid), Speed Slider with 500ms arbitration holdoff (Center), and Cycle Counter (BottomMid).</em></p>
+</div>
+
+
 ### Implementing the State Machine & Control Loop
 ```rust
 impl MinimalEngine {
@@ -93,26 +101,28 @@ void app_main(void) {
 
 ### Building the Minimal Starter
 ```bash
-# Build the bare-metal Xtensa Rust staticlib:
-cargo build --release --target xtensa-esp32s3-none-elf -p minimal-app
+# Using the root Makefile:
+make build-minimal
+make flash-minimal
 
-# Build and flash via ESP-IDF:
+# Or manually:
+cargo build --release --target xtensa-esp32s3-none-elf -p minimal-app
 cd examples/minimal
-idf.py build
+idf.py -DIDF_TARGET=esp32s3 build
 idf.py -p /dev/ttyUSB0 flash monitor
 ```
 
 ---
 
-## 2. Flagship S3-4848 Reference App (`examples/s3_4848_flagship`)
+## 2. Everything Reference App (`examples/everything`)
 
-The **Flagship S3-4848** application is the complete production demonstration currently running on the physical Guition ESP32-S3-4848S040 hardware:
+The **Everything** reference application showcases all 25 supported LVGL widgets across 6 tabs, running on the physical Guition ESP32-S3-4848S040 hardware:
 
 ### Key Capabilities
 
-1. **6-Tab Scene Graph (27 Bound Widgets):**
-   * **Tab 0 (Controls):** System Enable switch, frequency setpoint slider with 3-stage arbitration, reset button, and cycle readout.
-   * **Tab 1 (Selectors):** Mode dropdown, speed roller, precision spinbox, and auxiliary status LED.
+1. **6-Tab Scene Graph (All 25 Widgets Covered):**
+   * **Tab 0 (Controls):** System Enable switch, LED indicator, activity spinner, arc knob, load progress bar, setpoint frequency slider with 3-stage arbitration, reset button, and cycle readout.
+   * **Tab 1 (Selectors):** Mode dropdown, speed roller, and precision spinbox.
    * **Tab 2 (Inputs):** Dynamic virtual on-screen QWERTY keyboard with automatic focus retargeting between single-line command fields and multi-line notes areas.
    * **Tab 3 (Telemetry):** Real-time sine waveform streaming oscilloscope chart and multi-row system diagnostics status table (`Module`, `Status`, `Core 0`, `Core 1`, `PSRAM`).
    * **Tab 4 (Tools):** Maintenance Calendar date picker, 4×3 PIN security keypad matrix, and raw-pixel graphics Canvas.
@@ -126,53 +136,43 @@ The **Flagship S3-4848** application is the complete production demonstration cu
 3. **Anti-Jitter 3-Stage Arbitration:**
    * Monotonic sequence tickets (`seq_id`) protect interactive widgets during active touch dragging (`ARB_DRAGGING`) and temporal holdoff (`ARB_HOLDOFF`), completely eliminating telemetry rubber-banding and UI stutter.
 
-### Project Structure
-```text
-examples/s3_4848_flagship/
-├── CMakeLists.txt              # Standalone ESP-IDF project configuration
-├── README.md                   # Detailed guide
-├── main/
-│   ├── CMakeLists.txt          # Links esp_lvgl_bridge, BSP, and s3-flagship-app
-│   └── main.c                  # C task initialization, screensaver timer & scene graph
-└── crates/
-    └── s3-flagship-app/        # no_std Rust application logic
-        ├── Cargo.toml
-        └── src/lib.rs          # 27-widget S3 schema, SystemEngine & virtual keyboard wiring
-```
+### Visual Showcase (All 6 Tabs)
 
-### Building the Flagship Example
-```bash
-# Build the bare-metal Xtensa Rust staticlib:
-cargo build --release --target xtensa-esp32s3-none-elf -p s3-flagship-app
+The reference application exercises all 25 supported LVGL widgets across 6 functional tabs, captured below from the headless test renderer:
 
-# Build and flash via ESP-IDF:
-cd examples/s3_4848_flagship
-idf.py -DIDF_TARGET=esp32s3 build
-idf.py -p /dev/ttyUSB0 -b 460800 flash monitor
-```
+| Tab 0: Controls | Tab 1: Selectors | Tab 2: Inputs |
+|:---:|:---:|:---:|
+| <img src="artifacts/01_everything_tab0_controls.png" width="220" alt="Tab 0 Controls" /> | <img src="artifacts/02_everything_tab1_selectors.png" width="220" alt="Tab 1 Selectors" /> | <img src="artifacts/03_everything_tab2_inputs.png" width="220" alt="Tab 2 Inputs" /> |
+| `Switch`, `Slider`, `Arc`, `Bar`, `Led`, `Spinner`, `Button`, `Label` | `Checkbox`, `Dropdown`, `Roller`, `Spinbox`, `Scale` | `TextInput`, `TextArea`, `Keyboard`, `MsgBox` |
+| **Tab 3: Telemetry** | **Tab 4: Tools** | **Tab 5: System** |
+| <img src="artifacts/04_everything_tab3_telemetry.png" width="220" alt="Tab 3 Telemetry" /> | <img src="artifacts/05_everything_tab4_tools.png" width="220" alt="Tab 4 Tools" /> | <img src="artifacts/06_everything_tab5_system.png" width="220" alt="Tab 5 System" /> |
+| `Chart`, `Table`, `List` | `Calendar`, `ButtonMatrix`, `Canvas`, `Label` | `Menu`, `TileView` |
 
 ---
 
-## 3. Widget Cookbook Reference Catalog (`examples/widget_cookbook`)
+### Project Structure
+```text
+examples/everything/
+├── CMakeLists.txt              # Standalone ESP-IDF project configuration
+├── README.md                   # Detailed guide
+├── main/
+│   ├── CMakeLists.txt          # Links esp_lvgl_bridge, BSP, and everything-app
+│   └── main.c                  # C task initialization, screensaver timer & scene graph
+└── crates/
+    └── everything-app/         # no_std Rust application logic
+        ├── Cargo.toml
+        └── src/lib.rs          # 25-widget Everything schema, SystemEngine & virtual keyboard wiring
+```
 
-The **Widget Cookbook** serves as a modular recipe book for all 27 supported LVGL widgets. Developers can copy individual widget declarations and layouts directly into their projects.
-
-### Catalog Recipes
-
-1. **Recipe 1: Tier 1 Scalar Controls (`TIER1_SHOWCASE_SCHEMA`):**
-   * Foundational controls: Switch, Checkbox, LED, Activity Spinner, Arc Knob, Slider, Progress Bar, Dropdown, Roller, Button, Label, and Spinbox.
-2. **Recipe 2: Tier 2 Inputs & Keypads (`TIER2_SHOWCASE_SCHEMA`):**
-   * Text & feedback: Single-Line Text Input, Multi-Line Text Area, Button Matrix 3×4 Keypad, Analog Dial Scale, Virtual Keyboard, and Message Box Modal.
-3. **Recipe 3: Tier 3 Containers & Visualizations (`TIER3_SHOWCASE_SCHEMA`):**
-   * Multi-tab layouts & streaming data: Multi-Tab Container (`TabView`), Real-Time Streaming Chart, Structured Diagnostic Table, Interactive Calendar, and Scrollable List.
-
-### Building the Widget Cookbook
+### Building the Everything Example
 ```bash
-# Build the bare-metal Xtensa Rust staticlib:
-cargo build --release --target xtensa-esp32s3-none-elf -p widget-cookbook
+# Using the root Makefile:
+make build-everything
+make flash-everything
 
-# Build and flash via ESP-IDF:
-cd examples/widget_cookbook
+# Or manually:
+cargo build --release --target xtensa-esp32s3-none-elf -p everything-app
+cd examples/everything
 idf.py -DIDF_TARGET=esp32s3 build
 idf.py -p /dev/ttyUSB0 -b 460800 flash monitor
 ```

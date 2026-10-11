@@ -46,13 +46,16 @@ jobs:
         if: always()
         with:
           name: visual-test-snapshots
-          path: crates/esp32-rust-lvgl-bridge-harness/artifacts/*.png
+          path: |
+            artifacts/*.png
+            docs/src/artifacts/*.png
           if-no-files-found: ignore
           retention-days: 14
 
   docs-build:
-    name: mdBook Documentation Build
+    name: mdBook Documentation PR Check
     runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request'
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v4

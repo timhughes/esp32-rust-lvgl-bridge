@@ -1,7 +1,7 @@
 //! # Application Core: Domain Logic & Declarative UI Schemas
 //!
 //! This crate implements the core business logic, closed-loop state machines, and
-//! declarative UI schemas for the **ESP32 Hybrid C/Rust LVGL Framework**.
+//! declarative UI schemas for the **ESP32 Hybrid C/Rust LVGL Framework** Everything showcase.
 //!
 //! ## Architectural Principle: "C owns the display; Rust owns the system"
 //!
@@ -13,20 +13,18 @@
 //! ## Declarative UI Schemas
 //!
 //! Instead of procedural C UI assembly, UI layouts are declared as static data tables:
-//! - [`UI_SCHEMA`]: Baseline interactive schema (Switch, Slider, Reset Button, Cycle Counter).
-//! - [`TIER1_SHOWCASE_SCHEMA`]: Comprehensive 12-widget layout covering all Tier 1 LVGL widgets.
-//! - [`TIER2_SHOWCASE_SCHEMA`]: Text inputs, keypad button matrix, analog dial scale, and modal dialogs.
-//! - [`TIER3_SHOWCASE_SCHEMA`]: Multi-tab container (`TabView`) routing charts, tables, calendar, lists, and canvas.
-//! - [`S3_4848_SCHEMA`]: Hardware-tuned 480×480 layout for the Guition ESP32-S3 smart display.
+//! - [`EVERYTHING_SCHEMA`]: Complete 27-descriptor suite covering all 25 supported LVGL widgets across 6 tabs.
+//! - [`TAB0_CONTROLS_SCHEMA`]: Tab 0 scalar controls (Switch, Slider, Arc, Bar, LED, Spinner, Button, Label).
+//! - [`TAB1_SELECTORS_SCHEMA`]: Tab 1 discrete selectors (Checkbox, Dropdown, Roller, Spinbox, Scale).
+//! - [`TAB2_INPUTS_SCHEMA`]: Tab 2 text & input controls (TextInput, TextArea, Keyboard, MsgBox modal).
+//! - [`TAB3_TELEMETRY_SCHEMA`]: Tab 3 streaming telemetry (Oscilloscope Chart, Diagnostics Table, List).
+//! - [`TAB4_TOOLS_SCHEMA`]: Tab 4 interactive utilities (Calendar, ButtonMatrix keypad, Pixel Canvas).
+//! - [`TAB5_SYSTEM_SCHEMA`]: Tab 5 system configuration (Hierarchical Menu, Swipeable TileView).
 //!
 //! ## Exported C FFI Entry Points
 //! - [`rust_worker_init`]: Allocates and initializes the static state engine.
 //! - [`rust_worker_step`]: Advances the control loop by one tick (processes incoming commands, steps simulation).
-//! - [`rust_get_ui_schema`]: Provides C UI engine with baseline interactive schema.
-//! - [`rust_get_tier1_schema`]: Provides C UI engine with the 12-widget Tier 1 showcase schema.
-//! - [`rust_get_tier2_schema`]: Provides C UI engine with the Tier 2 showcase schema.
-//! - [`rust_get_tier3_schema`]: Provides C UI engine with the Tier 3 multi-tab showcase schema.
-//! - [`rust_get_s3_schema`]: Provides C UI engine with the 480×480 S3 widget descriptor table.
+//! - [`rust_get_everything_schema`]: Provides C UI engine with the complete 27-widget descriptor table.
 
 #![cfg_attr(target_os = "none", no_std)]
 #![allow(static_mut_refs)]
@@ -37,161 +35,18 @@ use bridge_core::abi::{
     DeviceTelemetry, ParamId, ParamVal, UiCommand, UiAlign, WidgetDescriptor,
 };
 
-pub static UI_SCHEMA: &[WidgetDescriptor] = &[
-    WidgetDescriptor::switch(
-        ParamId::SystemEnable,
-        UiAlign::TopLeft,
-        20,
-        20,
-        c"System: RUNNING",
-        c"System: STOPPED",
-    ),
-    WidgetDescriptor::slider(
-        ParamId::SetpointHz,
-        UiAlign::Center,
-        0,
-        15,
-        1,
-        100,
-        10,
-        500,
-        c"%ld Hz (Setting)",
-        c"%ld Hz (Actual)",
-    ),
-    WidgetDescriptor::button(
-        ParamId::TriggerReset,
-        UiAlign::BottomLeft,
-        20,
-        -20,
-        c"Reset Counter",
-        1,
-    ),
-    WidgetDescriptor::label(
-        ParamId::CycleCount,
-        UiAlign::BottomLeft,
-        170,
-        -30,
-        c"Cycles: %lu",
-    ),
-];
-
-pub static TIER1_SHOWCASE_SCHEMA: &[WidgetDescriptor] = &[
-    WidgetDescriptor::switch(
-        ParamId::SystemEnable,
-        UiAlign::TopLeft,
-        30,
-        25,
-        c"System: RUNNING",
-        c"System: STOPPED",
-    ),
-    WidgetDescriptor::checkbox(
-        ParamId::AuxCheckbox,
-        UiAlign::TopLeft,
-        250,
-        25,
-        c"Aux Power",
-        false,
-    ),
-    WidgetDescriptor::led(
-        ParamId::StatusLed,
-        UiAlign::TopLeft,
-        420,
-        25,
-        true,
-    ),
-    WidgetDescriptor::spinner(
-        ParamId::BusySpinner,
-        UiAlign::TopLeft,
-        500,
-        18,
-        true,
-    ),
-    WidgetDescriptor::arc(
-        ParamId::ArcKnob,
-        UiAlign::Center,
-        -250,
-        -30,
-        0,
-        100,
-        45,
-        500,
-        c"%ld%% (Setting)",
-        c"%ld%% (Actual)",
-    ),
-    WidgetDescriptor::slider(
-        ParamId::SetpointHz,
-        UiAlign::Center,
-        0,
-        -50,
-        1,
-        100,
-        10,
-        500,
-        c"%ld Hz (Setting)",
-        c"%ld Hz (Actual)",
-    ),
-    WidgetDescriptor::bar(
-        ParamId::ProgressBar,
-        UiAlign::Center,
-        0,
-        30,
-        0,
-        100,
-        25,
-        c"Progress: %ld%%",
-    ),
-    WidgetDescriptor::dropdown(
-        ParamId::ModeDropdown,
-        UiAlign::Center,
-        250,
-        -70,
-        c"Normal\nEco\nSport\nTurbo",
-        0,
-    ),
-    WidgetDescriptor::roller(
-        ParamId::SpeedRoller,
-        UiAlign::Center,
-        250,
-        50,
-        c"Slow\nMedium\nFast\nUltra",
-        1,
-    ),
-    WidgetDescriptor::button(
-        ParamId::TriggerReset,
-        UiAlign::BottomLeft,
-        40,
-        -30,
-        c"Reset Counter",
-        1,
-    ),
-    WidgetDescriptor::label(
-        ParamId::CycleCount,
-        UiAlign::BottomLeft,
-        220,
-        -38,
-        c"Cycles: %lu",
-    ),
-    WidgetDescriptor::spinbox(
-        ParamId::PrecisionStep,
-        UiAlign::BottomRight,
-        -60,
-        -30,
-        0,
-        9999,
-        1250,
-    ),
-];
-
-pub static S3_4848_SCHEMA: &[WidgetDescriptor] = &[
-    // Root Navigation: 6-Tab TabView across 480x480 display
+/// Root Navigation Container: 6-Tab TabView across 480x480 display
+pub static NAV_CONTAINER_SCHEMA: &[WidgetDescriptor] = &[
     WidgetDescriptor::tabview(
         ParamId::NavTab,
         c"Controls\nSelectors\nInputs\nTelemetry\nTools\nSystem",
         480,
         480,
     ),
+];
 
-    // --- Tab 0: Controls (Core scalar controls & readouts) ---
+/// Tab 0: Controls (Core scalar controls & readouts)
+pub static TAB0_CONTROLS_SCHEMA: &[WidgetDescriptor] = &[
     WidgetDescriptor::switch(
         ParamId::SystemEnable,
         UiAlign::TopLeft,
@@ -263,8 +118,10 @@ pub static S3_4848_SCHEMA: &[WidgetDescriptor] = &[
         -22,
         c"Cycles: %lu",
     ).with_parent(ParamId::NavTab, 0),
+];
 
-    // --- Tab 1: Selectors (Tier 1 discrete selectors & analog gauge) ---
+/// Tab 1: Selectors (Discrete selectors & analog scale)
+pub static TAB1_SELECTORS_SCHEMA: &[WidgetDescriptor] = &[
     WidgetDescriptor::checkbox(
         ParamId::AuxCheckbox,
         UiAlign::TopLeft,
@@ -309,8 +166,10 @@ pub static S3_4848_SCHEMA: &[WidgetDescriptor] = &[
         100,
         65,
     ).with_parent(ParamId::NavTab, 1),
+];
 
-    // --- Tab 2: Inputs (Single-line input, multi-line text area, on-screen keyboard & alert modal) ---
+/// Tab 2: Inputs (Text inputs, virtual keyboard & alert modal)
+pub static TAB2_INPUTS_SCHEMA: &[WidgetDescriptor] = &[
     WidgetDescriptor::text_input(
         ParamId::TextInput,
         UiAlign::TopMid,
@@ -349,8 +208,10 @@ pub static S3_4848_SCHEMA: &[WidgetDescriptor] = &[
         c"Hardware calibrated.",
         false,
     ),
+];
 
-    // --- Tab 3: Telemetry (Tier 3 live streaming waveforms, tables, and lists) ---
+/// Tab 3: Telemetry (Streaming waveforms, diagnostics table & list)
+pub static TAB3_TELEMETRY_SCHEMA: &[WidgetDescriptor] = &[
     WidgetDescriptor::chart(
         ParamId::TelemetryChart,
         ParamId::NavTab,
@@ -386,8 +247,10 @@ pub static S3_4848_SCHEMA: &[WidgetDescriptor] = &[
         75,
         c"ST7701S RGB (Active)\nGT911 I2C (Ready)\nESP32-S3 (240MHz)",
     ),
+];
 
-    // --- Tab 4: Tools (Interactive Calendar, Button Matrix keypad & Canvas) ---
+/// Tab 4: Tools (Maintenance calendar, keypad matrix & pixel canvas)
+pub static TAB4_TOOLS_SCHEMA: &[WidgetDescriptor] = &[
     WidgetDescriptor::calendar(
         ParamId::CalendarDate,
         ParamId::NavTab,
@@ -424,8 +287,10 @@ pub static S3_4848_SCHEMA: &[WidgetDescriptor] = &[
         -45,
         c"Calendar, Matrix & Canvas\nEngine Ticks: %lu",
     ).with_parent(ParamId::NavTab, 4),
+];
 
-    // --- Tab 5: System (Hierarchical Settings Menu & Swipeable TileView) ---
+/// Tab 5: System (Settings menu & swipeable tileview)
+pub static TAB5_SYSTEM_SCHEMA: &[WidgetDescriptor] = &[
     WidgetDescriptor::menu(
         ParamId::MenuNav,
         UiAlign::TopMid,
@@ -445,160 +310,42 @@ pub static S3_4848_SCHEMA: &[WidgetDescriptor] = &[
     ).with_parent(ParamId::NavTab, 5),
 ];
 
-
-pub static TIER2_SHOWCASE_SCHEMA: &[WidgetDescriptor] = &[
-    WidgetDescriptor::text_input(
-        ParamId::TextInput,
-        UiAlign::TopLeft,
-        40,
-        15,
-        340,
-        42,
-        c"Single-line command...",
-        Some(c"SYS:STATUS"),
-        31,
-    ),
-    WidgetDescriptor::text_area(
-        ParamId::TextArea,
-        UiAlign::TopRight,
-        -40,
-        15,
-        340,
-        75,
-        c"Multi-line notes...",
-        Some(c"System log initialized.\nReady for commands."),
-        false,
-        127,
-    ),
-    WidgetDescriptor::button_matrix(
-        ParamId::KeypadMatrix,
-        UiAlign::Center,
-        -180,
-        -15,
-        220,
-        150,
-        c"1 2 3 \n 4 5 6 \n 7 8 9 \n * 0 #",
-    ),
-    WidgetDescriptor::scale(
-        ParamId::GaugeScale,
-        UiAlign::Center,
-        180,
-        -15,
-        180,
-        180,
-        0,
-        100,
-        65,
-    ),
-    WidgetDescriptor::keyboard(
-        ParamId::Keyboard,
-        ParamId::TextInput,
-        UiAlign::BottomMid,
-        0,
-        -10,
-        720,
-        160,
-    ),
-    WidgetDescriptor::msgbox(
-        ParamId::AlertModal,
-        c"System Notice",
-        c"Hardware calibrated.",
-        false,
-    ),
-];
-
-pub static TIER3_SHOWCASE_SCHEMA: &[WidgetDescriptor] = &[
-    WidgetDescriptor::tabview(
-        ParamId::NavTab,
-        c"Telemetry\nDiagnostics\nConfig",
-        760,
-        460,
-    ),
-    WidgetDescriptor::chart(
-        ParamId::TelemetryChart,
-        ParamId::NavTab,
-        0,
-        UiAlign::Center,
-        0,
-        -70,
-        640,
-        220,
-        0,
-        100,
-    ),
-    WidgetDescriptor::list(
-        ParamId::ItemList,
-        ParamId::NavTab,
-        0,
-        UiAlign::BottomMid,
-        0,
-        -15,
-        640,
-        110,
-        c"Channel A (Active)\nChannel B (Standby)\nBus Voltage (3.3V)",
-    ),
-    WidgetDescriptor::table(
-        ParamId::DataTable,
-        ParamId::NavTab,
-        1,
-        UiAlign::Center,
-        0,
-        0,
-        500,
-        240,
-        (4 << 16) | 2,
-        c"Module;Status;Core 0;OK;Core 1;OK;PSRAM;8MB",
-    ),
-    WidgetDescriptor::calendar(
-        ParamId::CalendarDate,
-        ParamId::NavTab,
-        2,
-        UiAlign::Center,
-        0,
-        0,
-        320,
-        280,
-    ),
-];
-
-#[no_mangle]
-pub extern "C" fn rust_get_ui_schema(out_count: *mut usize) -> *const WidgetDescriptor {
-    if !out_count.is_null() {
-        unsafe { *out_count = UI_SCHEMA.len() };
+const fn concat_schemas<const N: usize>(tables: &[&'static [WidgetDescriptor]]) -> [WidgetDescriptor; N] {
+    let mut out = [tables[0][0]; N];
+    let mut out_idx = 0;
+    let mut t = 0;
+    while t < tables.len() {
+        let slice = tables[t];
+        let mut i = 0;
+        while i < slice.len() {
+            out[out_idx] = slice[i];
+            out_idx += 1;
+            i += 1;
+        }
+        t += 1;
     }
-    UI_SCHEMA.as_ptr()
+    out
 }
 
-#[no_mangle]
-pub extern "C" fn rust_get_tier1_schema(out_count: *mut usize) -> *const WidgetDescriptor {
-    if !out_count.is_null() {
-        unsafe { *out_count = TIER1_SHOWCASE_SCHEMA.len() };
-    }
-    TIER1_SHOWCASE_SCHEMA.as_ptr()
-}
+static EVERYTHING_SCHEMA_ARRAY: [WidgetDescriptor; 27] = concat_schemas(&[
+    NAV_CONTAINER_SCHEMA,
+    TAB0_CONTROLS_SCHEMA,
+    TAB1_SELECTORS_SCHEMA,
+    TAB2_INPUTS_SCHEMA,
+    TAB3_TELEMETRY_SCHEMA,
+    TAB4_TOOLS_SCHEMA,
+    TAB5_SYSTEM_SCHEMA,
+]);
+
+/// Complete 27-widget descriptor table joining all tab schemas and navigation container
+pub static EVERYTHING_SCHEMA: &[WidgetDescriptor] = &EVERYTHING_SCHEMA_ARRAY;
 
 #[no_mangle]
-pub extern "C" fn rust_get_tier2_schema(out_count: *mut usize) -> *const WidgetDescriptor {
+pub extern "C" fn rust_get_everything_schema(out_count: *mut usize) -> *const WidgetDescriptor {
     if !out_count.is_null() {
-        unsafe { *out_count = TIER2_SHOWCASE_SCHEMA.len() };
+        unsafe { *out_count = EVERYTHING_SCHEMA.len() };
     }
-    TIER2_SHOWCASE_SCHEMA.as_ptr()
-}
-
-#[no_mangle]
-pub extern "C" fn rust_get_tier3_schema(out_count: *mut usize) -> *const WidgetDescriptor {
-    if !out_count.is_null() {
-        unsafe { *out_count = TIER3_SHOWCASE_SCHEMA.len() };
-    }
-    TIER3_SHOWCASE_SCHEMA.as_ptr()
-}
-
-#[no_mangle]
-pub extern "C" fn rust_get_s3_schema(out_count: *mut usize) -> *const WidgetDescriptor {
-    if !out_count.is_null() {
-        unsafe { *out_count = S3_4848_SCHEMA.len() };
-    }
-    S3_4848_SCHEMA.as_ptr()
+    EVERYTHING_SCHEMA.as_ptr()
 }
 
 #[cfg(target_os = "none")]
@@ -613,29 +360,29 @@ extern "C" {
 }
 
 pub struct SystemEngine {
-    target_hz: i32,
-    current_hz: i32,
-    is_enabled: bool,
-    cycle_counter: u32,
-    active_seq_id: u32,
-    arc_knob_val: i32,
-    progress_val: i32,
-    aux_enabled: bool,
-    led_state: bool,
-    spinner_busy: bool,
-    mode_dropdown_idx: i32,
-    speed_roller_idx: i32,
-    spinbox_step_val: i32,
+    pub target_hz: i32,
+    pub current_hz: i32,
+    pub is_enabled: bool,
+    pub cycle_counter: u32,
+    pub active_seq_id: u32,
+    pub arc_knob_val: i32,
+    pub progress_val: i32,
+    pub aux_enabled: bool,
+    pub led_state: bool,
+    pub spinner_busy: bool,
+    pub mode_dropdown_idx: i32,
+    pub speed_roller_idx: i32,
+    pub spinbox_step_val: i32,
     // Tier 2 & Tier 3 state
-    text_buffer: [u8; 32],
-    textarea_buffer: [u8; 32],
-    keyboard_action: i32,
-    keypad_last_key: i32,
-    modal_open: bool,
-    gauge_val: i32,
-    active_tab: i32,
-    chart_sample: i32,
-    selected_date: u32,
+    pub text_buffer: [u8; 32],
+    pub textarea_buffer: [u8; 32],
+    pub keyboard_action: i32,
+    pub keypad_last_key: i32,
+    pub modal_open: bool,
+    pub gauge_val: i32,
+    pub active_tab: i32,
+    pub chart_sample: i32,
+    pub selected_date: u32,
 }
 
 impl SystemEngine {
@@ -883,15 +630,17 @@ mod tests {
 
     #[test]
     fn test_schemas_integrity() {
-        assert_eq!(UI_SCHEMA.len(), 4);
-        assert_eq!(TIER1_SHOWCASE_SCHEMA.len(), 12);
-        assert_eq!(TIER2_SHOWCASE_SCHEMA.len(), 6);
-        assert_eq!(TIER3_SHOWCASE_SCHEMA.len(), 5);
-        assert_eq!(S3_4848_SCHEMA.len(), 27);
+        assert_eq!(EVERYTHING_SCHEMA.len(), 27);
+        assert_eq!(TAB0_CONTROLS_SCHEMA.len(), 8);
+        assert_eq!(TAB1_SELECTORS_SCHEMA.len(), 5);
+        assert_eq!(TAB2_INPUTS_SCHEMA.len(), 4);
+        assert_eq!(TAB3_TELEMETRY_SCHEMA.len(), 3);
+        assert_eq!(TAB4_TOOLS_SCHEMA.len(), 4);
+        assert_eq!(TAB5_SYSTEM_SCHEMA.len(), 2);
 
-        // Root widget of S3 schema must be TabView
-        assert_eq!(S3_4848_SCHEMA[0].widget_type, WidgetType::TabView);
-        assert_eq!(S3_4848_SCHEMA[0].param_id, ParamId::NavTab);
+        // Root widget of EVERYTHING schema must be TabView
+        assert_eq!(EVERYTHING_SCHEMA[0].widget_type, WidgetType::TabView);
+        assert_eq!(EVERYTHING_SCHEMA[0].param_id, ParamId::NavTab);
     }
 
     #[test]

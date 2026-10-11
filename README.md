@@ -138,7 +138,7 @@ The test runner executes 4 headless unit test suites (FFI serialization, P4-C6 l
   [TEST] Rust SystemEngine Closed-Loop State Simulation... -> PASS
   [TEST] 3-Stage Anti-Jitter Arbitration Engine... -> PASS
 
---- Phase 2: Flagship S3-4848 6-Tab Application Journey ---
+--- Phase 2: Everything S3-4848 6-Tab Application Journey ---
 [1/12] S3 Tab 0 (Controls) Initial State -> Saved artifacts/01_s3_tab0_controls_init.png
 [2/12] S3 Tab 0 (Controls) Interactive Running & Dragging -> Saved artifacts/02_s3_tab0_controls_running.png
 ...
@@ -159,9 +159,9 @@ The test runner executes 4 headless unit test suites (FFI serialization, P4-C6 l
 
 ---
 
-### Option B: Build & Flash to Physical Hardware
+### Option B: Build & Flash the Everything Showcase (`examples/everything`)
 
-Follow these steps to deploy the full 27-widget flagship application to a **Guition ESP32-S3-4848S040** display:
+Deploy the complete 25-widget application to a **Guition ESP32-S3-4848S040** display (or any ESP32-S3 board):
 
 ```bash
 # 1. Connect your ESP32-S3 board to USB (e.g. /dev/ttyUSB0 on Linux)
@@ -170,44 +170,33 @@ Follow these steps to deploy the full 27-widget flagship application to a **Guit
 source $HOME/esp/esp-idf/export.sh
 
 # 3. Build the Rust static library for Xtensa bare-metal
-cargo build --release --target xtensa-esp32s3-none-elf -p s3-flagship-app
+cargo build --release --target xtensa-esp32s3-none-elf -p everything-app
 
-# 4. Build the ESP-IDF firmware binary
-idf.py -DIDF_TARGET=esp32s3 build
+# 4. Build and flash the firmware using the Makefile shortcut:
+make build-everything
+make flash-everything
 
-# 5. Flash to the connected board at 460800 baud
-idf.py -p /dev/ttyUSB0 -b 460800 flash
-
-# 6. Monitor live serial logs (Core 0 Rust engine + Core 1 LVGL UI)
-idf.py -p /dev/ttyUSB0 monitor
+# Or directly using idf.py:
+idf.py -C examples/everything -DIDF_TARGET=esp32s3 build
+idf.py -C examples/everything -p /dev/ttyUSB0 -b 460800 flash monitor
 ```
 
 *(Press `Ctrl+]` to exit the serial monitor).*
 
 ### Option C: Build the Minimal Starter Example (`examples/minimal`)
 
-To build the self-contained 2-widget starter project:
+To build the self-contained starter project:
 
 ```bash
 # 1. Compile the minimal Rust staticlib:
 cargo build --release --target xtensa-esp32s3-none-elf -p minimal-app
 
-# 2. Build and flash the minimal ESP-IDF project:
+# 2. Build and flash using Makefile:
+make build-minimal
+make flash-minimal
+
+# Or directly with idf.py:
 cd examples/minimal
-idf.py -DIDF_TARGET=esp32s3 build
-idf.py -p /dev/ttyUSB0 -b 460800 flash monitor
-```
-
-### Option D: Build the Widget Cookbook (`examples/widget_cookbook`)
-
-To explore the recipes covering all 27 widgets:
-
-```bash
-# 1. Compile the widget cookbook Rust staticlib:
-cargo build --release --target xtensa-esp32s3-none-elf -p widget-cookbook
-
-# 2. Build and flash the cookbook ESP-IDF project:
-cd examples/widget_cookbook
 idf.py -DIDF_TARGET=esp32s3 build
 idf.py -p /dev/ttyUSB0 -b 460800 flash monitor
 ```
@@ -273,10 +262,10 @@ When a user drags a slider or turns a rotary dial, high-rate background telemetr
 
 ### Declarative UI Defined 100% in Rust
 
-Instead of writing hundreds of lines of procedural C layout code, the interface is defined as static data tables in Rust ([`crates/app-core/src/lib.rs`](file:///home/thughes/git/esp32-rust-lvgl-framework/crates/app-core/src/lib.rs)):
+Instead of writing hundreds of lines of procedural C layout code, the interface is defined as static data tables in Rust ([`examples/everything/crates/everything-app/src/lib.rs`](file:///home/thughes/git/esp32-rust-lvgl-framework/examples/everything/crates/everything-app/src/lib.rs)):
 
 ```rust
-pub static S3_4848_SCHEMA: &[WidgetDescriptor] = &[
+pub static EVERYTHING_SCHEMA: &[WidgetDescriptor] = &[
     // 1. Root Container: 6-Tab TabView across 480x480 screen
     WidgetDescriptor::tabview(
         ParamId::NavTab,
@@ -381,10 +370,10 @@ ParamId::TargetTemperature => {
 # Preview changes instantly in offscreen test snapshots via pure Rust harness:
 cargo test --workspace
 
-# Build the official S3 flagship firmware binary:
-make build-s3
+# Build the official Everything firmware binary:
+make build-everything
 # Or directly with idf.py:
-idf.py -C examples/s3_4848_flagship -DIDF_TARGET=esp32s3 build
+idf.py -C examples/everything -DIDF_TARGET=esp32s3 build
 ```
 
 ---
@@ -485,9 +474,8 @@ esp32-rust-lvgl-framework/
 │   ├── esp32-rust-lvgl-bridge-core/    # Pure reusable no_std Rust library: ABI contracts & schemas
 │   └── esp32-rust-lvgl-bridge-harness/ # Self-contained headless LVGL host test harness for pure Rust tests
 ├── examples/                   # Official Sample Applications
-│   ├── minimal/                # Minimal 2-widget starter project
-│   ├── s3_4848_flagship/       # Full 27-widget 6-tab industrial dashboard
-│   └── widget_cookbook/        # Recipe catalog for all 27 widgets (Tiers 1, 2, 3)
+│   ├── minimal/                # Minimal 3-widget starter project (minimal-app crate)
+│   └── everything/             # Full 25-widget 6-tab dashboard (everything-app crate)
 └── docs/                       # Architecture specifications & mdBook guides
     └── src/
         ├── declarative_ui.md   # Complete widget catalog & schema API guide

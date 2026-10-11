@@ -184,17 +184,14 @@ typedef struct {
 
 ## Exported Rust C Entry Points
 
-Application staticlibs (such as `s3-flagship-app`, `widget-cookbook`, and `test-app`) export the following functions with C linkage (`extern "C"`):
+Application staticlibs (such as `everything-app` and `minimal-app`) export the following functions with C linkage (`extern "C"`):
 
 | Function | Signature | Description |
 |---|---|---|
 | `rust_worker_init` | `void rust_worker_init(void)` | Initializes the static `SystemEngine` state machine. |
 | `rust_worker_step` | `void rust_worker_step(void)` | Consumes incoming commands, steps simulation, and emits telemetry. |
-| `rust_get_ui_schema` | `const widget_descriptor_t *rust_get_ui_schema(size_t *count)` | Returns baseline interactive schema (Switch, Slider, Button, Label). |
-| `rust_get_tier1_schema` | `const widget_descriptor_t *rust_get_tier1_schema(size_t *count)` | Returns the 12-widget Tier 1 showcase schema. |
-| `rust_get_tier2_schema` | `const widget_descriptor_t *rust_get_tier2_schema(size_t *count)` | Returns the Tier 2 showcase schema (TextArea, Keyboard, ButtonMatrix, Scale, MsgBox). |
-| `rust_get_tier3_schema` | `const widget_descriptor_t *rust_get_tier3_schema(size_t *count)` | Returns the Tier 3 multi-tab schema (TabView, Chart, Table, Calendar, List, Canvas). |
-| `rust_get_s3_schema` | `const widget_descriptor_t *rust_get_s3_schema(size_t *count)` | Returns the hardware-tuned 480×480 layout for the ESP32-S3 Guition display. |
+| `rust_get_minimal_schema` | `const widget_descriptor_t *rust_get_minimal_schema(size_t *count)` | Returns minimal starter schema (`examples/minimal`). |
+| `rust_get_everything_schema` | `const widget_descriptor_t *rust_get_everything_schema(size_t *count)` | Returns the complete 25-widget 6-tab schema (`examples/everything`). |
 
 ---
 
