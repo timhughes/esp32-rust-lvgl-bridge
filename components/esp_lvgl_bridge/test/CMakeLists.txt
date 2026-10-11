@@ -1,0 +1,10 @@
+idf_component_register(
+    SRCS
+        "test_bridge_transport.c"
+        "test_p4_c6_link.c"
+    INCLUDE_DIRS
+        "."
+    REQUIRES
+        unity
+        esp_lvgl_bridge
+)

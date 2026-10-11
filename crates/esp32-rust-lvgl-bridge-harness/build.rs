@@ -79,9 +79,15 @@ fn main() {
     let mut c_files = Vec::new();
     collect_c_files(&lvgl_dir.join("src"), &mut c_files);
 
-    // Self-contained C bridge and harness files inside this crate
-    c_files.push(c_src_dir.join("ui_binding.c"));
-    c_files.push(c_src_dir.join("p4_c6_link.c"));
+    // Bridge component sources and headers
+    let bridge_dir = manifest_dir.join("../../components/esp_lvgl_bridge");
+    let bridge_src = bridge_dir.join("src");
+    let bridge_inc = bridge_dir.join("include");
+    let bsp_inc = manifest_dir.join("../../components/bsp_guition_s3_4848s040/include");
+
+    // Unified C bridge files from components + host harness test wrappers
+    c_files.push(bridge_src.join("ui_binding.c"));
+    c_files.push(bridge_src.join("p4_c6_link.c"));
     c_files.push(c_src_dir.join("harness.c"));
     c_files.push(c_src_dir.join("host_transport.c"));
 
@@ -90,6 +96,8 @@ fn main() {
         .opt_level(2)
         .define("LV_CONF_INCLUDE_SIMPLE", None)
         .include(&include_dir)
+        .include(&bridge_inc)
+        .include(&bsp_inc)
         .include(&lvgl_dir)
         .include(lvgl_dir.join("src"))
         .flag("-Wno-unused-function")
@@ -102,7 +110,10 @@ fn main() {
 
     build.compile("lvgl_bridge_harness");
 
-    println!("cargo:rerun-if-changed=c_src/ui_binding.c");
+    println!("cargo:rerun-if-changed=../../components/esp_lvgl_bridge/src/ui_binding.c");
+    println!("cargo:rerun-if-changed=../../components/esp_lvgl_bridge/src/p4_c6_link.c");
+    println!("cargo:rerun-if-changed=../../components/esp_lvgl_bridge/include/bridge_protocol.h");
+    println!("cargo:rerun-if-changed=../../components/esp_lvgl_bridge/include/ui_binding.h");
     println!("cargo:rerun-if-changed=c_src/harness.c");
     println!("cargo:rerun-if-changed=c_src/host_transport.c");
     println!("cargo:rerun-if-changed=c_src/include/lv_conf.h");

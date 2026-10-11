@@ -1,0 +1,9 @@
+idf_component_register(
+    SRCS
+        "test_bsp_guition.c"
+    INCLUDE_DIRS
+        "."
+    REQUIRES
+        unity
+        bsp_guition_s3_4848s040
+)

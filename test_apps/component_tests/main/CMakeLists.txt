@@ -1,0 +1,10 @@
+idf_component_register(
+    SRCS
+        "test_main.c"
+    INCLUDE_DIRS
+        "."
+    REQUIRES
+        unity
+        esp_lvgl_bridge
+        bsp_guition_s3_4848s040
+)

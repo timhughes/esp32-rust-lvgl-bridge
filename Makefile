@@ -29,6 +29,14 @@ build-minimal:
 flash-minimal:
 	idf.py -C examples/minimal -p $(PORT) -b $(BAUD) flash
 
+## Build ESP-IDF Unity component unit tests (esp_lvgl_bridge & bsp_guition_s3_4848s040)
+build-component-tests:
+	idf.py -C test_apps/component_tests -DIDF_TARGET=esp32s3 build
+
+## Flash and run ESP-IDF Unity component unit tests on device
+flash-component-tests:
+	idf.py -C test_apps/component_tests -p $(PORT) -b $(BAUD) flash monitor
+
 ## Build mdBook documentation (runs test suite, syncs visual artifacts, and builds book)
 docs: test
 	@mkdir -p docs/src/artifacts

@@ -9,10 +9,20 @@ The test suite runs entirely offscreen on host developer machines (Linux/macOS) 
 * **PNG Output**: After each UI scenario, frames are dumped directly to standard PNG images using `stb_image_write.h`.
 
 ## Running the Tests
+
+### 1. Host Headless Test Suite (Linux / macOS)
+Executes all Rust domain models, unified C bridge bindings, and headless offscreen rendering in RAM:
 ```bash
 cargo test --workspace
 # Or using the top-level Makefile:
 make test
+```
+
+### 2. On-Target ESP-IDF Unity Component Tests (ESP32-S3 / QEMU)
+Compiles and executes native C Unity tests for `components/esp_lvgl_bridge` (FreeRTOS command & telemetry queues, `p4_c6_link` protocol) and `components/bsp_guition_s3_4848s040` (resolution invariants, ops table, backlight duty cycle):
+```bash
+make build-component-tests
+make flash-component-tests
 ```
 
 ## Test Execution Workflow
