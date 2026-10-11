@@ -12,14 +12,16 @@
 //! use esp32_rust_lvgl_bridge_core::{ParamId, UiAlign, WidgetDescriptor};
 //! use esp32_rust_lvgl_bridge_harness::HeadlessHarness;
 //!
+//! const PARAM_POWER: ParamId = ParamId::new(101);
+//!
 //! let mut harness = HeadlessHarness::new(480, 480);
 //! harness.build_schema(&[WidgetDescriptor::switch(
-//!     ParamId::SystemEnable, UiAlign::Center, 0, 0, c"On", c"Off",
+//!     PARAM_POWER, UiAlign::Center, 0, 0, c"On", c"Off",
 //! )]);
 //! harness.step(50);
-//! assert!(harness.click(ParamId::SystemEnable));
+//! assert!(harness.click(PARAM_POWER));
 //! let cmd = harness.recv_command().expect("click emits a command");
-//! assert_eq!(cmd.param_id, ParamId::SystemEnable);
+//! assert_eq!(cmd.param_id, PARAM_POWER);
 //! ```
 
 use std::ffi::CString;

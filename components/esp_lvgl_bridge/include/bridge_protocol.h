@@ -12,42 +12,6 @@ extern "C" {
 typedef enum {
     PARAM_NONE           = 0,  // Sentinel: Unbound widget or root container without parent
     PARAM_WIDGET_FLAGS   = 36, // Framework protocol: ack_seq_id=target_param_id, u32_val=flags
-
-    // Legacy showcase demo IDs (Retained for backward compatibility. Applications define custom uint32_t IDs):
-    PARAM_SETPOINT_HZ    = 1, // Slider: i32_val setpoint
-    PARAM_SYSTEM_ENABLE  = 2, // Switch: bool_val enable/run state
-    PARAM_TRIGGER_RESET  = 3, // Push Button: momentary command trigger
-    PARAM_CYCLE_COUNT    = 4, // Readout: u32_val telemetry counter
-    PARAM_ARC_KNOB       = 5, // Arc: i32_val knob setpoint
-    PARAM_PROGRESS_BAR   = 6, // Bar: i32_val level indicator
-    PARAM_AUX_CHECKBOX   = 7, // Checkbox: bool_val check state
-    PARAM_STATUS_LED     = 8, // LED: bool_val status
-    PARAM_BUSY_SPINNER   = 9, // Spinner: bool_val visibility
-    PARAM_MODE_DROPDOWN  = 10,// Dropdown: i32_val option index
-    PARAM_SPEED_ROLLER   = 11,// Roller: i32_val option index
-    PARAM_PRECISION_STEP = 12,// Spinbox: i32_val step value
-    PARAM_TEXT_INPUT     = 13,// TextArea: str_val buffer
-    PARAM_KEYBOARD       = 14,// Keyboard: i32_val action (1=ready, 2=cancel)
-    PARAM_KEYPAD_MATRIX  = 15,// ButtonMatrix: i32_val index, str_val key
-    PARAM_ALERT_MODAL    = 16,// MsgBox: i32_val btn, bool_val open/close
-    PARAM_GAUGE_SCALE    = 17,// Scale: i32_val needle value
-    PARAM_NAV_TAB        = 18,// TabView: i32_val active tab
-    PARAM_NAV_TILE       = 19,// TileView: i32_val active tile
-    PARAM_MENU_NAV       = 20,// Menu: i32_val selected item
-    PARAM_ITEM_LIST      = 21,// List: i32_val selected item
-    PARAM_TELEMETRY_CHART= 22,// Chart: i32_val streaming sample
-    PARAM_DATA_TABLE     = 23,// Table: i32_val/str_val
-    PARAM_CANVAS_DRAW    = 25,// Canvas
-    PARAM_TEXT_AREA      = 26,// TextArea (multiline): str_val buffer
-    PARAM_IMAGE_PREVIEW  = 27,// Image: str_val src
-    PARAM_LINE_GRAPH     = 28,// Line
-    PARAM_ARCLABEL_TITLE = 29,// ArcLabel: str_val text / i32_val angle
-    PARAM_QR_WIFI_CONFIG = 30,// QRCode: str_val payload
-    PARAM_WINDOW_MODAL   = 31,// Win: bool_val visibility
-    PARAM_IMAGE_TRIGGER  = 32,// ImageButton: momentary command trigger
-    PARAM_FORMATTED_SPAN = 33,// SpanGroup: str_val text
-    PARAM_SPINNER_ANIM   = 34,// AnimImage: bool_val running
-    PARAM_ASSET_BARCODE  = 35,// Barcode: str_val payload
 } param_id_t;
 
 typedef enum {

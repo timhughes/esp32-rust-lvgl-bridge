@@ -18,10 +18,13 @@
 //! ```
 //! use esp32_rust_lvgl_bridge_core::{ParamId, UiAlign, WidgetDescriptor, WidgetType};
 //!
+//! const PARAM_TABS: ParamId = ParamId::new(10);
+//! const PARAM_POWER: ParamId = ParamId::new(11);
+//!
 //! static SCHEMA: &[WidgetDescriptor] = &[
-//!     WidgetDescriptor::tabview(ParamId::NavTab, c"Main\nSettings", 480, 480),
-//!     WidgetDescriptor::switch(ParamId::SystemEnable, UiAlign::TopLeft, 20, 15, c"On", c"Off")
-//!         .with_parent(ParamId::NavTab, 0),
+//!     WidgetDescriptor::tabview(PARAM_TABS, c"Main\nSettings", 480, 480),
+//!     WidgetDescriptor::switch(PARAM_POWER, UiAlign::TopLeft, 20, 15, c"On", c"Off")
+//!         .with_parent(PARAM_TABS, 0),
 //! ];
 //! assert_eq!(SCHEMA[0].widget_type, WidgetType::TabView);
 //! assert_eq!(SCHEMA[1].tab_index, 0);

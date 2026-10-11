@@ -36,84 +36,6 @@ impl ParamId {
     }
 }
 
-// ----------------------------------------------------------------------------
-// Backward Compatibility: Deprecated Application-Specific Identifiers
-// ----------------------------------------------------------------------------
-// Note: Applications should define custom ParamId constants using ParamId::new(id).
-#[allow(deprecated, non_upper_case_globals)]
-impl ParamId {
-    #[deprecated(note = "Application-specific demo constant. Define custom ParamId in your application crate instead.")]
-    pub const SetpointHz: Self = Self(1);
-    #[deprecated(note = "Application-specific demo constant. Define custom ParamId in your application crate instead.")]
-    pub const SystemEnable: Self = Self(2);
-    #[deprecated(note = "Application-specific demo constant. Define custom ParamId in your application crate instead.")]
-    pub const TriggerReset: Self = Self(3);
-    #[deprecated(note = "Application-specific demo constant. Define custom ParamId in your application crate instead.")]
-    pub const CycleCount: Self = Self(4);
-    #[deprecated(note = "Application-specific demo constant. Define custom ParamId in your application crate instead.")]
-    pub const ArcKnob: Self = Self(5);
-    #[deprecated(note = "Application-specific demo constant. Define custom ParamId in your application crate instead.")]
-    pub const ProgressBar: Self = Self(6);
-    #[deprecated(note = "Application-specific demo constant. Define custom ParamId in your application crate instead.")]
-    pub const AuxCheckbox: Self = Self(7);
-    #[deprecated(note = "Application-specific demo constant. Define custom ParamId in your application crate instead.")]
-    pub const StatusLed: Self = Self(8);
-    #[deprecated(note = "Application-specific demo constant. Define custom ParamId in your application crate instead.")]
-    pub const BusySpinner: Self = Self(9);
-    #[deprecated(note = "Application-specific demo constant. Define custom ParamId in your application crate instead.")]
-    pub const ModeDropdown: Self = Self(10);
-    #[deprecated(note = "Application-specific demo constant. Define custom ParamId in your application crate instead.")]
-    pub const SpeedRoller: Self = Self(11);
-    #[deprecated(note = "Application-specific demo constant. Define custom ParamId in your application crate instead.")]
-    pub const PrecisionStep: Self = Self(12);
-    #[deprecated(note = "Application-specific demo constant. Define custom ParamId in your application crate instead.")]
-    pub const TextInput: Self = Self(13);
-    #[deprecated(note = "Application-specific demo constant. Define custom ParamId in your application crate instead.")]
-    pub const Keyboard: Self = Self(14);
-    #[deprecated(note = "Application-specific demo constant. Define custom ParamId in your application crate instead.")]
-    pub const KeypadMatrix: Self = Self(15);
-    #[deprecated(note = "Application-specific demo constant. Define custom ParamId in your application crate instead.")]
-    pub const AlertModal: Self = Self(16);
-    #[deprecated(note = "Application-specific demo constant. Define custom ParamId in your application crate instead.")]
-    pub const GaugeScale: Self = Self(17);
-    #[deprecated(note = "Application-specific demo constant. Define custom ParamId in your application crate instead.")]
-    pub const NavTab: Self = Self(18);
-    #[deprecated(note = "Application-specific demo constant. Define custom ParamId in your application crate instead.")]
-    pub const NavTile: Self = Self(19);
-    #[deprecated(note = "Application-specific demo constant. Define custom ParamId in your application crate instead.")]
-    pub const MenuNav: Self = Self(20);
-    #[deprecated(note = "Application-specific demo constant. Define custom ParamId in your application crate instead.")]
-    pub const ItemList: Self = Self(21);
-    #[deprecated(note = "Application-specific demo constant. Define custom ParamId in your application crate instead.")]
-    pub const TelemetryChart: Self = Self(22);
-    #[deprecated(note = "Application-specific demo constant. Define custom ParamId in your application crate instead.")]
-    pub const DataTable: Self = Self(23);
-    #[deprecated(note = "Application-specific demo constant. Define custom ParamId in your application crate instead.")]
-    pub const CalendarDate: Self = Self(24);
-    #[deprecated(note = "Application-specific demo constant. Define custom ParamId in your application crate instead.")]
-    pub const CanvasDraw: Self = Self(25);
-    #[deprecated(note = "Application-specific demo constant. Define custom ParamId in your application crate instead.")]
-    pub const TextArea: Self = Self(26);
-    #[deprecated(note = "Application-specific demo constant. Define custom ParamId in your application crate instead.")]
-    pub const ImagePreview: Self = Self(27);
-    #[deprecated(note = "Application-specific demo constant. Define custom ParamId in your application crate instead.")]
-    pub const LineGraph: Self = Self(28);
-    #[deprecated(note = "Application-specific demo constant. Define custom ParamId in your application crate instead.")]
-    pub const ArcLabelHeading: Self = Self(29);
-    #[deprecated(note = "Application-specific demo constant. Define custom ParamId in your application crate instead.")]
-    pub const QrWifiConfig: Self = Self(30);
-    #[deprecated(note = "Application-specific demo constant. Define custom ParamId in your application crate instead.")]
-    pub const WindowModal: Self = Self(31);
-    #[deprecated(note = "Application-specific demo constant. Define custom ParamId in your application crate instead.")]
-    pub const ImageTrigger: Self = Self(32);
-    #[deprecated(note = "Application-specific demo constant. Define custom ParamId in your application crate instead.")]
-    pub const FormattedSpan: Self = Self(33);
-    #[deprecated(note = "Application-specific demo constant. Define custom ParamId in your application crate instead.")]
-    pub const SpinnerAnim: Self = Self(34);
-    #[deprecated(note = "Application-specific demo constant. Define custom ParamId in your application crate instead.")]
-    pub const AssetBarcode: Self = Self(35);
-}
-
 impl From<u32> for ParamId {
     #[inline]
     fn from(val: u32) -> Self {
@@ -183,12 +105,13 @@ impl DeviceTelemetry {
     /// ```
     /// use esp32_rust_lvgl_bridge_core::{DeviceTelemetry, ParamId, WidgetFlagOp};
     ///
+    /// let target_param = ParamId::new(42);
     /// let t = DeviceTelemetry::widget_flag_update(
-    ///     ParamId::TriggerReset,
+    ///     target_param,
     ///     WidgetFlagOp::Hidden as u32 | WidgetFlagOp::Disabled as u32,
     /// );
     /// assert_eq!(t.param_id, ParamId::WidgetFlags);
-    /// assert_eq!(t.ack_seq_id, ParamId::TriggerReset.as_u32());
+    /// assert_eq!(t.ack_seq_id, target_param.as_u32());
     /// assert_eq!(unsafe { t.value.u32_val }, 0b101);
     /// ```
     #[inline]
@@ -1409,9 +1332,11 @@ impl WidgetDescriptor {
     /// ```
     /// use esp32_rust_lvgl_bridge_core::{ParamId, UiAlign, WidgetDescriptor};
     ///
-    /// let d = WidgetDescriptor::button(ParamId::TriggerReset, UiAlign::Center, 0, 0, c"Go", 1)
-    ///     .with_parent(ParamId::NavTab, 2);
-    /// assert_eq!(d.parent_param_id, ParamId::NavTab);
+    /// let p_btn = ParamId::new(10);
+    /// let p_tab = ParamId::new(1);
+    /// let d = WidgetDescriptor::button(p_btn, UiAlign::Center, 0, 0, c"Go", 1)
+    ///     .with_parent(p_tab, 2);
+    /// assert_eq!(d.parent_param_id, p_tab);
     /// assert_eq!(d.tab_index, 2);
     /// ```
     pub const fn with_parent(mut self, parent_param_id: ParamId, tab_index: u32) -> Self {
@@ -1425,7 +1350,8 @@ impl WidgetDescriptor {
     /// ```
     /// use esp32_rust_lvgl_bridge_core::{LayoutFlow, ParamId, UiAlign, WidgetDescriptor};
     ///
-    /// let d = WidgetDescriptor::win(ParamId::WindowModal, UiAlign::Center, 0, 0, 300, 200, c"W")
+    /// let p_win = ParamId::new(20);
+    /// let d = WidgetDescriptor::win(p_win, UiAlign::Center, 0, 0, 300, 200, c"W")
     ///     .with_layout(LayoutFlow::Column);
     /// assert_eq!(d.layout_flow, LayoutFlow::Column);
     /// ```
@@ -1442,49 +1368,16 @@ mod tests {
     use std::ffi::CStr;
 
     #[test]
-    #[allow(deprecated)]
     fn test_param_id_conversions_and_constants() {
         let p = ParamId::new(42);
         assert_eq!(p.as_u32(), 42);
         assert_eq!(ParamId::from(100u32), ParamId(100));
         assert_eq!(u32::from(ParamId(200)), 200u32);
 
+        assert_eq!(ParamId::NONE, ParamId(0));
         assert_eq!(ParamId::None, ParamId(0));
-        assert_eq!(ParamId::SetpointHz, ParamId(1));
-        assert_eq!(ParamId::SystemEnable, ParamId(2));
-        assert_eq!(ParamId::TriggerReset, ParamId(3));
-        assert_eq!(ParamId::CycleCount, ParamId(4));
-        assert_eq!(ParamId::ArcKnob, ParamId(5));
-        assert_eq!(ParamId::ProgressBar, ParamId(6));
-        assert_eq!(ParamId::AuxCheckbox, ParamId(7));
-        assert_eq!(ParamId::StatusLed, ParamId(8));
-        assert_eq!(ParamId::BusySpinner, ParamId(9));
-        assert_eq!(ParamId::ModeDropdown, ParamId(10));
-        assert_eq!(ParamId::SpeedRoller, ParamId(11));
-        assert_eq!(ParamId::PrecisionStep, ParamId(12));
-        assert_eq!(ParamId::TextInput, ParamId(13));
-        assert_eq!(ParamId::Keyboard, ParamId(14));
-        assert_eq!(ParamId::KeypadMatrix, ParamId(15));
-        assert_eq!(ParamId::AlertModal, ParamId(16));
-        assert_eq!(ParamId::GaugeScale, ParamId(17));
-        assert_eq!(ParamId::NavTab, ParamId(18));
-        assert_eq!(ParamId::NavTile, ParamId(19));
-        assert_eq!(ParamId::MenuNav, ParamId(20));
-        assert_eq!(ParamId::ItemList, ParamId(21));
-        assert_eq!(ParamId::TelemetryChart, ParamId(22));
-        assert_eq!(ParamId::DataTable, ParamId(23));
-        assert_eq!(ParamId::CalendarDate, ParamId(24));
-        assert_eq!(ParamId::CanvasDraw, ParamId(25));
-        assert_eq!(ParamId::TextArea, ParamId(26));
-        assert_eq!(ParamId::ImagePreview, ParamId(27));
-        assert_eq!(ParamId::LineGraph, ParamId(28));
-        assert_eq!(ParamId::ArcLabelHeading, ParamId(29));
-        assert_eq!(ParamId::QrWifiConfig, ParamId(30));
-        assert_eq!(ParamId::WindowModal, ParamId(31));
-        assert_eq!(ParamId::ImageTrigger, ParamId(32));
-        assert_eq!(ParamId::FormattedSpan, ParamId(33));
-        assert_eq!(ParamId::SpinnerAnim, ParamId(34));
-        assert_eq!(ParamId::AssetBarcode, ParamId(35));
+        assert_eq!(ParamId::WIDGET_FLAGS, ParamId(36));
+        assert_eq!(ParamId::WidgetFlags, ParamId(36));
 
         // Test Hash and Eq in a HashSet
         let mut set = HashSet::new();
