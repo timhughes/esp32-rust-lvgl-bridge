@@ -81,6 +81,16 @@ extern "C" {
 }
 
 impl MinimalEngine {
+    pub const fn new() -> Self {
+        Self {
+            is_powered: false,
+            target_speed: 25,
+            current_speed: 25,
+            cycle_count: 0,
+            active_seq_id: 0,
+        }
+    }
+
     pub fn process_command(&mut self, cmd: &UiCommand) {
         self.active_seq_id = cmd.seq_id;
         match cmd.param_id {
@@ -139,13 +149,7 @@ pub extern "C" fn rust_get_minimal_schema(out_count: *mut usize) -> *const Widge
 #[no_mangle]
 pub extern "C" fn rust_minimal_init() {
     unsafe {
-        ENGINE = MinimalEngine {
-            is_powered: false,
-            target_speed: 25,
-            current_speed: 25,
-            cycle_count: 0,
-            active_seq_id: 0,
-        };
+        ENGINE = MinimalEngine::new();
     }
 }
 
@@ -160,5 +164,87 @@ pub extern "C" fn rust_minimal_step() {
 
         ENGINE.step();
         ENGINE.emit_telemetry();
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use bridge_core::abi::{WidgetType, UiAlign};
+
+    #[test]
+    fn test_minimal_schema_integrity() {
+        assert_eq!(MINIMAL_SCHEMA.len(), 3);
+
+        // Widget 0: Power Switch
+        assert_eq!(MINIMAL_SCHEMA[0].param_id, PARAM_POWER);
+        assert_eq!(MINIMAL_SCHEMA[0].widget_type, WidgetType::Switch);
+        assert_eq!(MINIMAL_SCHEMA[0].align, UiAlign::TopMid);
+
+        // Widget 1: Speed Slider
+        assert_eq!(MINIMAL_SCHEMA[1].param_id, PARAM_SPEED);
+        assert_eq!(MINIMAL_SCHEMA[1].widget_type, WidgetType::Slider);
+        assert_eq!(MINIMAL_SCHEMA[1].min_val, 0);
+        assert_eq!(MINIMAL_SCHEMA[1].max_val, 100);
+        assert_eq!(MINIMAL_SCHEMA[1].initial_val, 25);
+        assert_eq!(MINIMAL_SCHEMA[1].holdoff_ms, 500);
+
+        // Widget 2: Cycle Counter Label
+        assert_eq!(MINIMAL_SCHEMA[2].param_id, PARAM_COUNTER);
+        assert_eq!(MINIMAL_SCHEMA[2].widget_type, WidgetType::Label);
+        assert_eq!(MINIMAL_SCHEMA[2].align, UiAlign::BottomMid);
+    }
+
+    #[test]
+    fn test_minimal_engine_initial_state() {
+        let engine = MinimalEngine::new();
+        assert!(!engine.is_powered);
+        assert_eq!(engine.target_speed, 25);
+        assert_eq!(engine.current_speed, 25);
+        assert_eq!(engine.cycle_count, 0);
+    }
+
+    #[test]
+    fn test_minimal_engine_power_and_speed_control() {
+        let mut engine = MinimalEngine::new();
+
+        // Send power ON command
+        let cmd_power = UiCommand {
+            param_id: PARAM_POWER,
+            seq_id: 1,
+            value: ParamVal::from_bool(true),
+        };
+        engine.process_command(&cmd_power);
+        assert!(engine.is_powered);
+        assert_eq!(engine.active_seq_id, 1);
+
+        // Send new target speed
+        let cmd_speed = UiCommand {
+            param_id: PARAM_SPEED,
+            seq_id: 2,
+            value: ParamVal::from_i32(30),
+        };
+        engine.process_command(&cmd_speed);
+        assert_eq!(engine.target_speed, 30);
+        assert_eq!(engine.current_speed, 25);
+
+        // Step 5 times: speed should ramp by +1 each step
+        for _ in 0..5 {
+            engine.step();
+        }
+        assert_eq!(engine.current_speed, 30);
+        assert_eq!(engine.cycle_count, 5);
+    }
+
+    #[test]
+    fn test_minimal_engine_idle_when_powered_off() {
+        let mut engine = MinimalEngine::new();
+        assert!(!engine.is_powered);
+
+        // When powered off, step does not advance cycles or speed
+        engine.target_speed = 50;
+        engine.step();
+        assert_eq!(engine.cycle_count, 0);
+        assert_eq!(engine.current_speed, 25);
     }
 }

@@ -875,3 +875,128 @@ pub extern "C" fn rust_worker_step() {
         ENGINE.emit_telemetry();
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use bridge_core::abi::WidgetType;
+
+    #[test]
+    fn test_schemas_integrity() {
+        assert_eq!(UI_SCHEMA.len(), 4);
+        assert_eq!(TIER1_SHOWCASE_SCHEMA.len(), 12);
+        assert_eq!(TIER2_SHOWCASE_SCHEMA.len(), 6);
+        assert_eq!(TIER3_SHOWCASE_SCHEMA.len(), 5);
+        assert_eq!(S3_4848_SCHEMA.len(), 27);
+
+        // Root widget of S3 schema must be TabView
+        assert_eq!(S3_4848_SCHEMA[0].widget_type, WidgetType::TabView);
+        assert_eq!(S3_4848_SCHEMA[0].param_id, ParamId::NavTab);
+    }
+
+    #[test]
+    fn test_system_engine_initial_state() {
+        let engine = SystemEngine::new();
+        assert!(!engine.is_enabled);
+        assert_eq!(engine.target_hz, 10);
+        assert_eq!(engine.current_hz, 10);
+        assert_eq!(engine.cycle_counter, 0);
+        assert_eq!(engine.arc_knob_val, 45);
+        assert_eq!(engine.progress_val, 25);
+        assert_eq!(engine.mode_dropdown_idx, 0);
+        assert_eq!(engine.speed_roller_idx, 1);
+        assert_eq!(engine.spinbox_step_val, 1250);
+        assert!(!engine.modal_open);
+        assert_eq!(engine.active_tab, 0);
+    }
+
+    #[test]
+    fn test_system_engine_control_loop_and_frequency_ramp() {
+        let mut engine = SystemEngine::new();
+
+        // Turn system ON
+        engine.process_command(UiCommand {
+            param_id: ParamId::SystemEnable,
+            seq_id: 1,
+            value: ParamVal::from_bool(true),
+        });
+        assert!(engine.is_enabled);
+        assert!(engine.spinner_busy);
+
+        // Request 15 Hz
+        engine.process_command(UiCommand {
+            param_id: ParamId::SetpointHz,
+            seq_id: 2,
+            value: ParamVal::from_i32(15),
+        });
+        assert_eq!(engine.target_hz, 15);
+
+        // Step 5 times: current_hz ramps from 10 to 15
+        for _ in 0..5 {
+            engine.step();
+        }
+        assert_eq!(engine.current_hz, 15);
+        assert_eq!(engine.cycle_counter, 5);
+    }
+
+    #[test]
+    fn test_system_engine_reset_trigger() {
+        let mut engine = SystemEngine::new();
+        engine.process_command(UiCommand {
+            param_id: ParamId::SystemEnable,
+            seq_id: 1,
+            value: ParamVal::from_bool(true),
+        });
+        for _ in 0..10 {
+            engine.step();
+        }
+        assert_eq!(engine.cycle_counter, 10);
+
+        // Trigger reset
+        engine.process_command(UiCommand {
+            param_id: ParamId::TriggerReset,
+            seq_id: 2,
+            value: ParamVal::from_i32(1),
+        });
+        assert_eq!(engine.cycle_counter, 0);
+        assert_eq!(engine.progress_val, 0);
+    }
+
+    #[test]
+    fn test_system_engine_discrete_and_navigation_commands() {
+        let mut engine = SystemEngine::new();
+
+        // Aux power checkbox synchronizes status LED
+        engine.process_command(UiCommand {
+            param_id: ParamId::AuxCheckbox,
+            seq_id: 3,
+            value: ParamVal::from_bool(true),
+        });
+        assert!(engine.aux_enabled);
+        assert!(engine.led_state);
+
+        // Mode dropdown
+        engine.process_command(UiCommand {
+            param_id: ParamId::ModeDropdown,
+            seq_id: 4,
+            value: ParamVal::from_i32(2),
+        });
+        assert_eq!(engine.mode_dropdown_idx, 2);
+
+        // Tab navigation
+        engine.process_command(UiCommand {
+            param_id: ParamId::NavTab,
+            seq_id: 5,
+            value: ParamVal::from_i32(3),
+        });
+        assert_eq!(engine.active_tab, 3);
+
+        // Modal dialog toggle
+        engine.process_command(UiCommand {
+            param_id: ParamId::AlertModal,
+            seq_id: 6,
+            value: ParamVal::from_i32(1),
+        });
+        assert!(engine.modal_open);
+    }
+}

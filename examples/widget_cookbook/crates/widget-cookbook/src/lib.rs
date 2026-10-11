@@ -404,3 +404,87 @@ pub extern "C" fn rust_worker_step() {
         ENGINE.emit_telemetry();
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use bridge_core::abi::WidgetType;
+
+    #[test]
+    fn test_cookbook_schemas_integrity() {
+        assert_eq!(TIER1_SHOWCASE_SCHEMA.len(), 12);
+        assert_eq!(TIER2_SHOWCASE_SCHEMA.len(), 6);
+        assert_eq!(TIER3_SHOWCASE_SCHEMA.len(), 5);
+
+        // Verify Tier 1 schema widgets
+        assert_eq!(TIER1_SHOWCASE_SCHEMA[0].widget_type, WidgetType::Switch);
+        assert_eq!(TIER1_SHOWCASE_SCHEMA[1].widget_type, WidgetType::Checkbox);
+        assert_eq!(TIER1_SHOWCASE_SCHEMA[2].widget_type, WidgetType::Led);
+        assert_eq!(TIER1_SHOWCASE_SCHEMA[3].widget_type, WidgetType::Spinner);
+        assert_eq!(TIER1_SHOWCASE_SCHEMA[4].widget_type, WidgetType::Arc);
+        assert_eq!(TIER1_SHOWCASE_SCHEMA[5].widget_type, WidgetType::Slider);
+        assert_eq!(TIER1_SHOWCASE_SCHEMA[6].widget_type, WidgetType::Bar);
+        assert_eq!(TIER1_SHOWCASE_SCHEMA[7].widget_type, WidgetType::Dropdown);
+        assert_eq!(TIER1_SHOWCASE_SCHEMA[8].widget_type, WidgetType::Roller);
+        assert_eq!(TIER1_SHOWCASE_SCHEMA[9].widget_type, WidgetType::Button);
+        assert_eq!(TIER1_SHOWCASE_SCHEMA[10].widget_type, WidgetType::Label);
+        assert_eq!(TIER1_SHOWCASE_SCHEMA[11].widget_type, WidgetType::Spinbox);
+
+        // Verify Tier 2 schema widgets
+        assert_eq!(TIER2_SHOWCASE_SCHEMA[0].widget_type, WidgetType::TextArea);
+        assert_eq!(TIER2_SHOWCASE_SCHEMA[1].widget_type, WidgetType::TextArea);
+        assert_eq!(TIER2_SHOWCASE_SCHEMA[2].widget_type, WidgetType::ButtonMatrix);
+        assert_eq!(TIER2_SHOWCASE_SCHEMA[3].widget_type, WidgetType::Scale);
+        assert_eq!(TIER2_SHOWCASE_SCHEMA[4].widget_type, WidgetType::Keyboard);
+        assert_eq!(TIER2_SHOWCASE_SCHEMA[5].widget_type, WidgetType::MsgBox);
+
+        // Verify Tier 3 schema widgets
+        assert_eq!(TIER3_SHOWCASE_SCHEMA[0].widget_type, WidgetType::TabView);
+        assert_eq!(TIER3_SHOWCASE_SCHEMA[1].widget_type, WidgetType::Chart);
+        assert_eq!(TIER3_SHOWCASE_SCHEMA[2].widget_type, WidgetType::List);
+        assert_eq!(TIER3_SHOWCASE_SCHEMA[3].widget_type, WidgetType::Table);
+        assert_eq!(TIER3_SHOWCASE_SCHEMA[4].widget_type, WidgetType::Calendar);
+    }
+
+    #[test]
+    fn test_cookbook_engine_lifecycle() {
+        let mut engine = CookbookEngine::new();
+        assert!(engine.is_enabled);
+        assert_eq!(engine.counter, 0);
+        assert_eq!(engine.setpoint_hz, 25);
+
+        // Step 10 times
+        for _ in 0..10 {
+            engine.step();
+        }
+        assert_eq!(engine.counter, 10);
+
+        // Set frequency to 60 Hz
+        engine.process_command(UiCommand {
+            param_id: ParamId::SetpointHz,
+            seq_id: 1,
+            value: ParamVal::from_i32(60),
+        });
+        assert_eq!(engine.setpoint_hz, 60);
+
+        // Reset counter
+        engine.process_command(UiCommand {
+            param_id: ParamId::TriggerReset,
+            seq_id: 2,
+            value: ParamVal::from_i32(1),
+        });
+        assert_eq!(engine.counter, 0);
+
+        // Disable engine
+        engine.process_command(UiCommand {
+            param_id: ParamId::SystemEnable,
+            seq_id: 3,
+            value: ParamVal::from_bool(false),
+        });
+        assert!(!engine.is_enabled);
+
+        // Step while disabled: counter should remain 0
+        engine.step();
+        assert_eq!(engine.counter, 0);
+    }
+}

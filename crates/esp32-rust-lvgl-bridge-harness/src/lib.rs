@@ -214,3 +214,120 @@ impl HeadlessHarness {
         unsafe { bsp_backlight_is_on() }
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use esp32_rust_lvgl_bridge_core::abi::{ParamVal, UiAlign};
+    use std::sync::Mutex;
+
+    static TEST_LOCK: Mutex<()> = Mutex::new(());
+
+    #[test]
+    fn test_harness_resolution_and_backlight() {
+        let _guard = TEST_LOCK.lock().unwrap();
+        let mut harness = HeadlessHarness::new(320, 240);
+        assert!(harness.backlight_is_on());
+
+        harness.set_resolution(800, 480);
+        harness.step(10);
+    }
+
+    #[test]
+    fn test_widget_queries_for_nonexistent_param() {
+        let _guard = TEST_LOCK.lock().unwrap();
+        let harness = HeadlessHarness::new(480, 480);
+        let unknown = ParamId::new(9999);
+
+        assert_eq!(harness.get_slider_value(unknown), None);
+        assert_eq!(harness.get_checked_state(unknown), None);
+        assert_eq!(harness.get_dropdown_selected(unknown), None);
+        assert_eq!(harness.get_roller_selected(unknown), None);
+        assert_eq!(harness.get_arc_value(unknown), None);
+        assert_eq!(harness.get_spinbox_value(unknown), None);
+    }
+
+    #[test]
+    fn test_click_and_drag_nonexistent_widget() {
+        let _guard = TEST_LOCK.lock().unwrap();
+        let mut harness = HeadlessHarness::new(480, 480);
+        let unknown = ParamId::new(8888);
+
+        assert!(!harness.click(unknown));
+        assert!(!harness.drag_slider(unknown, 50));
+    }
+
+    #[test]
+    fn test_command_transport_queue() {
+        let _guard = TEST_LOCK.lock().unwrap();
+        let mut harness = HeadlessHarness::new(480, 480);
+
+        // Queue should initially be empty
+        assert!(harness.recv_command().is_none());
+
+        // Inject command from UI
+        let cmd = UiCommand {
+            param_id: ParamId::new(42),
+            seq_id: 1,
+            value: ParamVal::from_i32(100),
+        };
+        let ok = unsafe { bridge_send_command_from_ui(&cmd) };
+        assert!(ok);
+
+        let received = harness.recv_command();
+        assert!(received.is_some());
+        let rec_cmd = received.unwrap();
+        assert_eq!(rec_cmd.param_id, ParamId::new(42));
+        assert_eq!(rec_cmd.seq_id, 1);
+        assert_eq!(unsafe { rec_cmd.value.i32_val }, 100);
+
+        // Queue should now be empty again
+        assert!(harness.recv_command().is_none());
+    }
+
+    #[test]
+    fn test_save_png_invalid_path() {
+        let _guard = TEST_LOCK.lock().unwrap();
+        let harness = HeadlessHarness::new(100, 100);
+        let res = harness.save_png("/nonexistent_directory_999999/test.png");
+        assert!(res.is_err());
+    }
+
+    #[test]
+    fn test_arc_and_checkbox_queries() {
+        let _guard = TEST_LOCK.lock().unwrap();
+        let mut harness = HeadlessHarness::new(480, 480);
+
+        const P_ARC: ParamId = ParamId::new(201);
+        const P_CB: ParamId = ParamId::new(202);
+
+        let schema = &[
+            WidgetDescriptor::arc(
+                P_ARC,
+                UiAlign::Center,
+                0,
+                0,
+                0,
+                100,
+                42,
+                0,
+                c"%ld",
+                c"%ld",
+            ),
+            WidgetDescriptor::checkbox(
+                P_CB,
+                UiAlign::TopLeft,
+                10,
+                10,
+                c"Check",
+                true,
+            ),
+        ];
+
+        harness.build_schema(schema);
+        harness.step(20);
+
+        assert_eq!(harness.get_arc_value(P_ARC), Some(42));
+        assert_eq!(harness.get_checked_state(P_CB), Some(true));
+    }
+}

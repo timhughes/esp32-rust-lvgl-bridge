@@ -940,4 +940,348 @@ impl WidgetDescriptor {
     }
 }
 
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use std::collections::HashSet;
+    use std::ffi::CStr;
+
+    #[test]
+    fn test_param_id_conversions_and_constants() {
+        let p = ParamId::new(42);
+        assert_eq!(p.as_u32(), 42);
+        assert_eq!(ParamId::from(100u32), ParamId(100));
+        assert_eq!(u32::from(ParamId(200)), 200u32);
+
+        assert_eq!(ParamId::None, ParamId(0));
+        assert_eq!(ParamId::SetpointHz, ParamId(1));
+        assert_eq!(ParamId::SystemEnable, ParamId(2));
+        assert_eq!(ParamId::TriggerReset, ParamId(3));
+        assert_eq!(ParamId::CycleCount, ParamId(4));
+        assert_eq!(ParamId::ArcKnob, ParamId(5));
+        assert_eq!(ParamId::ProgressBar, ParamId(6));
+        assert_eq!(ParamId::AuxCheckbox, ParamId(7));
+        assert_eq!(ParamId::StatusLed, ParamId(8));
+        assert_eq!(ParamId::BusySpinner, ParamId(9));
+        assert_eq!(ParamId::ModeDropdown, ParamId(10));
+        assert_eq!(ParamId::SpeedRoller, ParamId(11));
+        assert_eq!(ParamId::PrecisionStep, ParamId(12));
+        assert_eq!(ParamId::TextInput, ParamId(13));
+        assert_eq!(ParamId::Keyboard, ParamId(14));
+        assert_eq!(ParamId::KeypadMatrix, ParamId(15));
+        assert_eq!(ParamId::AlertModal, ParamId(16));
+        assert_eq!(ParamId::GaugeScale, ParamId(17));
+        assert_eq!(ParamId::NavTab, ParamId(18));
+        assert_eq!(ParamId::NavTile, ParamId(19));
+        assert_eq!(ParamId::MenuNav, ParamId(20));
+        assert_eq!(ParamId::ItemList, ParamId(21));
+        assert_eq!(ParamId::TelemetryChart, ParamId(22));
+        assert_eq!(ParamId::DataTable, ParamId(23));
+        assert_eq!(ParamId::CalendarDate, ParamId(24));
+        assert_eq!(ParamId::CanvasDraw, ParamId(25));
+        assert_eq!(ParamId::TextArea, ParamId(26));
+
+        // Test Hash and Eq in a HashSet
+        let mut set = HashSet::new();
+        set.insert(ParamId(1));
+        set.insert(ParamId(2));
+        set.insert(ParamId(1));
+        assert_eq!(set.len(), 2);
+    }
+
+    #[test]
+    fn test_param_val_primitives() {
+        let v_i32 = ParamVal::from_i32(-999);
+        assert_eq!(unsafe { v_i32.i32_val }, -999);
+
+        let v_u32 = ParamVal::from_u32(123456);
+        assert_eq!(unsafe { v_u32.u32_val }, 123456);
+
+        let v_true = ParamVal::from_bool(true);
+        assert_eq!(unsafe { v_true.bool_val }, true);
+
+        let v_false = ParamVal::from_bool(false);
+        assert_eq!(unsafe { v_false.bool_val }, false);
+    }
+
+    #[test]
+    fn test_param_val_string_and_truncation() {
+        let short = ParamVal::from_str(b"ESP32-S3");
+        let bytes = unsafe { &short.str_val };
+        assert_eq!(&bytes[..8], b"ESP32-S3");
+        assert_eq!(bytes[8], 0);
+
+        // Exactly 31 characters
+        let exact31 = b"1234567890123456789012345678901";
+        let val31 = ParamVal::from_str(exact31);
+        let bytes31 = unsafe { &val31.str_val };
+        assert_eq!(&bytes31[..31], exact31);
+        assert_eq!(bytes31[31], 0);
+
+        // Longer than 31 characters (must truncate to 31 + null terminator)
+        let long = b"This is a very long string that definitely exceeds the 32 byte buffer limit!";
+        let val_long = ParamVal::from_str(long);
+        let bytes_long = unsafe { &val_long.str_val };
+        assert_eq!(&bytes_long[..31], &long[..31]);
+        assert_eq!(bytes_long[31], 0);
+    }
+
+    #[test]
+    fn test_ui_command_and_telemetry_layout() {
+        let cmd = UiCommand {
+            param_id: ParamId(42),
+            seq_id: 101,
+            value: ParamVal::from_i32(50),
+        };
+        assert_eq!(cmd.param_id, ParamId(42));
+        assert_eq!(cmd.seq_id, 101);
+        assert_eq!(unsafe { cmd.value.i32_val }, 50);
+
+        let telem = DeviceTelemetry {
+            param_id: ParamId(42),
+            ack_seq_id: 101,
+            value: ParamVal::from_bool(true),
+        };
+        assert_eq!(telem.param_id, ParamId(42));
+        assert_eq!(telem.ack_seq_id, 101);
+        assert_eq!(unsafe { telem.value.bool_val }, true);
+    }
+
+    #[test]
+    fn test_tier1_widget_constructors() {
+        let sw = WidgetDescriptor::switch(
+            ParamId(1),
+            UiAlign::TopLeft,
+            10,
+            20,
+            c"ON",
+            c"OFF",
+        );
+        assert_eq!(sw.widget_type, WidgetType::Switch);
+        assert_eq!(sw.param_id, ParamId(1));
+        assert_eq!(sw.align, UiAlign::TopLeft);
+        assert_eq!(sw.offset_x, 10);
+        assert_eq!(sw.offset_y, 20);
+        assert_eq!(sw.min_val, 0);
+        assert_eq!(sw.max_val, 1);
+        assert_eq!(unsafe { CStr::from_ptr(sw.label_primary).to_str().unwrap() }, "ON");
+        assert_eq!(unsafe { CStr::from_ptr(sw.label_secondary).to_str().unwrap() }, "OFF");
+
+        let sl = WidgetDescriptor::slider(
+            ParamId(2),
+            UiAlign::Center,
+            0,
+            0,
+            10,
+            100,
+            50,
+            300,
+            c"Val: %ld",
+            c"Act: %ld",
+        );
+        assert_eq!(sl.widget_type, WidgetType::Slider);
+        assert_eq!(sl.min_val, 10);
+        assert_eq!(sl.max_val, 100);
+        assert_eq!(sl.initial_val, 50);
+        assert_eq!(sl.holdoff_ms, 300);
+
+        let btn = WidgetDescriptor::button(
+            ParamId(3),
+            UiAlign::BottomMid,
+            0,
+            -20,
+            c"Click Me",
+            1,
+        );
+        assert_eq!(btn.widget_type, WidgetType::Button);
+        assert_eq!(btn.initial_val, 1);
+        assert_eq!(unsafe { CStr::from_ptr(btn.label_primary).to_str().unwrap() }, "Click Me");
+        assert!(btn.label_secondary.is_null());
+
+        let lbl = WidgetDescriptor::label(
+            ParamId(4),
+            UiAlign::TopMid,
+            0,
+            15,
+            c"Title: %s",
+        );
+        assert_eq!(lbl.widget_type, WidgetType::Label);
+
+        let arc = WidgetDescriptor::arc(
+            ParamId(5),
+            UiAlign::Center,
+            0,
+            0,
+            0,
+            100,
+            25,
+            400,
+            c"%ld%%",
+            c"%ld%%",
+        );
+        assert_eq!(arc.widget_type, WidgetType::Arc);
+        assert_eq!(arc.holdoff_ms, 400);
+
+        let bar = WidgetDescriptor::bar(
+            ParamId(6),
+            UiAlign::BottomLeft,
+            10,
+            -10,
+            0,
+            100,
+            40,
+            c"%ld",
+        );
+        assert_eq!(bar.widget_type, WidgetType::Bar);
+
+        let cb = WidgetDescriptor::checkbox(
+            ParamId(7),
+            UiAlign::TopRight,
+            -10,
+            10,
+            c"Enable",
+            true,
+        );
+        assert_eq!(cb.widget_type, WidgetType::Checkbox);
+        assert_eq!(cb.initial_val, 1);
+
+        let led = WidgetDescriptor::led(
+            ParamId(8),
+            UiAlign::TopLeft,
+            5,
+            5,
+            false,
+        );
+        assert_eq!(led.widget_type, WidgetType::Led);
+        assert_eq!(led.initial_val, 0);
+
+        let spin = WidgetDescriptor::spinner(
+            ParamId(9),
+            UiAlign::Center,
+            0,
+            0,
+            true,
+        );
+        assert_eq!(spin.widget_type, WidgetType::Spinner);
+        assert_eq!(spin.initial_val, 1);
+
+        let dd = WidgetDescriptor::dropdown(
+            ParamId(10),
+            UiAlign::Center,
+            0,
+            50,
+            c"Opt1\nOpt2\nOpt3",
+            1,
+        );
+        assert_eq!(dd.widget_type, WidgetType::Dropdown);
+        assert_eq!(dd.initial_val, 1);
+
+        let roller = WidgetDescriptor::roller(
+            ParamId(11),
+            UiAlign::Center,
+            0,
+            -50,
+            c"Low\nMed\nHigh",
+            2,
+        );
+        assert_eq!(roller.widget_type, WidgetType::Roller);
+        assert_eq!(roller.initial_val, 2);
+
+        let spinbox = WidgetDescriptor::spinbox(
+            ParamId(12),
+            UiAlign::BottomRight,
+            -20,
+            -20,
+            -50,
+            50,
+            0,
+        );
+        assert_eq!(spinbox.widget_type, WidgetType::Spinbox);
+        assert_eq!(spinbox.min_val, -50);
+        assert_eq!(spinbox.max_val, 50);
+    }
+
+    #[test]
+    fn test_tier2_and_tier3_widget_constructors() {
+        let ta = WidgetDescriptor::text_area(
+            ParamId(13),
+            UiAlign::Center,
+            0,
+            0,
+            200,
+            100,
+            c"Placeholder",
+            Some(c"Default"),
+            false,
+            64,
+        );
+        assert_eq!(ta.widget_type, WidgetType::TextArea);
+        assert_eq!(ta.width, 200);
+        assert_eq!(ta.height, 100);
+        assert_eq!(ta.min_val, 0); // multi-line
+        assert_eq!(ta.max_val, 64);
+        assert_eq!(unsafe { CStr::from_ptr(ta.label_primary).to_str().unwrap() }, "Placeholder");
+        assert_eq!(unsafe { CStr::from_ptr(ta.label_secondary).to_str().unwrap() }, "Default");
+
+        let kb = WidgetDescriptor::keyboard(
+            ParamId(14),
+            ParamId(13),
+            UiAlign::BottomMid,
+            0,
+            0,
+            320,
+            120,
+        );
+        assert_eq!(kb.widget_type, WidgetType::Keyboard);
+        assert_eq!(kb.initial_val, 13); // target textarea param_id
+
+        let mb = WidgetDescriptor::msgbox(
+            ParamId(16),
+            c"Warning",
+            c"High Temperature Alert",
+            true,
+        );
+        assert_eq!(mb.widget_type, WidgetType::MsgBox);
+        assert_eq!(mb.initial_val, 1);
+        assert_eq!(unsafe { CStr::from_ptr(mb.label_primary).to_str().unwrap() }, "Warning");
+        assert_eq!(unsafe { CStr::from_ptr(mb.label_secondary).to_str().unwrap() }, "High Temperature Alert");
+
+        let tab = WidgetDescriptor::tabview(
+            ParamId(18),
+            c"Home\nSettings\nDiagnostics",
+            480,
+            480,
+        );
+        assert_eq!(tab.widget_type, WidgetType::TabView);
+        assert_eq!(tab.width, 480);
+        assert_eq!(tab.height, 480);
+
+        let list = WidgetDescriptor::list(
+            ParamId(21),
+            ParamId(18),
+            1,
+            UiAlign::Center,
+            0,
+            0,
+            200,
+            200,
+            c"Item1\nItem2",
+        );
+        assert_eq!(list.widget_type, WidgetType::List);
+        assert_eq!(list.parent_param_id, ParamId(18));
+        assert_eq!(list.tab_index, 1);
+
+        let chained = WidgetDescriptor::button(
+            ParamId(30),
+            UiAlign::Center,
+            0,
+            0,
+            c"Tab Button",
+            0,
+        ).with_parent(ParamId(18), 2);
+        assert_eq!(chained.parent_param_id, ParamId(18));
+        assert_eq!(chained.tab_index, 2);
+    }
+}
+
 

@@ -14,5 +14,5 @@ categories = ["embedded", "gui", "development-tools::testing"]
 esp32-rust-lvgl-bridge-core = { version = "0.1.0", path = "../esp32-rust-lvgl-bridge-core" }
 
 [build-dependencies]
-cc = "1.0"
+cc = "1.8.0"
 
