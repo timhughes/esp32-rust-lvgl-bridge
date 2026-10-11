@@ -12,12 +12,17 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  rust-checks:
-    name: Rust Workspace Checks & Docs
+  rust-workspace-tests:
+    name: Rust Workspace Checks & Headless Visual QA
     runs-on: ubuntu-latest
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v4
+
+      - name: Install System Dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y gcc make git libpng-dev
 
       - name: Setup Rust Nightly Toolchain
         uses: dtolnay/rust-toolchain@nightly
@@ -27,63 +32,22 @@ jobs:
       - name: Rust Cache
         uses: Swatinem/rust-cache@v2
 
-      - name: Cargo Check
+      - name: Cargo Check Workspace
         run: cargo check --workspace
+
+      - name: Run Workspace Tests & Headless Visual QA
+        run: cargo test --workspace --verbose
 
       - name: Verify Rustdoc
         run: cargo doc --workspace --no-deps
 
-  headless-visual-qa:
-    name: Headless Visual QA Test Suite
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout Repository
-        uses: actions/checkout@v4
-
-      - name: Setup Build Tools
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y gcc make git
-
-      - name: Setup Rust Nightly Toolchain
-        uses: dtolnay/rust-toolchain@nightly
-        with:
-          components: rust-src
-
-      - name: Rust Cache
-        uses: Swatinem/rust-cache@v2
-
-      - name: Clone LVGL v9 for Host Test Harness
-        run: |
-          git clone --depth 1 --branch release/v9.4 https://github.com/lvgl/lvgl.git test_harness/lvgl
-
-      - name: Build & Run Headless Visual Test Harness
-        run: |
-          cd test_harness
-          make clean
-          make run
-
-      - name: Verify Generated Snapshots
-        run: |
-          ls -lh test_harness/artifacts/*.png
-          test -f test_harness/artifacts/01_s3_tab0_controls_init.png
-          test -f test_harness/artifacts/02_s3_tab0_controls_running.png
-          test -f test_harness/artifacts/03_s3_tab1_selectors.png
-          test -f test_harness/artifacts/04_s3_tab2_inputs_typing.png
-          test -f test_harness/artifacts/05_s3_tab3_telemetry_waveforms.png
-          test -f test_harness/artifacts/06_s3_tab4_tools.png
-          test -f test_harness/artifacts/07_s3_tab5_system.png
-          test -f test_harness/artifacts/08_s3_screen_blanked.png
-          test -f test_harness/artifacts/09_s3_screen_woken.png
-          test -f test_harness/artifacts/10_tier1_showcase.png
-          test -f test_harness/artifacts/11_tier2_showcase.png
-          test -f test_harness/artifacts/12_tier3_showcase.png
-
-      - name: Upload Visual Test Snapshots
+      - name: Upload Visual QA Screenshot Artifacts
         uses: actions/upload-artifact@v4
+        if: always()
         with:
           name: visual-test-snapshots
-          path: test_harness/artifacts/*.png
+          path: crates/esp32-rust-lvgl-bridge-harness/artifacts/*.png
+          if-no-files-found: ignore
           retention-days: 14
 
   docs-build:
@@ -99,7 +63,7 @@ jobs:
           mdbook --version
 
       - name: Build Documentation Book
-        run: mdbook build docs
+        run: mdbook build
 
       - name: Upload mdBook Artifact
         uses: actions/upload-artifact@v4

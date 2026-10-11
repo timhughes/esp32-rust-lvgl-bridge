@@ -3,10 +3,10 @@
 //! Demonstrates a minimal application defining custom parameter IDs,
 //! declaring a 3-widget UI schema, and running a closed-loop control worker.
 
-#![cfg_attr(not(feature = "std"), no_std)]
+#![cfg_attr(target_os = "none", no_std)]
 #![allow(static_mut_refs)]
 
-#[cfg(not(any(test, feature = "std")))]
+#[cfg(target_os = "none")]
 #[panic_handler]
 fn panic(_info: &core::panic::PanicInfo) -> ! {
     loop {}

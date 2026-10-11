@@ -18,7 +18,7 @@
 //!   Multi-tab containers (`TabView`), streaming waveforms (`Chart`), structured
 //!   data grids (`Table`), interactive calendars, scrollable lists, menus, and canvas.
 
-#![cfg_attr(not(feature = "std"), no_std)]
+#![cfg_attr(target_os = "none", no_std)]
 #![allow(static_mut_refs)]
 
 use core::mem::MaybeUninit;
@@ -316,7 +316,7 @@ pub extern "C" fn rust_get_tier3_schema(out_count: *mut usize) -> *const WidgetD
 // Simulation & Hardware Loop
 // ======================================================================
 
-#[cfg(not(any(test, feature = "std")))]
+#[cfg(target_os = "none")]
 #[panic_handler]
 fn panic(_info: &core::panic::PanicInfo) -> ! {
     loop {}

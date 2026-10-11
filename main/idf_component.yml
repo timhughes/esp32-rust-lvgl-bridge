@@ -1,6 +1,0 @@
-dependencies:
-  lvgl/lvgl: "^9.2.0"
-  espressif/esp_lcd_touch: "^1.1.0"
-  espressif/esp_lcd_touch_gt911: "^1.2.0"
-  espressif/esp_lcd_st7701: "^1.1.0"
-  espressif/esp_lcd_panel_io_additions: "^1.0.0"

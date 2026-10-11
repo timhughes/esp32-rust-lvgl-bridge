@@ -120,15 +120,13 @@ You can compile and run the full LVGL v9 engine, Rust state machine, and test ha
 
 ```bash
 # 1. Clone the repository
-git clone https://github.com/your-org/esp32-rust-lvgl-framework.git
+git clone https://github.com/timhughes/esp32-rust-lvgl-framework.git
 cd esp32-rust-lvgl-framework
 
-# 2. Build the Rust test harness staticlib
-cargo build --release -p test-app
-
-# 3. Build and execute the visual test harness
-cd test_harness
-make run
+# 2. Run all unit tests and headless visual QA in pure Rust
+cargo test --workspace
+# Or:
+make test
 ```
 
 The test runner executes 4 headless unit test suites (FFI serialization, P4-C6 link, Rust state engine, 3-stage arbitration) followed by 12 interactive visual scenarios (including 6-tab S3 app and screensaver power management):
@@ -378,14 +376,15 @@ ParamId::TargetTemperature => {
 }
 ```
 
-### Step 4: Verify on Host, Then Flash to Hardware
+### Step 4: Verify on Host, Then Build Official Example
 ```bash
-# Preview changes instantly in offscreen test snapshots:
-make -C test_harness run
+# Preview changes instantly in offscreen test snapshots via pure Rust harness:
+cargo test --workspace
 
-# Flash to the physical board:
-cargo build --release --target xtensa-esp32s3-none-elf -p app-core
-idf.py -p /dev/ttyUSB0 flash
+# Build the official S3 flagship firmware binary:
+make build-s3
+# Or directly with idf.py:
+idf.py -C examples/s3_4848_flagship -DIDF_TARGET=esp32s3 build
 ```
 
 ---
@@ -441,29 +440,13 @@ On the **ESP32-P4**, wireless connectivity is delegated to an auxiliary **ESP32-
 
 ## 10. Automated Visual QA & Testing
 
-The headless host test runner validates layouts, fonts, and state machines automatically. It renders frames into an offscreen RGB888 memory buffer and exports PNGs via `stb_image_write.h`.
+The headless host test runner validates layouts, fonts, and state machines automatically. It renders frames into an offscreen RGB888 memory buffer and exports PNGs via `esp32-rust-lvgl-bridge-harness`.
 
 ```bash
-cd test_harness
-make run
+cargo test --workspace
+# Or:
+make test
 ```
-
-### Snapshot Gallery (`test_harness/artifacts/`)
-
-| Scenario | Snapshot | Description |
-|---|---|---|
-| **01** | `01_s3_tab0_controls_init.png` | S3-4848 Tab 0 (Controls): Stopped state, 10 Hz slider, 0 cycles |
-| **02** | `02_s3_tab0_controls_running.png` | S3-4848 Tab 0 (Controls): RUNNING state, slider at 60 Hz, active cycles |
-| **03** | `03_s3_tab1_selectors.png` | S3-4848 Tab 1 (Selectors): Dropdown, Roller, Spinbox & illuminated Aux LED |
-| **04** | `04_s3_tab2_inputs_typing.png` | S3-4848 Tab 2 (Inputs): Virtual Keyboard focus retargeting & character entry |
-| **05** | `05_s3_tab3_telemetry_waveforms.png` | S3-4848 Tab 3 (Telemetry): Real-time waveform oscilloscope & table registers |
-| **06** | `06_s3_tab4_tools.png` | S3-4848 Tab 4 (Tools): Maintenance Calendar, 4×3 PIN Keypad & Canvas |
-| **07** | `07_s3_tab5_system.png` | S3-4848 Tab 5 (System): Hierarchical Settings Menu & swipeable TileView |
-| **08** | `08_s3_screen_blanked.png` | Power Management: 60-second inactivity timeout blanking display backlight |
-| **09** | `09_s3_screen_woken.png` | Power Management: Wake-on-touch restoration with blind first-tap suppression |
-| **10** | `10_tier1_showcase.png` | Isolated Showcase: All 12 Tier 1 scalar widgets active simultaneously |
-| **11** | `11_tier2_showcase.png` | Isolated Showcase: Tier 2 inputs, virtual keyboard, button matrix & scale |
-| **12** | `12_tier3_showcase.png` | Isolated Showcase: Tier 3 multi-tab container with charts, tables & lists |
 
 ---
 
@@ -471,9 +454,9 @@ make run
  
 ```text
 esp32-rust-lvgl-framework/
-├── CMakeLists.txt              # Top-level ESP-IDF CMake orchestration
-├── .cargo/config.toml          # Xtensa Windowed ABI & bare-metal targets
-├── Cargo.toml                  # Workspace definition (crates, examples, test-app)
+├── Makefile                    # Developer shortcuts (test, check, build examples, docs)
+├── .cargo/config.toml          # Xtensa exception flags & bare-metal targets
+├── Cargo.toml                  # Workspace definition (crates and official examples)
 ├── components/                 # Reusable Modular ESP-IDF Components
 │   ├── esp_lvgl_bridge/        # Core Bridge Engine Library Component
 │   │   ├── CMakeLists.txt      # ESP-IDF component registration
@@ -501,25 +484,15 @@ esp32-rust-lvgl-framework/
 ├── crates/
 │   ├── esp32-rust-lvgl-bridge-core/    # Pure reusable no_std Rust library: ABI contracts & schemas
 │   └── esp32-rust-lvgl-bridge-harness/ # Self-contained headless LVGL host test harness for pure Rust tests
-├── examples/                   # Standalone Application Templates & Catalogs
+├── examples/                   # Official Sample Applications
 │   ├── minimal/                # Minimal 2-widget starter project
 │   ├── s3_4848_flagship/       # Full 27-widget 6-tab industrial dashboard
 │   └── widget_cookbook/        # Recipe catalog for all 27 widgets (Tiers 1, 2, 3)
-├── main/                       # Application layer (consumes components & s3-flagship-app)
-│   ├── CMakeLists.txt          # Links esp_lvgl_bridge, BSP, and s3-flagship-app
-│   └── main.c                  # FreeRTOS dual-core task spawners & screensaver timer
-├── docs/                       # Architecture specifications & mdBook guides
-│   └── src/
-│       ├── declarative_ui.md   # Complete widget catalog & schema API guide
-│       ├── examples.md         # Example walkthroughs & build guides
-│       └── ffi_contracts.md    # POD ring queue protocol specification
-└── test_harness/               # Host-native headless visual QA & CI test pipeline
-    ├── crates/
-    │   └── test-app/           # Dedicated test fixtures & mock state engine
-    ├── Makefile                # Native host build (make run)
-    ├── harness.c               # Offscreen RGB888 canvas & mock touch injector
-    ├── main_test.c             # 12-scenario automated visual test runner
-    └── artifacts/              # Generated visual PNG snapshots
+└── docs/                       # Architecture specifications & mdBook guides
+    └── src/
+        ├── declarative_ui.md   # Complete widget catalog & schema API guide
+        ├── examples.md         # Example walkthroughs & build guides
+        └── ffi_contracts.md    # POD ring queue protocol specification
 ```
 
 ---

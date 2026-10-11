@@ -1,4 +1,7 @@
 [toolchain]
 channel = "nightly"
 components = ["rust-src"]
-targets = ["xtensa-esp32s3-none-elf", "riscv32imafc-unknown-none-elf", "riscv32imac-unknown-none-elf"]
+# Note: xtensa-esp32s3-none-elf is a Tier 3 target compiled from source via
+# `rust-src` and `-Zbuild-std=core,alloc`. Rustup does not distribute prebuilt
+# `rust-std` binaries for it, so only Tier 2 prebuilt targets are listed below.
+targets = ["riscv32imafc-unknown-none-elf", "riscv32imac-unknown-none-elf"]

@@ -67,9 +67,6 @@ examples/
 ├── minimal/                  # Minimal 2-widget starter project (minimal-app crate)
 ├── s3_4848_flagship/         # Full 27-widget 6-tab industrial dashboard (s3-flagship-app crate)
 └── widget_cookbook/          # Recipe catalog for all 27 widgets (widget-cookbook crate)
-
-test_harness/
-└── crates/test-app/          # Dedicated test fixtures & mock state engine
 ```
 
 ### Generic Hardware BSP Interface (`esp_lvgl_bsp_ops_t`)

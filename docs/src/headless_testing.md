@@ -10,8 +10,9 @@ The test suite runs entirely offscreen on host developer machines (Linux/macOS) 
 
 ## Running the Tests
 ```bash
-cd test_harness
-make clean && make run
+cargo test --workspace
+# Or using the top-level Makefile:
+make test
 ```
 
 ## Test Execution Workflow

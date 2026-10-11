@@ -28,7 +28,7 @@
 //! - [`rust_get_tier3_schema`]: Provides C UI engine with the Tier 3 multi-tab showcase schema.
 //! - [`rust_get_s3_schema`]: Provides C UI engine with the 480×480 S3 widget descriptor table.
 
-#![cfg_attr(not(feature = "std"), no_std)]
+#![cfg_attr(target_os = "none", no_std)]
 #![allow(static_mut_refs)]
 
 use core::mem::MaybeUninit;
@@ -601,7 +601,7 @@ pub extern "C" fn rust_get_s3_schema(out_count: *mut usize) -> *const WidgetDesc
     S3_4848_SCHEMA.as_ptr()
 }
 
-#[cfg(not(any(test, feature = "std")))]
+#[cfg(target_os = "none")]
 #[panic_handler]
 fn panic(_info: &core::panic::PanicInfo) -> ! {
     loop {}

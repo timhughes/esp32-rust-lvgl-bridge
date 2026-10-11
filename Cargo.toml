@@ -6,7 +6,6 @@ members = [
     "examples/minimal/crates/minimal-app",
     "examples/s3_4848_flagship/crates/s3-flagship-app",
     "examples/widget_cookbook/crates/widget-cookbook",
-    "test_harness/crates/test-app",
 ]
 
 [profile.dev]
