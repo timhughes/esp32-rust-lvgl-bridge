@@ -20,8 +20,8 @@ impl ParamId {
     pub const None: Self = Self(0);
 
     /// Special framework protocol parameter ID for dynamic runtime widget flag updates.
-    pub const WIDGET_FLAGS: Self = Self(36);
-    pub const WidgetFlags: Self = Self(36);
+    pub const WIDGET_FLAGS: Self = Self(u32::MAX);
+    pub const WidgetFlags: Self = Self(u32::MAX);
 
     /// Creates a custom application parameter ID.
     #[inline]
@@ -1376,8 +1376,8 @@ mod tests {
 
         assert_eq!(ParamId::NONE, ParamId(0));
         assert_eq!(ParamId::None, ParamId(0));
-        assert_eq!(ParamId::WIDGET_FLAGS, ParamId(36));
-        assert_eq!(ParamId::WidgetFlags, ParamId(36));
+        assert_eq!(ParamId::WIDGET_FLAGS, ParamId(u32::MAX));
+        assert_eq!(ParamId::WidgetFlags, ParamId(u32::MAX));
 
         // Test Hash and Eq in a HashSet
         let mut set = HashSet::new();

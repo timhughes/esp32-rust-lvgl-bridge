@@ -10,8 +10,8 @@ extern "C" {
 #endif
 
 typedef enum {
-    PARAM_NONE           = 0,  // Sentinel: Unbound widget or root container without parent
-    PARAM_WIDGET_FLAGS   = 36, // Framework protocol: ack_seq_id=target_param_id, u32_val=flags
+    PARAM_NONE           = 0,           // Sentinel: Unbound widget or root container without parent
+    PARAM_WIDGET_FLAGS   = 0xFFFFFFFFU, // Framework protocol sentinel (u32::MAX): ack_seq_id=target_param_id, u32_val=flags
 } param_id_t;
 
 typedef enum {
