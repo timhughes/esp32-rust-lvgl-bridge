@@ -1,7 +1,7 @@
 PORT ?= /dev/ttyUSB0
 BAUD ?= 460800
 
-.PHONY: all test check build-everything build-minimal flash-everything flash-minimal docs clean help
+.PHONY: all test check build-everything build-minimal flash-everything flash-minimal build-component-tests flash-component-tests docs clean help
 
 all: test
 
@@ -61,8 +61,10 @@ help:
 	@echo "  make check             - Run cargo check across all workspace crates"
 	@echo "  make build-minimal     - Build examples/minimal firmware"
 	@echo "  make flash-minimal     - Flash examples/minimal to device"
-	@echo "  make build-everything  - Build examples/everything firmware (all widgets)"
-	@echo "  make flash-everything  - Flash examples/everything to device"
+	@echo "  make build-everything        - Build examples/everything firmware (all widgets)"
+	@echo "  make flash-everything        - Flash examples/everything to device"
+	@echo "  make build-component-tests   - Build ESP-IDF Unity unit tests for C components"
+	@echo "  make flash-component-tests   - Flash and run Unity unit tests on device"
 	@echo "  make docs              - Build mdBook documentation site (runs tests & syncs visual artifacts)"
 	@echo "  make docs-serve        - Live serve mdBook documentation locally"
 	@echo "  make clean             - Clean Cargo build targets"
