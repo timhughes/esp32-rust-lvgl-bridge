@@ -135,6 +135,19 @@ pub struct DeviceTelemetry {
 }
 
 impl DeviceTelemetry {
+    /// Builds a telemetry message that changes runtime flags of another widget.
+    ///
+    /// ```
+    /// use esp32_rust_lvgl_bridge_core::{DeviceTelemetry, ParamId, WidgetFlagOp};
+    ///
+    /// let t = DeviceTelemetry::widget_flag_update(
+    ///     ParamId::TriggerReset,
+    ///     WidgetFlagOp::Hidden as u32 | WidgetFlagOp::Disabled as u32,
+    /// );
+    /// assert_eq!(t.param_id, ParamId::WidgetFlags);
+    /// assert_eq!(t.ack_seq_id, ParamId::TriggerReset.as_u32());
+    /// assert_eq!(unsafe { t.value.u32_val }, 0b101);
+    /// ```
     #[inline]
     pub const fn widget_flag_update(target: ParamId, flags: u32) -> Self {
         Self {
@@ -1348,12 +1361,31 @@ impl WidgetDescriptor {
         }
     }
 
+    /// Places this widget inside a container (e.g. a `TabView` tab).
+    ///
+    /// ```
+    /// use esp32_rust_lvgl_bridge_core::{ParamId, UiAlign, WidgetDescriptor};
+    ///
+    /// let d = WidgetDescriptor::button(ParamId::TriggerReset, UiAlign::Center, 0, 0, c"Go", 1)
+    ///     .with_parent(ParamId::NavTab, 2);
+    /// assert_eq!(d.parent_param_id, ParamId::NavTab);
+    /// assert_eq!(d.tab_index, 2);
+    /// ```
     pub const fn with_parent(mut self, parent_param_id: ParamId, tab_index: u32) -> Self {
         self.parent_param_id = parent_param_id;
         self.tab_index = tab_index;
         self
     }
 
+    /// Applies a declarative flex layout flow to the created widget.
+    ///
+    /// ```
+    /// use esp32_rust_lvgl_bridge_core::{LayoutFlow, ParamId, UiAlign, WidgetDescriptor};
+    ///
+    /// let d = WidgetDescriptor::win(ParamId::WindowModal, UiAlign::Center, 0, 0, 300, 200, c"W")
+    ///     .with_layout(LayoutFlow::Column);
+    /// assert_eq!(d.layout_flow, LayoutFlow::Column);
+    /// ```
     pub const fn with_layout(mut self, layout_flow: LayoutFlow) -> Self {
         self.layout_flow = layout_flow;
         self

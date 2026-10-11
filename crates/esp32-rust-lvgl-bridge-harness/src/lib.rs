@@ -5,6 +5,22 @@
 //!
 //! Enables embedded developers to write 100% pure Rust unit and visual
 //! regression tests for their declarative UI schemas without physical hardware.
+//!
+//! ## Example
+//!
+//! ```
+//! use esp32_rust_lvgl_bridge_core::{ParamId, UiAlign, WidgetDescriptor};
+//! use esp32_rust_lvgl_bridge_harness::HeadlessHarness;
+//!
+//! let mut harness = HeadlessHarness::new(480, 480);
+//! harness.build_schema(&[WidgetDescriptor::switch(
+//!     ParamId::SystemEnable, UiAlign::Center, 0, 0, c"On", c"Off",
+//! )]);
+//! harness.step(50);
+//! assert!(harness.click(ParamId::SystemEnable));
+//! let cmd = harness.recv_command().expect("click emits a command");
+//! assert_eq!(cmd.param_id, ParamId::SystemEnable);
+//! ```
 
 use std::ffi::CString;
 use std::os::raw::{c_char, c_void};

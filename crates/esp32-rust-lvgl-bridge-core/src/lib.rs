@@ -13,6 +13,20 @@
 //! - **Declarative UI Descriptors**: [`WidgetDescriptor`] structures allow
 //!   Rust to define UI hierarchies that C constructs without procedural UI code.
 //!
+//! ## Example
+//!
+//! ```
+//! use esp32_rust_lvgl_bridge_core::{ParamId, UiAlign, WidgetDescriptor, WidgetType};
+//!
+//! static SCHEMA: &[WidgetDescriptor] = &[
+//!     WidgetDescriptor::tabview(ParamId::NavTab, c"Main\nSettings", 480, 480),
+//!     WidgetDescriptor::switch(ParamId::SystemEnable, UiAlign::TopLeft, 20, 15, c"On", c"Off")
+//!         .with_parent(ParamId::NavTab, 0),
+//! ];
+//! assert_eq!(SCHEMA[0].widget_type, WidgetType::TabView);
+//! assert_eq!(SCHEMA[1].tab_index, 0);
+//! ```
+//!
 //! ## Modules
 //! - [`abi`]: C-compatible data structures, parameter identifiers, and alignment constants.
 //! - [`worker`]: Generic traits for closed-loop controllers and worker execution loops.
