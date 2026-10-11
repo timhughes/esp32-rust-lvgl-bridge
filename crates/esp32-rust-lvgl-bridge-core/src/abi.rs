@@ -170,6 +170,16 @@ impl DeviceTelemetry {
     }
 }
 
+/// Real-time queue and transport statistics mirroring `bridge_transport_stats_t`.
+#[repr(C)]
+#[derive(Copy, Clone, Debug, Default, PartialEq, Eq)]
+pub struct BridgeTransportStats {
+    pub cmd_sent: u32,
+    pub cmd_dropped: u32,
+    pub telem_sent: u32,
+    pub telem_dropped: u32,
+}
+
 #[repr(u32)]
 #[derive(Copy, Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub enum WidgetType {

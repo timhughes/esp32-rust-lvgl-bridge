@@ -386,3 +386,26 @@ fn test_declarative_flex_layout() {
     harness.step(20);
     assert_eq!(harness.get_widget_flex_flow(PARAM_WINDOW_MODAL), Some(LayoutFlow::Column));
 }
+
+/// 12. Transport Statistics Monitoring
+#[test]
+fn test_bridge_transport_stats() {
+    let _guard = TEST_LOCK.lock().unwrap_or_else(|e| e.into_inner());
+    let mut harness = HeadlessHarness::new(480, 480);
+    harness.build_schema(EVERYTHING_SCHEMA);
+    harness.step(20);
+
+    let stats_before = harness.transport_stats();
+
+    // Click a button to send a UI command
+    assert!(harness.click(PARAM_TRIGGER_RESET));
+    harness.step(20);
+
+    let stats_after = harness.transport_stats();
+    assert!(
+        stats_after.cmd_sent > stats_before.cmd_sent,
+        "Command sent count should increment after click: before={}, after={}",
+        stats_before.cmd_sent,
+        stats_after.cmd_sent
+    );
+}

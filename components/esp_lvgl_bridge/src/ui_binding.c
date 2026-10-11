@@ -4,11 +4,10 @@
 
 static inline void ui_set_obj_hidden(lv_obj_t *obj, bool hidden) {
     if (!obj) return;
-    if (hidden) {
-        lv_obj_add_flag(obj, LV_OBJ_FLAG_HIDDEN);
-    } else {
-        lv_obj_remove_flag(obj, LV_OBJ_FLAG_HIDDEN);
-    }
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wdeprecated-declarations"
+    lv_obj_set_flag(obj, LV_OBJ_FLAG_HIDDEN, hidden);
+#pragma GCC diagnostic pop
 }
 
 #if LV_USE_FLEX
@@ -32,8 +31,11 @@ static void apply_layout_flow(lv_obj_t *obj, layout_flow_t flow_mode) {
 #define MAX_LABEL_BINDINGS 32
 #define MAX_PARAM_LOOKUPS 256
 
+#include <stdlib.h>
+
 #ifdef ESP_PLATFORM
 #include "esp_log.h"
+#include "esp_heap_caps.h"
 #define LOG_BIND_ERR(fmt, ...) ESP_LOGE("UI_BINDING", fmt, ##__VA_ARGS__)
 #else
 #define LOG_BIND_ERR(fmt, ...) fprintf(stderr, "[UI_BINDING ERROR] " fmt "\n", ##__VA_ARGS__)
@@ -370,9 +372,6 @@ static size_t s_num_barcodes = 0;
 // Button matrix map storage
 static char s_btnmatrix_str_bufs[MAX_BINDINGS][256];
 static const char *s_btnmatrix_maps[MAX_BINDINGS][32];
-
-// Canvas static draw buffer (100x100 RGB565)
-static uint8_t s_canvas_buffers[2][100 * 100 * 2];
 
 static widget_lookup_t s_lookups[MAX_PARAM_LOOKUPS];
 static size_t s_num_lookups = 0;
@@ -841,6 +840,13 @@ void ui_engine_init(void) {
     s_num_charts = 0;
     s_num_tables = 0;
     s_num_calendars = 0;
+    // Clean up dynamic canvas buffers if previously allocated
+    for (size_t c = 0; c < s_num_canvases; c++) {
+        if (s_canvases[c].cbuf) {
+            free(s_canvases[c].cbuf);
+            s_canvases[c].cbuf = NULL;
+        }
+    }
     s_num_canvases = 0;
     // Phase 1
     s_num_images = 0;
@@ -1257,12 +1263,15 @@ void ui_engine_dispatch_telemetry(const device_telemetry_t *telem) {
             if (flags & WIDGET_FLAG_ENABLED) {
                 lv_obj_remove_state(obj, LV_STATE_DISABLED);
             }
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wdeprecated-declarations"
             if (flags & WIDGET_FLAG_CLICKABLE) {
-                lv_obj_add_flag(obj, LV_OBJ_FLAG_CLICKABLE);
+                lv_obj_set_flag(obj, LV_OBJ_FLAG_CLICKABLE, true);
             }
             if (flags & WIDGET_FLAG_UNCLICKABLE) {
-                lv_obj_remove_flag(obj, LV_OBJ_FLAG_CLICKABLE);
+                lv_obj_set_flag(obj, LV_OBJ_FLAG_CLICKABLE, false);
             }
+#pragma GCC diagnostic pop
         }
     }
 }
@@ -1949,24 +1958,41 @@ void ui_engine_build_from_schema(const widget_descriptor_t *schema, size_t count
             lv_obj_set_size(cv, w, h);
             lv_obj_align(cv, align, d->offset_x, d->offset_y);
 
-            if (s_num_canvases < 2) {
-                size_t c_idx = s_num_canvases;
-                lv_canvas_set_buffer(cv, s_canvas_buffers[c_idx], w, h, LV_COLOR_FORMAT_RGB565);
-                lv_canvas_fill_bg(cv, lv_palette_lighten(LV_PALETTE_GREY, 3), LV_OPA_COVER);
+            if (s_num_canvases < MAX_BINDINGS) {
+                size_t buf_size = w * h * 2; // RGB565
+                uint8_t *cbuf = NULL;
+#ifdef ESP_PLATFORM
+                cbuf = (uint8_t *)heap_caps_malloc(buf_size, MALLOC_CAP_SPIRAM | MALLOC_CAP_8BIT);
+                if (!cbuf) {
+                    cbuf = (uint8_t *)heap_caps_malloc(buf_size, MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT);
+                }
+#else
+                cbuf = (uint8_t *)malloc(buf_size);
+#endif
+                if (cbuf) {
+                    lv_canvas_set_buffer(cv, cbuf, w, h, LV_COLOR_FORMAT_RGB565);
+                    lv_canvas_fill_bg(cv, lv_palette_lighten(LV_PALETTE_GREY, 3), LV_OPA_COVER);
 
-                // Draw test pattern: border and cross
-                for (uint32_t y = 5; y < 95 && y < h; y++) {
-                    for (uint32_t x = 5; x < 95 && x < w; x++) {
-                        if (x == y || x == (99 - y) || x == 5 || x == 94 || y == 5 || y == 94) {
-                            lv_canvas_set_px(cv, (int32_t)x, (int32_t)y, lv_palette_main(LV_PALETTE_TEAL), LV_OPA_COVER);
+                    // Draw test pattern: border and cross
+                    for (uint32_t y = 5; y < 95 && y < h; y++) {
+                        for (uint32_t x = 5; x < 95 && x < w; x++) {
+                            if (x == y || x == (99 - y) || x == 5 || x == 94 || y == 5 || y == 94) {
+                                lv_canvas_set_px(cv, (int32_t)x, (int32_t)y, lv_palette_main(LV_PALETTE_TEAL), LV_OPA_COVER);
+                            }
                         }
                     }
-                }
 
-                bound_canvas_t *b = &s_canvases[s_num_canvases++];
-                b->param_id = d->param_id;
-                b->canvas = cv;
-                b->cbuf = s_canvas_buffers[c_idx];
+                    bound_canvas_t *b = &s_canvases[s_num_canvases++];
+                    b->param_id = d->param_id;
+                    b->canvas = cv;
+                    b->cbuf = cbuf;
+                } else {
+                    LOG_BIND_ERR("Failed to allocate %zu bytes for canvas (param %lu)",
+                                 buf_size, (unsigned long)d->param_id);
+                }
+            } else {
+                LOG_BIND_ERR("Canvas bindings capacity exhausted (max %d)! Cannot bind param %lu",
+                             MAX_BINDINGS, (unsigned long)d->param_id);
             }
             register_lookup(d->param_id, cv);
             break;

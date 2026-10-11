@@ -492,6 +492,7 @@ fn panic(_info: &core::panic::PanicInfo) -> ! {
 extern "C" {
     pub fn bridge_recv_command(out_cmd: *mut UiCommand, timeout_ms: u32) -> bool;
     pub fn bridge_send_telemetry(telem: *const DeviceTelemetry) -> bool;
+    pub fn bridge_transport_get_stats(out_stats: *mut bridge_core::abi::BridgeTransportStats);
 }
 
 pub struct SystemEngine {

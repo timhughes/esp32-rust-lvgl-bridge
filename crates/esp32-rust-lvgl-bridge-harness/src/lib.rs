@@ -39,6 +39,7 @@ extern "C" {
     fn bridge_recv_command(out_cmd: *mut UiCommand, timeout_ms: u32) -> bool;
     fn bridge_send_telemetry(telem: *const DeviceTelemetry) -> bool;
     fn bridge_recv_telemetry_in_ui(out_telem: *mut DeviceTelemetry) -> bool;
+    fn bridge_transport_get_stats(out_stats: *mut esp32_rust_lvgl_bridge_core::abi::BridgeTransportStats);
 
     fn harness_init();
     fn harness_set_resolution(hor_res: i32, ver_res: i32);
@@ -138,6 +139,13 @@ impl HeadlessHarness {
         } else {
             None
         }
+    }
+
+    /// Read the current in-memory transport statistics.
+    pub fn transport_stats(&self) -> esp32_rust_lvgl_bridge_core::abi::BridgeTransportStats {
+        let mut stats = esp32_rust_lvgl_bridge_core::abi::BridgeTransportStats::default();
+        unsafe { bridge_transport_get_stats(&mut stats) };
+        stats
     }
 
     /// Simulate a touch press and release (click) on a widget bound to `param_id`.
