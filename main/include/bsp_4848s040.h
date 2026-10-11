@@ -30,6 +30,12 @@ lv_indev_t *bsp_touch_init(lv_display_t *disp);
  */
 void bsp_backlight_set(uint8_t percent);
 
+/**
+ * @brief Check if display backlight is currently turned on.
+ * @return true if backlight is on, false if off.
+ */
+bool bsp_backlight_is_on(void);
+
 #ifdef __cplusplus
 }
 #endif

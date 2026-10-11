@@ -46,6 +46,19 @@ static uint32_t bsp_lvgl_tick(void) {
     return (uint32_t)(esp_timer_get_time() / 1000);
 }
 
+#if CONFIG_IDF_TARGET_ESP32S3
+#define SCREEN_TIMEOUT_MS (60 * 1000)
+
+static void screen_saver_timer_cb(lv_timer_t *timer) {
+    lv_display_t *disp = (lv_display_t *)lv_timer_get_user_data(timer);
+    uint32_t inactive_ms = lv_display_get_inactive_time(disp);
+    if (bsp_backlight_is_on() && inactive_ms >= SCREEN_TIMEOUT_MS) {
+        ESP_LOGI("APP", "Inactivity timeout (%lu ms >= 60s). Turning display backlight OFF.", (unsigned long)inactive_ms);
+        bsp_backlight_set(0);
+    }
+}
+#endif
+
 static void lvgl_ui_task(void *pvParams) {
     (void)pvParams;
 
@@ -64,6 +77,10 @@ static void lvgl_ui_task(void *pvParams) {
     ui_engine_init();
     ui_engine_build_from_schema(schema, count);
     ESP_LOGI("APP", "UI schema construction complete!");
+
+    // Register 1-minute inactivity screensaver timer (checks once every second)
+    lv_timer_create(screen_saver_timer_cb, 1000, disp);
+    ESP_LOGI("APP", "Registered 60-second screen timeout timer.");
 #else
     setup_test_ui();
 #endif

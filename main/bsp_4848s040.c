@@ -68,6 +68,12 @@ static void lvgl_flush_cb(lv_display_t *disp, const lv_area_t *area, uint8_t *px
     lv_display_flush_ready(disp);
 }
 
+static bool s_backlight_on = true;
+
+bool bsp_backlight_is_on(void) {
+    return s_backlight_on;
+}
+
 static void lvgl_touch_read_cb(lv_indev_t *indev, lv_indev_data_t *data) {
     esp_lcd_touch_handle_t touch = (esp_lcd_touch_handle_t)lv_indev_get_user_data(indev);
     esp_lcd_touch_point_data_t pt;
@@ -76,6 +82,13 @@ static void lvgl_touch_read_cb(lv_indev_t *indev, lv_indev_data_t *data) {
     esp_lcd_touch_read_data(touch);
     esp_err_t err = esp_lcd_touch_get_data(touch, &pt, &count, 1);
     if (err == ESP_OK && count > 0) {
+        if (!s_backlight_on) {
+            ESP_LOGI("BSP", "Touch detected while display is dark. Turning backlight ON!");
+            bsp_backlight_set(100);
+            lv_display_trigger_activity(NULL);
+            data->state = LV_INDEV_STATE_RELEASED;
+            return;
+        }
         data->point.x = pt.x;
         data->point.y = pt.y;
         data->state = LV_INDEV_STATE_PRESSED;
@@ -92,7 +105,8 @@ void bsp_backlight_set(uint8_t percent) {
         .pull_up_en = GPIO_PULLUP_DISABLE,
     };
     gpio_config(&bl_conf);
-    gpio_set_level((gpio_num_t)LCD_IO_BL, percent > 0 ? 1 : 0);
+    s_backlight_on = (percent > 0);
+    gpio_set_level((gpio_num_t)LCD_IO_BL, s_backlight_on ? 1 : 0);
 }
 
 // Initialization sequence specifically tailored for Guition ESP32-S3-4848S040 (ST7701S)

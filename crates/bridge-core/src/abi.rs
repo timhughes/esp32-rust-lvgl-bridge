@@ -35,7 +35,9 @@ pub enum ParamId {
     DataTable = 23,
     CalendarDate = 24,
     CanvasDraw = 25,
+    TextArea = 26,
 }
+
 
 #[repr(C)]
 #[derive(Copy, Clone)]
@@ -527,6 +529,31 @@ impl WidgetDescriptor {
         }
     }
 
+    pub const fn text_input(
+        param_id: ParamId,
+        align: UiAlign,
+        offset_x: i32,
+        offset_y: i32,
+        width: i32,
+        height: i32,
+        placeholder: &'static core::ffi::CStr,
+        default_text: Option<&'static core::ffi::CStr>,
+        max_len: i32,
+    ) -> Self {
+        Self::text_area(
+            param_id,
+            align,
+            offset_x,
+            offset_y,
+            width,
+            height,
+            placeholder,
+            default_text,
+            true,
+            max_len,
+        )
+    }
+
     pub const fn keyboard(
         param_id: ParamId,
         target_textarea: ParamId,
@@ -544,11 +571,11 @@ impl WidgetDescriptor {
             offset_y,
             min_val: 0,
             max_val: 0,
-            initial_val: 0,
+            initial_val: target_textarea as i32,
             holdoff_ms: 0,
             label_primary: core::ptr::null(),
             label_secondary: core::ptr::null(),
-            parent_param_id: target_textarea,
+            parent_param_id: ParamId::None,
             width,
             height,
             tab_index: 0,
@@ -669,15 +696,18 @@ impl WidgetDescriptor {
 
     pub const fn tileview(
         param_id: ParamId,
+        align: UiAlign,
+        offset_x: i32,
+        offset_y: i32,
         width: i32,
         height: i32,
     ) -> Self {
         Self {
             widget_type: WidgetType::TileView,
             param_id,
-            align: UiAlign::Center,
-            offset_x: 0,
-            offset_y: 0,
+            align,
+            offset_x,
+            offset_y,
             min_val: 0,
             max_val: 0,
             initial_val: 0,

@@ -143,3 +143,87 @@ pub static TIER3_SHOWCASE_SCHEMA: &[WidgetDescriptor] = &[
     ),
 ];
 ```
+
+---
+
+### Text Input, Multi-Line Text Area & Virtual Keyboard
+
+The framework provides first-class support for both single-line form inputs and multi-line text editors paired with an on-screen virtual keyboard:
+
+```rust
+pub static INPUTS_SCHEMA: &[WidgetDescriptor] = &[
+    // 1. Single-Line Text Input Field (e.g. command or Wi-Fi SSID)
+    WidgetDescriptor::text_input(
+        ParamId::TextInput,
+        UiAlign::TopMid,
+        0, 10,
+        440, 40,
+        c"Single-line command...",
+        Some(c"SYS:STATUS"),
+        31, // max length
+    ),
+
+    // 2. Multi-Line Text Area (e.g. system notes or log viewer)
+    WidgetDescriptor::text_area(
+        ParamId::TextArea,
+        UiAlign::TopMid,
+        0, 58,
+        440, 75,
+        c"Multi-line notes...",
+        Some(c"ESP32-S3 LVGL v9\nTouch input active."),
+        false, // multi-line
+        127,   // max length
+    ),
+
+    // 3. On-Screen Virtual Keyboard (retargetable)
+    WidgetDescriptor::keyboard(
+        ParamId::Keyboard,
+        ParamId::TextInput, // Initial target text field
+        UiAlign::BottomMid,
+        0, -5,
+        460, 165,
+    ),
+];
+```
+
+#### Dynamic Keyboard Focus Switching
+
+Rather than hardcoding a keyboard to a single input field forever:
+1. When any `TextInput` or `TextArea` receives touch focus (`LV_EVENT_FOCUSED` or `LV_EVENT_CLICKED`), the C runtime invokes `on_textarea_focused`.
+2. All active keyboards on the screen are dynamically re-routed to the focused target via `lv_keyboard_set_textarea(kb, ta)`.
+3. Keystrokes, backspace, mode switching (`1#` numeric / symbol keys), and enter keys flow immediately into whichever field the user tapped.
+4. When characters are edited, `LV_EVENT_VALUE_CHANGED` forwards zero-allocation Plain Old Data (POD) strings (`cmd.value.str_val: [u8; 32]`) over the lock-free bridge ring buffer to Rust's `SystemEngine`.
+
+---
+
+### ESP32-S3-4848S040 Complete Widget Suite (`S3_4848_SCHEMA`)
+
+The dedicated Guition ESP32-S3-4848S040 demo integrates **all 26 widget types** across 6 dedicated functional tabs in a 480×480 layout:
+
+| Tab | Name | Contained Widgets |
+|---|---|---|
+| **0** | **Controls** | `Switch`, `Led`, `Spinner`, `Arc` (dial), `Bar` (load), `Slider`, `Button`, `Label` (cycles) |
+| **1** | **Selectors** | `Checkbox`, `Dropdown`, `Roller`, `Spinbox`, `Scale` (analog needle gauge) |
+| **2** | **Inputs** | `TextInput` (single-line), `TextArea` (multi-line), `Keyboard` (virtual QWERTY), `MsgBox` (modal) |
+| **3** | **Telemetry** | `Chart` (streaming waveform), `Table` (diagnostics grid), `List` (interactive items) |
+| **4** | **Tools** | `Calendar` (interactive date picker), `ButtonMatrix` (4×3 keypad), `Canvas` (100×100 RGB565 custom graphics), `Label` |
+| **5** | **System** | `Menu` (hierarchical settings), `TileView` (horizontal swipeable 2D grid) |
+
+```rust
+// Root Navigation Container: 6 Tabs across 480x480 screen
+WidgetDescriptor::tabview(
+    ParamId::NavTab,
+    c"Controls\nSelectors\nInputs\nTelemetry\nTools\nSystem",
+    480, 480,
+)
+```
+
+#### Automatic Inactivity Screen Timeout & Wake-on-Touch
+
+To preserve power and display longevity on the Guition 480×480 screen:
+- **Inactivity Timeout:** After 60 seconds (1 minute) with no touch events, `screen_saver_timer_cb` detects inactivity via `lv_display_get_inactive_time(disp) >= 60000` and disables the LED backlight (`bsp_backlight_set(0)`).
+- **Wake-on-Touch:** When the screen is touched while dark, the Goodix GT911 touch digitizer detects the press, instantly turns the backlight back on to 100% (`bsp_backlight_set(100)`), and resets the inactivity timer.
+- **Accidental Click Suppression:** The initial wake-up touch suppresses `LV_INDEV_STATE_PRESSED` forwarding, preventing unintended widget interactions in the dark.
+
+
+

@@ -188,6 +188,23 @@ int main(void) {
         harness_step(20);
     }
 
+    // Focus single-line TextInput then multi-line TextArea to verify keyboard retargeting
+    lv_obj_t *text_in = ui_engine_get_widget_by_param(PARAM_TEXT_INPUT);
+    if (text_in) {
+        harness_click_widget(text_in);
+        rust_worker_step();
+        pump_incoming_telemetry();
+        harness_step(20);
+    }
+
+    lv_obj_t *text_area = ui_engine_get_widget_by_param(PARAM_TEXT_AREA);
+    if (text_area) {
+        harness_click_widget(text_area);
+        rust_worker_step();
+        pump_incoming_telemetry();
+        harness_step(20);
+    }
+
     // Interact with Keypad Matrix
     lv_obj_t *keypad = ui_engine_get_widget_by_param(PARAM_KEYPAD_MATRIX);
     if (keypad) {
@@ -246,7 +263,7 @@ int main(void) {
     // ----------------------------------------------------
     // Scenario 11: Tier 3 Tab 2 (Config - Calendar)
     // ----------------------------------------------------
-    printf("[11/11] Capturing Scenario 11: Tier 3 Tab 2 (Config - Calendar)...\n");
+    printf("[11/13] Capturing Scenario 11: Tier 3 Tab 2 (Config - Calendar)...\n");
     if (tv) {
         lv_tabview_set_active(tv, 2, LV_ANIM_OFF);
         harness_step(50);
@@ -257,6 +274,43 @@ int main(void) {
     }
     printf("  -> Saved artifacts/11_tier3_config.png\n");
 
-    printf("=== Test Suite Complete: All 11 Artifacts Successfully Generated ===\n");
+    // ----------------------------------------------------
+    // Scenario 12: S3 4848 Complete Widget Suite (Tab 4: Tools)
+    // ----------------------------------------------------
+    printf("[12/13] Capturing Scenario 12: S3 4848 Tab 4 (Tools - Calendar, Keypad & Canvas)...\n");
+    lv_obj_clean(lv_screen_active());
+    ui_engine_init();
+
+    size_t s3_count = 0;
+    const widget_descriptor_t *s3_schema = rust_get_s3_schema(&s3_count);
+    printf("  -> Building S3 4848 UI schema with %zu widgets across 6 tabs...\n", s3_count);
+    ui_engine_build_from_schema(s3_schema, s3_count);
+
+    lv_obj_t *s3_tv = ui_engine_get_widget_by_param(PARAM_NAV_TAB);
+    if (s3_tv) {
+        lv_tabview_set_active(s3_tv, 4, LV_ANIM_OFF);
+        harness_step(50);
+    }
+    if (!harness_save_png("artifacts/12_s3_tab4_tools.png")) {
+        fprintf(stderr, "Failed to save artifacts/12_s3_tab4_tools.png\n");
+        return 1;
+    }
+    printf("  -> Saved artifacts/12_s3_tab4_tools.png\n");
+
+    // ----------------------------------------------------
+    // Scenario 13: S3 4848 Complete Widget Suite (Tab 5: System)
+    // ----------------------------------------------------
+    printf("[13/13] Capturing Scenario 13: S3 4848 Tab 5 (System - Menu & TileView)...\n");
+    if (s3_tv) {
+        lv_tabview_set_active(s3_tv, 5, LV_ANIM_OFF);
+        harness_step(50);
+    }
+    if (!harness_save_png("artifacts/13_s3_tab5_system.png")) {
+        fprintf(stderr, "Failed to save artifacts/13_s3_tab5_system.png\n");
+        return 1;
+    }
+    printf("  -> Saved artifacts/13_s3_tab5_system.png\n");
+
+    printf("=== Test Suite Complete: All 13 Artifacts Successfully Generated ===\n");
     return 0;
 }

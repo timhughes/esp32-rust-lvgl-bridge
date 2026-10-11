@@ -36,9 +36,10 @@ typedef enum {
     PARAM_ITEM_LIST      = 21,// List: i32_val selected item
     PARAM_TELEMETRY_CHART= 22,// Chart: i32_val streaming sample
     PARAM_DATA_TABLE     = 23,// Table: i32_val/str_val
-    PARAM_CALENDAR_DATE  = 24,// Calendar: u32_val encoded YYYYMMDD
     PARAM_CANVAS_DRAW    = 25,// Canvas
+    PARAM_TEXT_AREA      = 26,// TextArea (multiline): str_val buffer
 } param_id_t;
+
 
 typedef union {
     int32_t  i32_val;

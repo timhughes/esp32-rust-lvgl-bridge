@@ -490,6 +490,15 @@ static void on_textarea_event_value_changed(lv_event_t *e) {
     bridge_send_command_from_ui(&cmd);
 }
 
+static void on_textarea_focused(lv_event_t *e) {
+    lv_obj_t *ta = lv_event_get_current_target(e);
+    for (size_t i = 0; i < s_num_keyboards; i++) {
+        if (s_keyboards[i].keyboard) {
+            lv_keyboard_set_textarea(s_keyboards[i].keyboard, ta);
+        }
+    }
+}
+
 static void on_keyboard_event(lv_event_t *e) {
     bound_keyboard_t *b = (bound_keyboard_t *)lv_event_get_user_data(e);
     if (!b) return;
@@ -983,9 +992,7 @@ void ui_engine_build_from_schema(const widget_descriptor_t *schema, size_t count
 
         // Resolve container parent
         lv_obj_t *parent_obj = scr;
-        if (d->widget_type == WIDGET_TYPE_KEYBOARD) {
-            parent_obj = scr;
-        } else if (d->parent_param_id != PARAM_NONE) {
+        if (d->parent_param_id != PARAM_NONE) {
             // Check if parent is a TabView
             for (size_t t = 0; t < s_num_tabviews; t++) {
                 if (s_tabviews[t].param_id == d->parent_param_id) {
@@ -995,7 +1002,7 @@ void ui_engine_build_from_schema(const widget_descriptor_t *schema, size_t count
                     break;
                 }
             }
-            if (parent_obj == scr) {
+            if (parent_obj == scr && d->widget_type != WIDGET_TYPE_KEYBOARD) {
                 lv_obj_t *found = ui_engine_get_widget_by_param(d->parent_param_id);
                 if (found) parent_obj = found;
             }
@@ -1279,6 +1286,9 @@ void ui_engine_build_from_schema(const widget_descriptor_t *schema, size_t count
                 lv_textarea_set_max_length(ta, (uint32_t)d->max_val);
             }
 
+            lv_obj_add_event_cb(ta, on_textarea_focused, LV_EVENT_FOCUSED, NULL);
+            lv_obj_add_event_cb(ta, on_textarea_focused, LV_EVENT_CLICKED, NULL);
+
             if (s_num_textareas < MAX_BINDINGS) {
                 bound_textarea_t *b = &s_textareas[s_num_textareas++];
                 b->param_id = d->param_id;
@@ -1298,8 +1308,14 @@ void ui_engine_build_from_schema(const widget_descriptor_t *schema, size_t count
                 lv_obj_set_size(kb, d->width, d->height);
             }
 
-            if (d->parent_param_id != PARAM_NONE) {
-                lv_obj_t *target_ta = ui_engine_get_widget_by_param(d->parent_param_id);
+            param_id_t target_id = PARAM_NONE;
+            if (d->initial_val > 0) {
+                target_id = (param_id_t)d->initial_val;
+            } else if (d->parent_param_id != PARAM_NONE && parent_obj == scr) {
+                target_id = d->parent_param_id;
+            }
+            if (target_id != PARAM_NONE) {
+                lv_obj_t *target_ta = ui_engine_get_widget_by_param(target_id);
                 if (target_ta) {
                     lv_keyboard_set_textarea(kb, target_ta);
                 }
@@ -1435,6 +1451,20 @@ void ui_engine_build_from_schema(const widget_descriptor_t *schema, size_t count
                 b->param_id = d->param_id;
                 b->tileview = tv;
                 b->num_tiles = 0;
+
+                lv_obj_t *t1 = lv_tileview_add_tile(tv, 0, 0, LV_DIR_RIGHT);
+                lv_obj_t *lbl1 = lv_label_create(t1);
+                lv_label_set_text(lbl1, "TileView (0,0): Swipe Right ->");
+                lv_obj_center(lbl1);
+
+                lv_obj_t *t2 = lv_tileview_add_tile(tv, 1, 0, LV_DIR_LEFT);
+                lv_obj_t *lbl2 = lv_label_create(t2);
+                lv_label_set_text(lbl2, "<- TileView (1,0): Swipe Left");
+                lv_obj_center(lbl2);
+
+                b->tiles[0] = t1;
+                b->tiles[1] = t2;
+                b->num_tiles = 2;
             }
             register_lookup(d->param_id, tv);
             break;
@@ -1446,9 +1476,18 @@ void ui_engine_build_from_schema(const widget_descriptor_t *schema, size_t count
             lv_obj_align(menu, align, d->offset_x, d->offset_y);
 
             lv_obj_t *page = lv_menu_page_create(menu, d->label_primary ? d->label_primary : "Menu");
-            lv_obj_t *cont = lv_menu_cont_create(page);
-            lv_obj_t *lbl = lv_label_create(cont);
-            lv_label_set_text(lbl, "System Settings");
+            lv_obj_t *cont1 = lv_menu_cont_create(page);
+            lv_obj_t *lbl1 = lv_label_create(cont1);
+            lv_label_set_text(lbl1, "WiFi: Connected (STA)");
+
+            lv_obj_t *cont2 = lv_menu_cont_create(page);
+            lv_obj_t *lbl2 = lv_label_create(cont2);
+            lv_label_set_text(lbl2, "Display: 480x480 RGB565");
+
+            lv_obj_t *cont3 = lv_menu_cont_create(page);
+            lv_obj_t *lbl3 = lv_label_create(cont3);
+            lv_label_set_text(lbl3, "Core Engine: FreeRTOS + Rust");
+
             lv_menu_set_page(menu, page);
 
             if (s_num_menus < MAX_BINDINGS) {
@@ -1572,6 +1611,15 @@ void ui_engine_build_from_schema(const widget_descriptor_t *schema, size_t count
                 size_t c_idx = s_num_canvases;
                 lv_canvas_set_buffer(cv, s_canvas_buffers[c_idx], w, h, LV_COLOR_FORMAT_RGB565);
                 lv_canvas_fill_bg(cv, lv_palette_lighten(LV_PALETTE_GREY, 3), LV_OPA_COVER);
+
+                // Draw test pattern: border and cross
+                for (uint32_t y = 5; y < 95 && y < h; y++) {
+                    for (uint32_t x = 5; x < 95 && x < w; x++) {
+                        if (x == y || x == (99 - y) || x == 5 || x == 94 || y == 5 || y == 94) {
+                            lv_canvas_set_px(cv, (int32_t)x, (int32_t)y, lv_palette_main(LV_PALETTE_TEAL), LV_OPA_COVER);
+                        }
+                    }
+                }
 
                 bound_canvas_t *b = &s_canvases[s_num_canvases++];
                 b->param_id = d->param_id;

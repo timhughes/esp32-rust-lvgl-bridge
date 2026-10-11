@@ -183,10 +183,10 @@ pub static TIER1_SHOWCASE_SCHEMA: &[WidgetDescriptor] = &[
 ];
 
 pub static S3_4848_SCHEMA: &[WidgetDescriptor] = &[
-    // Root Navigation: 4-Tab TabView across 480x480 display
+    // Root Navigation: 6-Tab TabView across 480x480 display
     WidgetDescriptor::tabview(
         ParamId::NavTab,
-        c"Controls\nSelectors\nInputs\nTelemetry",
+        c"Controls\nSelectors\nInputs\nTelemetry\nTools\nSystem",
         480,
         480,
     ),
@@ -310,27 +310,38 @@ pub static S3_4848_SCHEMA: &[WidgetDescriptor] = &[
         65,
     ).with_parent(ParamId::NavTab, 1),
 
-    // --- Tab 2: Inputs (Tier 2 text input, keypad & alert modal) ---
-    WidgetDescriptor::text_area(
+    // --- Tab 2: Inputs (Single-line input, multi-line text area, on-screen keyboard & alert modal) ---
+    WidgetDescriptor::text_input(
         ParamId::TextInput,
         UiAlign::TopMid,
         0,
-        15,
-        380,
-        45,
-        c"Enter command...",
+        10,
+        440,
+        40,
+        c"Single-line command...",
         Some(c"SYS:STATUS"),
-        true,
         31,
     ).with_parent(ParamId::NavTab, 2),
-    WidgetDescriptor::button_matrix(
-        ParamId::KeypadMatrix,
-        UiAlign::Center,
+    WidgetDescriptor::text_area(
+        ParamId::TextArea,
+        UiAlign::TopMid,
         0,
-        45,
-        260,
-        220,
-        c"1 2 3 \n 4 5 6 \n 7 8 9 \n * 0 #",
+        58,
+        440,
+        75,
+        c"Multi-line notes...",
+        Some(c"ESP32-S3 LVGL v9\nTouch input active."),
+        false,
+        127,
+    ).with_parent(ParamId::NavTab, 2),
+    WidgetDescriptor::keyboard(
+        ParamId::Keyboard,
+        ParamId::TextInput,
+        UiAlign::BottomMid,
+        0,
+        -5,
+        460,
+        165,
     ).with_parent(ParamId::NavTab, 2),
     WidgetDescriptor::msgbox(
         ParamId::AlertModal,
@@ -375,36 +386,104 @@ pub static S3_4848_SCHEMA: &[WidgetDescriptor] = &[
         75,
         c"ST7701S RGB (Active)\nGT911 I2C (Ready)\nESP32-S3 (240MHz)",
     ),
+
+    // --- Tab 4: Tools (Interactive Calendar, Button Matrix keypad & Canvas) ---
+    WidgetDescriptor::calendar(
+        ParamId::CalendarDate,
+        ParamId::NavTab,
+        4,
+        UiAlign::TopLeft,
+        12,
+        10,
+        225,
+        220,
+    ),
+    WidgetDescriptor::button_matrix(
+        ParamId::KeypadMatrix,
+        UiAlign::TopRight,
+        -12,
+        10,
+        195,
+        220,
+        c"1 2 3 \n 4 5 6 \n 7 8 9 \n * 0 #",
+    ).with_parent(ParamId::NavTab, 4),
+    WidgetDescriptor::canvas(
+        ParamId::CanvasDraw,
+        ParamId::NavTab,
+        4,
+        UiAlign::BottomLeft,
+        20,
+        -20,
+        100,
+        100,
+    ),
+    WidgetDescriptor::label(
+        ParamId::CycleCount,
+        UiAlign::BottomRight,
+        -20,
+        -45,
+        c"Calendar, Matrix & Canvas\nEngine Ticks: %lu",
+    ).with_parent(ParamId::NavTab, 4),
+
+    // --- Tab 5: System (Hierarchical Settings Menu & Swipeable TileView) ---
+    WidgetDescriptor::menu(
+        ParamId::MenuNav,
+        UiAlign::TopMid,
+        0,
+        10,
+        440,
+        180,
+        c"System Settings",
+    ).with_parent(ParamId::NavTab, 5),
+    WidgetDescriptor::tileview(
+        ParamId::NavTile,
+        UiAlign::BottomMid,
+        0,
+        -10,
+        440,
+        180,
+    ).with_parent(ParamId::NavTab, 5),
 ];
 
 
 pub static TIER2_SHOWCASE_SCHEMA: &[WidgetDescriptor] = &[
-    WidgetDescriptor::text_area(
+    WidgetDescriptor::text_input(
         ParamId::TextInput,
-        UiAlign::TopMid,
-        0,
-        20,
-        400,
-        45,
-        c"Enter command...",
+        UiAlign::TopLeft,
+        40,
+        15,
+        340,
+        42,
+        c"Single-line command...",
         Some(c"SYS:STATUS"),
-        true,
         31,
+    ),
+    WidgetDescriptor::text_area(
+        ParamId::TextArea,
+        UiAlign::TopRight,
+        -40,
+        15,
+        340,
+        75,
+        c"Multi-line notes...",
+        Some(c"System log initialized.\nReady for commands."),
+        false,
+        127,
     ),
     WidgetDescriptor::button_matrix(
         ParamId::KeypadMatrix,
         UiAlign::Center,
-        -160,
-        -30,
+        -180,
+        -15,
         220,
-        170,
+        150,
         c"1 2 3 \n 4 5 6 \n 7 8 9 \n * 0 #",
     ),
     WidgetDescriptor::scale(
         ParamId::GaugeScale,
         UiAlign::Center,
-        160,
-        -30,
+        180,
+        -15,
         180,
         180,
         0,
@@ -417,7 +496,7 @@ pub static TIER2_SHOWCASE_SCHEMA: &[WidgetDescriptor] = &[
         UiAlign::BottomMid,
         0,
         -10,
-        640,
+        720,
         160,
     ),
     WidgetDescriptor::msgbox(
@@ -549,6 +628,7 @@ pub struct SystemEngine {
     spinbox_step_val: i32,
     // Tier 2 & Tier 3 state
     text_buffer: [u8; 32],
+    textarea_buffer: [u8; 32],
     keyboard_action: i32,
     keypad_last_key: i32,
     modal_open: bool,
@@ -575,6 +655,7 @@ impl SystemEngine {
             speed_roller_idx: 1,
             spinbox_step_val: 1250,
             text_buffer: [0u8; 32],
+            textarea_buffer: [0u8; 32],
             keyboard_action: 0,
             keypad_last_key: 0,
             modal_open: false,
@@ -621,6 +702,9 @@ impl SystemEngine {
             }
             ParamId::TextInput => {
                 self.text_buffer = unsafe { cmd.value.str_val };
+            }
+            ParamId::TextArea => {
+                self.textarea_buffer = unsafe { cmd.value.str_val };
             }
             ParamId::Keyboard => {
                 self.keyboard_action = unsafe { cmd.value.i32_val };
