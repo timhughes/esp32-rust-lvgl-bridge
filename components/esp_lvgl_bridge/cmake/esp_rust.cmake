@@ -42,15 +42,16 @@ function(esp_rust_link_staticlib)
     string(REPLACE "-" "_" RUST_LIB_FILENAME "${RUST_ARG_CRATE_NAME}")
     set(RUST_LIB_PATH "${RUST_ARG_CRATE_DIR}/target/${RUST_TARGET}/release/lib${RUST_LIB_FILENAME}.a")
 
-    add_custom_command(
-        OUTPUT "${RUST_LIB_PATH}"
+    set(RUST_TARGET_NAME "cargo_${RUST_LIB_FILENAME}")
+    add_custom_target(
+        ${RUST_TARGET_NAME}
+        ALL
         COMMAND cargo build --release --target ${RUST_TARGET} -Zbuild-std=core,alloc -p ${RUST_ARG_CRATE_NAME}
         WORKING_DIRECTORY "${RUST_ARG_CRATE_DIR}"
+        BYPRODUCTS "${RUST_LIB_PATH}"
         COMMENT "Compiling Rust crate '${RUST_ARG_CRATE_NAME}' for target ${RUST_TARGET}..."
     )
 
-    set(RUST_TARGET_NAME "cargo_${RUST_LIB_FILENAME}")
-    add_custom_target(${RUST_TARGET_NAME} DEPENDS "${RUST_LIB_PATH}")
     add_dependencies(${RUST_ARG_COMPONENT} ${RUST_TARGET_NAME})
     target_link_libraries(${RUST_ARG_COMPONENT} PRIVATE "${RUST_LIB_PATH}")
 endfunction()
