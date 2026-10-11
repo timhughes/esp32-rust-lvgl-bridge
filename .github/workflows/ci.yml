@@ -55,7 +55,6 @@ jobs:
   docs-build:
     name: mdBook Documentation PR Check
     runs-on: ubuntu-latest
-    if: github.event_name == 'pull_request'
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v4
