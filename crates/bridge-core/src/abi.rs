@@ -868,4 +868,12 @@ impl WidgetDescriptor {
             tab_index,
         }
     }
+
+    pub const fn with_parent(mut self, parent_param_id: ParamId, tab_index: u32) -> Self {
+        self.parent_param_id = parent_param_id;
+        self.tab_index = tab_index;
+        self
+    }
 }
+
+

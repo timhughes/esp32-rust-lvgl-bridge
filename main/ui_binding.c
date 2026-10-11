@@ -72,18 +72,21 @@ typedef struct {
     param_id_t param_id;
     lv_obj_t *dropdown;
     uint32_t current_seq;
+    bool is_programmatic_update;
 } bound_dropdown_t;
 
 typedef struct {
     param_id_t param_id;
     lv_obj_t *roller;
     uint32_t current_seq;
+    bool is_programmatic_update;
 } bound_roller_t;
 
 typedef struct {
     param_id_t param_id;
     lv_obj_t *spinbox;
     uint32_t current_seq;
+    bool is_programmatic_update;
 } bound_spinbox_t;
 
 // Tier 2 Widgets
@@ -124,6 +127,7 @@ typedef struct {
     lv_obj_t *tabs[8];
     size_t num_tabs;
     uint32_t current_seq;
+    bool is_programmatic_update;
 } bound_tabview_t;
 
 typedef struct {
@@ -426,7 +430,7 @@ static void on_button_event_clicked(lv_event_t *e) {
 
 static void on_dropdown_event_value_changed(lv_event_t *e) {
     bound_dropdown_t *b = (bound_dropdown_t *)lv_event_get_user_data(e);
-    if (!b) return;
+    if (!b || b->is_programmatic_update) return;
 
     uint32_t sel = lv_dropdown_get_selected(b->dropdown);
     b->current_seq = ++s_global_seq;
@@ -440,7 +444,7 @@ static void on_dropdown_event_value_changed(lv_event_t *e) {
 
 static void on_roller_event_value_changed(lv_event_t *e) {
     bound_roller_t *b = (bound_roller_t *)lv_event_get_user_data(e);
-    if (!b) return;
+    if (!b || b->is_programmatic_update) return;
 
     uint32_t sel = lv_roller_get_selected(b->roller);
     b->current_seq = ++s_global_seq;
@@ -454,7 +458,7 @@ static void on_roller_event_value_changed(lv_event_t *e) {
 
 static void on_spinbox_event_value_changed(lv_event_t *e) {
     bound_spinbox_t *b = (bound_spinbox_t *)lv_event_get_user_data(e);
-    if (!b) return;
+    if (!b || b->is_programmatic_update) return;
 
     b->current_seq = ++s_global_seq;
     int32_t val = lv_spinbox_get_value(b->spinbox);
@@ -554,7 +558,7 @@ static void on_msgbox_ok_clicked(lv_event_t *e) {
 // ----------------------------------------------------------------------
 static void on_tabview_event_value_changed(lv_event_t *e) {
     bound_tabview_t *b = (bound_tabview_t *)lv_event_get_user_data(e);
-    if (!b) return;
+    if (!b || b->is_programmatic_update) return;
 
     uint32_t active = lv_tabview_get_tab_active(b->tabview);
     b->current_seq = ++s_global_seq;
@@ -856,7 +860,12 @@ void ui_engine_dispatch_telemetry(const device_telemetry_t *telem) {
     for (size_t i = 0; i < s_num_dropdowns; i++) {
         bound_dropdown_t *b = &s_dropdowns[i];
         if (b->param_id == telem->param_id) {
-            lv_dropdown_set_selected(b->dropdown, (uint32_t)telem->value.i32_val);
+            uint32_t target_idx = (uint32_t)telem->value.i32_val;
+            if (lv_dropdown_get_selected(b->dropdown) != target_idx) {
+                b->is_programmatic_update = true;
+                lv_dropdown_set_selected(b->dropdown, target_idx);
+                b->is_programmatic_update = false;
+            }
         }
     }
 
@@ -864,7 +873,12 @@ void ui_engine_dispatch_telemetry(const device_telemetry_t *telem) {
     for (size_t i = 0; i < s_num_rollers; i++) {
         bound_roller_t *b = &s_rollers[i];
         if (b->param_id == telem->param_id) {
-            lv_roller_set_selected(b->roller, (uint32_t)telem->value.i32_val, LV_ANIM_OFF);
+            uint32_t target_idx = (uint32_t)telem->value.i32_val;
+            if (lv_roller_get_selected(b->roller) != target_idx) {
+                b->is_programmatic_update = true;
+                lv_roller_set_selected(b->roller, target_idx, LV_ANIM_OFF);
+                b->is_programmatic_update = false;
+            }
         }
     }
 
@@ -872,7 +886,11 @@ void ui_engine_dispatch_telemetry(const device_telemetry_t *telem) {
     for (size_t i = 0; i < s_num_spinboxes; i++) {
         bound_spinbox_t *b = &s_spinboxes[i];
         if (b->param_id == telem->param_id) {
-            lv_spinbox_set_value(b->spinbox, telem->value.i32_val);
+            if (lv_spinbox_get_value(b->spinbox) != telem->value.i32_val) {
+                b->is_programmatic_update = true;
+                lv_spinbox_set_value(b->spinbox, telem->value.i32_val);
+                b->is_programmatic_update = false;
+            }
         }
     }
 
@@ -912,7 +930,12 @@ void ui_engine_dispatch_telemetry(const device_telemetry_t *telem) {
     for (size_t i = 0; i < s_num_tabviews; i++) {
         bound_tabview_t *b = &s_tabviews[i];
         if (b->param_id == telem->param_id) {
-            lv_tabview_set_active(b->tabview, (uint32_t)telem->value.i32_val, LV_ANIM_ON);
+            uint32_t target_tab = (uint32_t)telem->value.i32_val;
+            if (lv_tabview_get_tab_active(b->tabview) != target_tab) {
+                b->is_programmatic_update = true;
+                lv_tabview_set_active(b->tabview, target_tab, LV_ANIM_OFF);
+                b->is_programmatic_update = false;
+            }
         }
     }
 
@@ -1188,6 +1211,7 @@ void ui_engine_build_from_schema(const widget_descriptor_t *schema, size_t count
                 b->param_id = d->param_id;
                 b->dropdown = dd;
                 b->current_seq = 0;
+                b->is_programmatic_update = false;
 
                 lv_obj_add_event_cb(dd, on_dropdown_event_value_changed, LV_EVENT_VALUE_CHANGED, b);
             }
@@ -1208,6 +1232,7 @@ void ui_engine_build_from_schema(const widget_descriptor_t *schema, size_t count
                 b->param_id = d->param_id;
                 b->roller = roller;
                 b->current_seq = 0;
+                b->is_programmatic_update = false;
 
                 lv_obj_add_event_cb(roller, on_roller_event_value_changed, LV_EVENT_VALUE_CHANGED, b);
             }
@@ -1228,6 +1253,7 @@ void ui_engine_build_from_schema(const widget_descriptor_t *schema, size_t count
                 b->param_id = d->param_id;
                 b->spinbox = sb;
                 b->current_seq = 0;
+                b->is_programmatic_update = false;
 
                 lv_obj_add_event_cb(sb, on_spinbox_event_value_changed, LV_EVENT_VALUE_CHANGED, b);
             }
@@ -1379,6 +1405,7 @@ void ui_engine_build_from_schema(const widget_descriptor_t *schema, size_t count
                 b->tabview = tv;
                 b->num_tabs = 0;
                 b->current_seq = 0;
+                b->is_programmatic_update = false;
 
                 // Parse tab names separated by \n
                 if (d->label_primary) {
