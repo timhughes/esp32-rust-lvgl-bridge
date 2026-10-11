@@ -11,4 +11,5 @@ idf_component_register(
         espressif__esp_lcd_panel_io_additions
         driver
         esp_timer
+        esp_lvgl_bridge
 )

@@ -16,12 +16,14 @@ static uint32_t bsp_lvgl_tick(void) {
 #if CONFIG_IDF_TARGET_ESP32S3
 #define SCREEN_TIMEOUT_MS (60 * 1000)
 
+static const esp_lvgl_bsp_ops_t *s_bsp = NULL;
+
 static void screen_saver_timer_cb(lv_timer_t *timer) {
     lv_display_t *disp = (lv_display_t *)lv_timer_get_user_data(timer);
     uint32_t inactive_ms = lv_display_get_inactive_time(disp);
-    if (bsp_backlight_is_on() && inactive_ms >= SCREEN_TIMEOUT_MS) {
+    if (s_bsp && s_bsp->backlight_is_on() && inactive_ms >= SCREEN_TIMEOUT_MS) {
         ESP_LOGI("APP", "Inactivity timeout (%lu ms >= 60s). Turning display backlight OFF.", (unsigned long)inactive_ms);
-        bsp_backlight_set(0);
+        s_bsp->set_backlight(0);
     }
 }
 #endif
@@ -34,9 +36,10 @@ static void lvgl_ui_task(void *pvParams) {
     lv_tick_set_cb(bsp_lvgl_tick);
 
 #if CONFIG_IDF_TARGET_ESP32S3
-    ESP_LOGI("APP", "Initializing S3-4848S040 display & touch...");
-    lv_display_t *disp = bsp_display_init();
-    bsp_touch_init(disp);
+    s_bsp = bsp_4848s040_get_ops();
+    ESP_LOGI("APP", "Initializing BSP: %s...", s_bsp->board_name);
+    lv_display_t *disp = s_bsp->init_display();
+    s_bsp->init_touch(disp);
 
     size_t count = 0;
     const widget_descriptor_t *schema = rust_get_s3_schema(&count);

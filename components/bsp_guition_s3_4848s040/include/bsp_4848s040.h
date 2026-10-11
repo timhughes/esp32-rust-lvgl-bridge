@@ -42,6 +42,14 @@ void bsp_backlight_set(uint8_t percent);
  */
 bool bsp_backlight_is_on(void);
 
+#include "esp_lvgl_bsp.h"
+
+/**
+ * @brief Get the hardware operations table for the Guition ESP32-S3-4848S040 board.
+ * @return const esp_lvgl_bsp_ops_t* pointer to static operations table.
+ */
+const esp_lvgl_bsp_ops_t *bsp_4848s040_get_ops(void);
+
 #ifdef __cplusplus
 }
 #endif

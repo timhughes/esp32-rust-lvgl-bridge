@@ -17,6 +17,7 @@ extern "C" {
 #include "bridge_protocol.h"
 #include "ui_binding.h"
 #include "p4_c6_link.h"
+#include "esp_lvgl_bsp.h"
 
 #ifdef __cplusplus
 }

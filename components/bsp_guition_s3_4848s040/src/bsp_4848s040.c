@@ -302,3 +302,16 @@ lv_indev_t *bsp_touch_init(lv_display_t *disp) {
     ESP_LOGI(TAG, "GT911 touch panel initialized successfully");
     return indev;
 }
+
+static const esp_lvgl_bsp_ops_t s_guition_s3_4848s040_ops = {
+    .board_name      = "Guition ESP32-S3-4848S040 (ST7701S RGB + GT911)",
+    .init_display    = bsp_display_init,
+    .init_touch      = bsp_touch_init,
+    .set_backlight   = bsp_backlight_set,
+    .backlight_is_on = bsp_backlight_is_on,
+};
+
+const esp_lvgl_bsp_ops_t *bsp_4848s040_get_ops(void) {
+    return &s_guition_s3_4848s040_ops;
+}
+
