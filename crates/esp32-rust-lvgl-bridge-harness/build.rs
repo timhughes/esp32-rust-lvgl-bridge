@@ -85,11 +85,13 @@ fn main() {
     let bridge_inc = bridge_dir.join("include");
     let bsp_inc = manifest_dir.join("../../components/bsp_guition_s3_4848s040/include");
 
-    // Unified C bridge files from components + host harness test wrappers
+    // Unified C bridge & BSP files from components + host harness test wrappers
     c_files.push(bridge_src.join("ui_binding.c"));
     c_files.push(bridge_src.join("p4_c6_link.c"));
+    c_files.push(bridge_src.join("bridge_transport.c"));
+    let bsp_src = manifest_dir.join("../../components/bsp_guition_s3_4848s040/src");
+    c_files.push(bsp_src.join("bsp_4848s040.c"));
     c_files.push(c_src_dir.join("harness.c"));
-    c_files.push(c_src_dir.join("host_transport.c"));
 
     let mut build = cc::Build::new();
     build

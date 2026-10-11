@@ -1,6 +1,14 @@
 #include "bsp_4848s040.h"
 #include <stdio.h>
 #include <string.h>
+
+static bool s_backlight_on = true;
+
+bool bsp_backlight_is_on(void) {
+    return s_backlight_on;
+}
+
+#ifdef ESP_PLATFORM
 #include "esp_log.h"
 #include "esp_err.h"
 #include "esp_heap_caps.h"
@@ -68,11 +76,6 @@ static void lvgl_flush_cb(lv_display_t *disp, const lv_area_t *area, uint8_t *px
     lv_display_flush_ready(disp);
 }
 
-static bool s_backlight_on = true;
-
-bool bsp_backlight_is_on(void) {
-    return s_backlight_on;
-}
 
 static void lvgl_touch_read_cb(lv_indev_t *indev, lv_indev_data_t *data) {
     esp_lcd_touch_handle_t touch = (esp_lcd_touch_handle_t)lv_indev_get_user_data(indev);
@@ -302,6 +305,23 @@ lv_indev_t *bsp_touch_init(lv_display_t *disp) {
     ESP_LOGI(TAG, "GT911 touch panel initialized successfully");
     return indev;
 }
+
+#else // !ESP_PLATFORM (Host simulation / local tests)
+
+void bsp_backlight_set(uint8_t percent) {
+    s_backlight_on = (percent > 0);
+}
+
+lv_display_t *bsp_display_init(void) {
+    return NULL;
+}
+
+lv_indev_t *bsp_touch_init(lv_display_t *disp) {
+    (void)disp;
+    return NULL;
+}
+
+#endif // ESP_PLATFORM
 
 static const esp_lvgl_bsp_ops_t s_guition_s3_4848s040_ops = {
     .board_name      = "Guition ESP32-S3-4848S040 (ST7701S RGB + GT911)",

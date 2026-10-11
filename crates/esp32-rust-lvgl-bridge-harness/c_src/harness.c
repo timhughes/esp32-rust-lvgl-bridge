@@ -22,20 +22,12 @@ static uint32_t s_screensaver_timeout_ms = 60000;
 static int32_t s_touch_x = 0;
 static int32_t s_touch_y = 0;
 static bool s_touch_pressed = false;
-static bool s_backlight_on = true;
-
-void bsp_backlight_set(uint8_t percent) {
-    s_backlight_on = (percent > 0);
-}
-
-bool bsp_backlight_is_on(void) {
-    return s_backlight_on;
-}
+#include "bsp_4848s040.h"
 
 static void screen_saver_timer_cb(lv_timer_t *timer) {
     lv_display_t *disp = (lv_display_t *)lv_timer_get_user_data(timer);
     uint32_t inactive_ms = lv_display_get_inactive_time(disp);
-    if (s_backlight_on && inactive_ms >= s_screensaver_timeout_ms) {
+    if (bsp_backlight_is_on() && inactive_ms >= s_screensaver_timeout_ms) {
         bsp_backlight_set(0);
     }
 }
@@ -56,9 +48,9 @@ static void harness_flush_cb(lv_display_t *disp, const lv_area_t *area, uint8_t 
 static void harness_touch_read_cb(lv_indev_t *indev, lv_indev_data_t *data) {
     (void)indev;
     if (s_touch_pressed) {
-        if (!s_backlight_on) {
+        if (!bsp_backlight_is_on()) {
             // Wake on touch: restore backlight, reset inactivity timer, swallow blind tap!
-            s_backlight_on = true;
+            bsp_backlight_set(100);
             lv_display_trigger_activity(s_disp);
             data->state = LV_INDEV_STATE_RELEASED;
             return;
@@ -74,7 +66,7 @@ static void harness_touch_read_cb(lv_indev_t *indev, lv_indev_data_t *data) {
 void harness_init(void) {
     if (s_disp) {
         lv_obj_clean(lv_screen_active());
-        s_backlight_on = true;
+        bsp_backlight_set(100);
         s_touch_pressed = false;
         harness_step(50);
         return;
@@ -94,7 +86,7 @@ void harness_init(void) {
     lv_indev_set_display(s_indev, s_disp);
     lv_indev_set_read_cb(s_indev, harness_touch_read_cb);
 
-    s_backlight_on = true;
+    bsp_backlight_set(100);
 
     // Initial render pass
     harness_step(50);
@@ -237,7 +229,7 @@ bool harness_save_png(const char *filename) {
     lv_obj_invalidate(lv_screen_active());
     lv_timer_handler();
 
-    if (!s_backlight_on) {
+    if (!bsp_backlight_is_on()) {
         // Display backlight is turned off: clear framebuffer to black for visual QA
         memset(s_framebuffer, 0, s_hor_res * s_ver_res * 3);
     }

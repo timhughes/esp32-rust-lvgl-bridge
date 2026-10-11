@@ -8,7 +8,9 @@
 
 #![allow(static_mut_refs)]
 
-use esp32_rust_lvgl_bridge_core::abi::{ParamId, UiAlign, WidgetDescriptor};
+use esp32_rust_lvgl_bridge_core::abi::{
+    DeviceTelemetry, ParamId, ParamVal, UiAlign, UiCommand, WidgetDescriptor,
+};
 use esp32_rust_lvgl_bridge_harness::HeadlessHarness;
 use std::sync::Mutex;
 
@@ -65,6 +67,15 @@ type P4C6RxCallback = extern "C" fn(
     user_data: *mut std::ffi::c_void,
 );
 
+#[repr(C)]
+pub struct EspLvglBspOps {
+    pub board_name: *const std::ffi::c_char,
+    pub init_display: extern "C" fn() -> *mut std::ffi::c_void,
+    pub init_touch: extern "C" fn(*mut std::ffi::c_void) -> *mut std::ffi::c_void,
+    pub set_backlight: extern "C" fn(u8),
+    pub backlight_is_on: extern "C" fn() -> bool,
+}
+
 extern "C" {
     fn p4_c6_link_init(config: *const P4C6LinkConfig) -> i32;
     fn p4_c6_link_send(channel: P4C6Channel, data: *const u8, len: u16, timeout_ms: u32) -> i32;
@@ -75,6 +86,16 @@ extern "C" {
     ) -> i32;
     fn p4_c6_link_get_stats(out_stats: *mut P4C6LinkStats);
     fn p4_c6_link_is_alive() -> bool;
+
+    fn bridge_transport_init(cmd_depth: usize, telem_depth: usize);
+    fn bridge_send_command_from_ui(cmd: *const UiCommand) -> bool;
+    fn bridge_recv_command(out_cmd: *mut UiCommand, timeout_ms: u32) -> bool;
+    fn bridge_send_telemetry(telem: *const DeviceTelemetry) -> bool;
+    fn bridge_recv_telemetry_in_ui(out_telem: *mut DeviceTelemetry) -> bool;
+
+    fn bsp_4848s040_get_ops() -> *const EspLvglBspOps;
+    fn bsp_backlight_set(percent: u8);
+    fn bsp_backlight_is_on() -> bool;
 }
 
 static mut RECEIVED_BYTES: Vec<u8> = Vec::new();
@@ -199,3 +220,107 @@ fn test_unified_ui_binding_component_compilation() {
 
     assert!(harness.widget_exists(P_TEST), "Button created directly via components/esp_lvgl_bridge/src/ui_binding.c");
 }
+
+#[test]
+fn test_bridge_transport_command_and_telemetry_queues() {
+    let _guard = TEST_LOCK.lock().unwrap_or_else(|e| e.into_inner());
+
+    unsafe { bridge_transport_init(8, 8) };
+
+    let send_cmd = UiCommand {
+        param_id: ParamId::new(42),
+        seq_id: 100,
+        value: ParamVal::from_i32(1234),
+    };
+    assert!(unsafe { bridge_send_command_from_ui(&send_cmd) });
+
+    let mut recv_cmd = UiCommand {
+        param_id: ParamId::new(0),
+        seq_id: 0,
+        value: ParamVal::from_i32(0),
+    };
+    assert!(unsafe { bridge_recv_command(&mut recv_cmd, 10) });
+    assert_eq!(recv_cmd.param_id, ParamId::new(42));
+    assert_eq!(recv_cmd.seq_id, 100);
+    assert_eq!(unsafe { recv_cmd.value.i32_val }, 1234);
+
+    // Queue should now be empty (non-blocking)
+    assert!(!unsafe { bridge_recv_command(&mut recv_cmd, 0) });
+
+    // Telemetry queue
+    let send_telem = DeviceTelemetry {
+        param_id: ParamId::new(10),
+        ack_seq_id: 55,
+        value: ParamVal::from_bool(true),
+    };
+    assert!(unsafe { bridge_send_telemetry(&send_telem) });
+
+    let mut recv_telem = DeviceTelemetry {
+        param_id: ParamId::new(0),
+        ack_seq_id: 0,
+        value: ParamVal::from_bool(false),
+    };
+    assert!(unsafe { bridge_recv_telemetry_in_ui(&mut recv_telem) });
+    assert_eq!(recv_telem.param_id, ParamId::new(10));
+    assert_eq!(recv_telem.ack_seq_id, 55);
+    assert_eq!(unsafe { recv_telem.value.bool_val }, true);
+
+    // Queue should now be empty
+    assert!(!unsafe { bridge_recv_telemetry_in_ui(&mut recv_telem) });
+}
+
+#[test]
+fn test_bridge_transport_null_guards() {
+    let _guard = TEST_LOCK.lock().unwrap_or_else(|e| e.into_inner());
+
+    unsafe { bridge_transport_init(8, 8) };
+    assert!(!unsafe { bridge_send_command_from_ui(std::ptr::null()) });
+    assert!(!unsafe { bridge_recv_command(std::ptr::null_mut(), 0) });
+    assert!(!unsafe { bridge_send_telemetry(std::ptr::null()) });
+    assert!(!unsafe { bridge_recv_telemetry_in_ui(std::ptr::null_mut()) });
+}
+
+#[test]
+fn test_bsp_guition_resolution_invariants_and_ops() {
+    let _guard = TEST_LOCK.lock().unwrap_or_else(|e| e.into_inner());
+
+    let ops = unsafe { bsp_4848s040_get_ops() };
+    assert!(!ops.is_null(), "bsp_4848s040_get_ops must return valid pointer");
+
+    unsafe {
+        let ops_ref = &*ops;
+        assert!(!ops_ref.board_name.is_null());
+        let board_name_cstr = std::ffi::CStr::from_ptr(ops_ref.board_name);
+        let board_name_str = board_name_cstr.to_str().unwrap();
+        assert!(board_name_str.contains("Guition ESP32-S3-4848S040"));
+        assert!(!ops_ref.board_name.is_null());
+    }
+}
+
+#[test]
+fn test_bsp_guition_backlight_state_tracking() {
+    let _guard = TEST_LOCK.lock().unwrap_or_else(|e| e.into_inner());
+
+    let ops = unsafe { &*bsp_4848s040_get_ops() };
+
+    (ops.set_backlight)(0);
+    assert_eq!((ops.backlight_is_on)(), false);
+
+    (ops.set_backlight)(100);
+    assert_eq!((ops.backlight_is_on)(), true);
+
+    (ops.set_backlight)(50);
+    assert_eq!((ops.backlight_is_on)(), true);
+
+    (ops.set_backlight)(0);
+    assert_eq!((ops.backlight_is_on)(), false);
+
+    // Also verify direct C symbol linkage
+    unsafe {
+        bsp_backlight_set(100);
+        assert_eq!(bsp_backlight_is_on(), true);
+        bsp_backlight_set(0);
+        assert_eq!(bsp_backlight_is_on(), false);
+    }
+}
+
