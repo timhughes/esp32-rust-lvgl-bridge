@@ -8,10 +8,10 @@
 //! 4. Visual regression QA: High-resolution offscreen PNG snapshots generated for each tab.
 
 use bridge_core::abi::{
-    DeviceTelemetry, ParamId, ParamVal, WidgetType,
+    DeviceTelemetry, ParamVal, WidgetType,
 };
 use bridge_harness::HeadlessHarness;
-use everything_app::{SystemEngine, EVERYTHING_SCHEMA};
+use everything_app::*;
 use std::collections::HashSet;
 use std::sync::Mutex;
 
@@ -67,68 +67,68 @@ fn test_tab0_controls_interaction_and_telemetry() {
     let mut engine = SystemEngine::new();
 
     // Ensure we are on Tab 0
-    assert!(harness.set_active_tab(ParamId::NavTab, 0));
-    assert_eq!(harness.get_active_tab(ParamId::NavTab), Some(0));
+    assert!(harness.set_active_tab(PARAM_NAV_TAB, 0));
+    assert_eq!(harness.get_active_tab(PARAM_NAV_TAB), Some(0));
 
     // Test Switch (SystemEnable)
-    assert_eq!(harness.get_checked_state(ParamId::SystemEnable), Some(false));
-    assert!(harness.click(ParamId::SystemEnable));
+    assert_eq!(harness.get_checked_state(PARAM_SYSTEM_ENABLE), Some(false));
+    assert!(harness.click(PARAM_SYSTEM_ENABLE));
     harness.step(20);
-    assert_eq!(harness.get_checked_state(ParamId::SystemEnable), Some(true));
+    assert_eq!(harness.get_checked_state(PARAM_SYSTEM_ENABLE), Some(true));
 
     let cmd = harness.recv_command().expect("Expected SystemEnable command");
-    assert_eq!(cmd.param_id, ParamId::SystemEnable);
+    assert_eq!(cmd.param_id, PARAM_SYSTEM_ENABLE);
     assert_eq!(unsafe { cmd.value.bool_val }, true);
     engine.process_command(cmd);
     assert!(engine.is_enabled);
 
     // Test Slider (SetpointHz)
-    assert_eq!(harness.get_slider_value(ParamId::SetpointHz), Some(10));
-    assert!(harness.drag_slider(ParamId::SetpointHz, 65));
+    assert_eq!(harness.get_slider_value(PARAM_SETPOINT_HZ), Some(10));
+    assert!(harness.drag_slider(PARAM_SETPOINT_HZ, 65));
     harness.touch_release();
     harness.step(20);
-    assert_eq!(harness.get_slider_value(ParamId::SetpointHz), Some(65));
+    assert_eq!(harness.get_slider_value(PARAM_SETPOINT_HZ), Some(65));
 
     let cmd = harness.recv_command().expect("Expected SetpointHz command");
-    assert_eq!(cmd.param_id, ParamId::SetpointHz);
+    assert_eq!(cmd.param_id, PARAM_SETPOINT_HZ);
     assert_eq!(unsafe { cmd.value.i32_val }, 65);
     engine.process_command(cmd);
     assert_eq!(engine.target_hz, 65);
 
     // Test Button (TriggerReset)
-    assert!(harness.click(ParamId::TriggerReset));
+    assert!(harness.click(PARAM_TRIGGER_RESET));
     harness.step(20);
     let cmd = harness.recv_command().expect("Expected TriggerReset command");
-    assert_eq!(cmd.param_id, ParamId::TriggerReset);
+    assert_eq!(cmd.param_id, PARAM_TRIGGER_RESET);
     assert_eq!(unsafe { cmd.value.u32_val }, 1);
     engine.process_command(cmd);
 
     // Test Bar (ProgressBar) via telemetry dispatch
-    assert_eq!(harness.get_bar_value(ParamId::ProgressBar), Some(25));
+    assert_eq!(harness.get_bar_value(PARAM_PROGRESS_BAR), Some(25));
     let mut telem = DeviceTelemetry {
-        param_id: ParamId::ProgressBar,
+        param_id: PARAM_PROGRESS_BAR,
         ack_seq_id: 0,
         value: ParamVal::from_i32(80),
     };
     harness.dispatch_telemetry(&telem);
     harness.step(20);
-    assert_eq!(harness.get_bar_value(ParamId::ProgressBar), Some(80));
+    assert_eq!(harness.get_bar_value(PARAM_PROGRESS_BAR), Some(80));
 
     // Test LED (StatusLed)
-    assert_eq!(harness.get_led_brightness(ParamId::StatusLed), Some(255));
-    telem.param_id = ParamId::StatusLed;
+    assert_eq!(harness.get_led_brightness(PARAM_STATUS_LED), Some(255));
+    telem.param_id = PARAM_STATUS_LED;
     telem.value = ParamVal::from_bool(false);
     harness.dispatch_telemetry(&telem);
     harness.step(20);
     // When off, LVGL dims LED to LV_LED_BRIGHT_MIN (80)
-    assert_eq!(harness.get_led_brightness(ParamId::StatusLed), Some(80));
+    assert_eq!(harness.get_led_brightness(PARAM_STATUS_LED), Some(80));
 
     // Test Label (CycleCount)
-    telem.param_id = ParamId::CycleCount;
+    telem.param_id = PARAM_CYCLE_COUNT;
     telem.value = ParamVal::from_u32(9876);
     harness.dispatch_telemetry(&telem);
     harness.step(20);
-    let label_txt = harness.get_label_text(ParamId::CycleCount).unwrap_or_default();
+    let label_txt = harness.get_label_text(PARAM_CYCLE_COUNT).unwrap_or_default();
     assert!(
         label_txt.contains("9876"),
         "CycleCount label should reflect dispatched telemetry: {}",
@@ -136,7 +136,7 @@ fn test_tab0_controls_interaction_and_telemetry() {
     );
 
     // Test ImageButton (ImageTrigger) exists
-    assert!(harness.widget_exists(ParamId::ImageTrigger));
+    assert!(harness.widget_exists(PARAM_IMAGE_TRIGGER));
 }
 
 /// 4. Tab 1 (Selectors): Checkbox, Dropdown, Roller, Spinbox, Scale, AnimImage
@@ -148,31 +148,31 @@ fn test_tab1_selectors_interaction() {
     harness.step(50);
 
     // Switch to Tab 1
-    assert!(harness.set_active_tab(ParamId::NavTab, 1));
-    assert_eq!(harness.get_active_tab(ParamId::NavTab), Some(1));
+    assert!(harness.set_active_tab(PARAM_NAV_TAB, 1));
+    assert_eq!(harness.get_active_tab(PARAM_NAV_TAB), Some(1));
 
     // Test Checkbox (AuxCheckbox)
-    assert_eq!(harness.get_checked_state(ParamId::AuxCheckbox), Some(true));
-    assert!(harness.click(ParamId::AuxCheckbox));
+    assert_eq!(harness.get_checked_state(PARAM_AUX_CHECKBOX), Some(true));
+    assert!(harness.click(PARAM_AUX_CHECKBOX));
     harness.step(20);
-    assert_eq!(harness.get_checked_state(ParamId::AuxCheckbox), Some(false));
+    assert_eq!(harness.get_checked_state(PARAM_AUX_CHECKBOX), Some(false));
 
     let cmd = harness.recv_command().expect("Expected AuxCheckbox command");
-    assert_eq!(cmd.param_id, ParamId::AuxCheckbox);
+    assert_eq!(cmd.param_id, PARAM_AUX_CHECKBOX);
     assert_eq!(unsafe { cmd.value.bool_val }, false);
 
     // Test Dropdown (ModeDropdown)
-    assert_eq!(harness.get_dropdown_selected(ParamId::ModeDropdown), Some(0));
+    assert_eq!(harness.get_dropdown_selected(PARAM_MODE_DROPDOWN), Some(0));
 
     // Test Roller (SpeedRoller)
-    assert_eq!(harness.get_roller_selected(ParamId::SpeedRoller), Some(1));
+    assert_eq!(harness.get_roller_selected(PARAM_SPEED_ROLLER), Some(1));
 
     // Test Spinbox (PrecisionStep)
-    assert_eq!(harness.get_spinbox_value(ParamId::PrecisionStep), Some(1250));
+    assert_eq!(harness.get_spinbox_value(PARAM_PRECISION_STEP), Some(1250));
 
     // Test Scale (GaugeScale) and AnimImage (SpinnerAnim) exist
-    assert!(harness.widget_exists(ParamId::GaugeScale));
-    assert!(harness.widget_exists(ParamId::SpinnerAnim));
+    assert!(harness.widget_exists(PARAM_GAUGE_SCALE));
+    assert!(harness.widget_exists(PARAM_SPINNER_ANIM));
 }
 
 /// 5. Tab 2 (Inputs): TextInput, TextArea, Keyboard, MsgBox, SpanGroup, Win
@@ -184,37 +184,37 @@ fn test_tab2_inputs_and_keyboard() {
     harness.step(50);
 
     // Switch to Tab 2
-    assert!(harness.set_active_tab(ParamId::NavTab, 2));
-    assert_eq!(harness.get_active_tab(ParamId::NavTab), Some(2));
+    assert!(harness.set_active_tab(PARAM_NAV_TAB, 2));
+    assert_eq!(harness.get_active_tab(PARAM_NAV_TAB), Some(2));
 
     // Test Single-line TextInput
     assert_eq!(
-        harness.get_textarea_text(ParamId::TextInput).as_deref(),
+        harness.get_textarea_text(PARAM_TEXT_INPUT).as_deref(),
         Some("SYS:STATUS")
     );
-    assert!(harness.set_textarea_text(ParamId::TextInput, "SET_FREQ:45"));
+    assert!(harness.set_textarea_text(PARAM_TEXT_INPUT, "SET_FREQ:45"));
     assert_eq!(
-        harness.get_textarea_text(ParamId::TextInput).as_deref(),
+        harness.get_textarea_text(PARAM_TEXT_INPUT).as_deref(),
         Some("SET_FREQ:45")
     );
 
     // Test Multi-line TextArea
-    let ta_text = harness.get_textarea_text(ParamId::TextArea).unwrap_or_default();
+    let ta_text = harness.get_textarea_text(PARAM_TEXT_AREA).unwrap_or_default();
     assert!(
         ta_text.contains("ESP32-S3"),
         "TextArea should contain initial default text: {}",
         ta_text
     );
-    assert!(harness.set_textarea_text(ParamId::TextArea, "Line 1\nLine 2\nLine 3"));
+    assert!(harness.set_textarea_text(PARAM_TEXT_AREA, "Line 1\nLine 2\nLine 3"));
     assert_eq!(
-        harness.get_textarea_text(ParamId::TextArea).as_deref(),
+        harness.get_textarea_text(PARAM_TEXT_AREA).as_deref(),
         Some("Line 1\nLine 2\nLine 3")
     );
 
     // Test Keyboard, MsgBox & SpanGroup exist in scene graph
-    assert!(harness.widget_exists(ParamId::Keyboard));
-    assert!(harness.widget_exists(ParamId::AlertModal));
-    assert!(harness.widget_exists(ParamId::FormattedSpan));
+    assert!(harness.widget_exists(PARAM_KEYBOARD));
+    assert!(harness.widget_exists(PARAM_ALERT_MODAL));
+    assert!(harness.widget_exists(PARAM_FORMATTED_SPAN));
 }
 
 /// 6. Tab 3 (Telemetry): Chart, Line, Table, List
@@ -226,19 +226,19 @@ fn test_tab3_telemetry_streams() {
     harness.step(50);
 
     // Switch to Tab 3
-    assert!(harness.set_active_tab(ParamId::NavTab, 3));
-    assert_eq!(harness.get_active_tab(ParamId::NavTab), Some(3));
+    assert!(harness.set_active_tab(PARAM_NAV_TAB, 3));
+    assert_eq!(harness.get_active_tab(PARAM_NAV_TAB), Some(3));
 
     // Verify widgets exist
-    assert!(harness.widget_exists(ParamId::TelemetryChart));
-    assert!(harness.widget_exists(ParamId::LineGraph));
-    assert!(harness.widget_exists(ParamId::DataTable));
-    assert!(harness.widget_exists(ParamId::ItemList));
+    assert!(harness.widget_exists(PARAM_TELEMETRY_CHART));
+    assert!(harness.widget_exists(PARAM_LINE_GRAPH));
+    assert!(harness.widget_exists(PARAM_DATA_TABLE));
+    assert!(harness.widget_exists(PARAM_ITEM_LIST));
 
     // Stream telemetry points into Chart
     for i in 0..10 {
         let telem = DeviceTelemetry {
-            param_id: ParamId::TelemetryChart,
+            param_id: PARAM_TELEMETRY_CHART,
             ack_seq_id: 0,
             value: ParamVal::from_i32(i * 10),
         };
@@ -256,20 +256,20 @@ fn test_tab4_tools_keypad_and_canvas() {
     harness.step(50);
 
     // Switch to Tab 4
-    assert!(harness.set_active_tab(ParamId::NavTab, 4));
-    assert_eq!(harness.get_active_tab(ParamId::NavTab), Some(4));
+    assert!(harness.set_active_tab(PARAM_NAV_TAB, 4));
+    assert_eq!(harness.get_active_tab(PARAM_NAV_TAB), Some(4));
 
     // Verify Calendar & Canvas exist
-    assert!(harness.widget_exists(ParamId::CalendarDate));
-    assert!(harness.widget_exists(ParamId::CanvasDraw));
+    assert!(harness.widget_exists(PARAM_CALENDAR_DATE));
+    assert!(harness.widget_exists(PARAM_CANVAS_DRAW));
 
     // Test ButtonMatrix (KeypadMatrix) click by button text
-    assert!(harness.widget_exists(ParamId::KeypadMatrix));
-    assert!(harness.click_button_matrix_text(ParamId::KeypadMatrix, "5"));
+    assert!(harness.widget_exists(PARAM_KEYPAD_MATRIX));
+    assert!(harness.click_button_matrix_text(PARAM_KEYPAD_MATRIX, "5"));
     harness.step(20);
 
     let cmd = harness.recv_command().expect("Expected KeypadMatrix command for key '5'");
-    assert_eq!(cmd.param_id, ParamId::KeypadMatrix);
+    assert_eq!(cmd.param_id, PARAM_KEYPAD_MATRIX);
 }
 
 /// 8. Tab 5 (Media): WindowModal, AssetBarcode, ImagePreview
@@ -281,13 +281,13 @@ fn test_tab5_media_assets() {
     harness.step(50);
 
     // Switch to Tab 5
-    assert!(harness.set_active_tab(ParamId::NavTab, 5));
-    assert_eq!(harness.get_active_tab(ParamId::NavTab), Some(5));
+    assert!(harness.set_active_tab(PARAM_NAV_TAB, 5));
+    assert_eq!(harness.get_active_tab(PARAM_NAV_TAB), Some(5));
 
     // Verify WindowModal, AssetBarcode & ImagePreview exist
-    assert!(harness.widget_exists(ParamId::WindowModal));
-    assert!(harness.widget_exists(ParamId::AssetBarcode));
-    assert!(harness.widget_exists(ParamId::ImagePreview));
+    assert!(harness.widget_exists(PARAM_WINDOW_MODAL));
+    assert!(harness.widget_exists(PARAM_ASSET_BARCODE));
+    assert!(harness.widget_exists(PARAM_IMAGE_PREVIEW));
 }
 
 /// 9. Tab 6 (System): Menu, QRCode, TileView
@@ -299,13 +299,13 @@ fn test_tab6_system_navigation() {
     harness.step(50);
 
     // Switch to Tab 6
-    assert!(harness.set_active_tab(ParamId::NavTab, 6));
-    assert_eq!(harness.get_active_tab(ParamId::NavTab), Some(6));
+    assert!(harness.set_active_tab(PARAM_NAV_TAB, 6));
+    assert_eq!(harness.get_active_tab(PARAM_NAV_TAB), Some(6));
 
     // Verify Menu, QRCode and TileView exist
-    assert!(harness.widget_exists(ParamId::MenuNav));
-    assert!(harness.widget_exists(ParamId::QrWifiConfig));
-    assert!(harness.widget_exists(ParamId::NavTile));
+    assert!(harness.widget_exists(PARAM_MENU_NAV));
+    assert!(harness.widget_exists(PARAM_QR_WIFI_CONFIG));
+    assert!(harness.widget_exists(PARAM_NAV_TILE));
 }
 
 /// 10. Full Visual Regression Snapshot Suite
@@ -335,7 +335,7 @@ fn test_visual_snapshots_all_tabs() {
     ];
 
     for (tab_idx, filename) in tab_snapshots {
-        assert!(harness.set_active_tab(ParamId::NavTab, tab_idx));
+        assert!(harness.set_active_tab(PARAM_NAV_TAB, tab_idx));
         harness.step(50);
         for dir in dirs {
             if let Ok(_) = std::fs::create_dir_all(dir) {
@@ -355,7 +355,7 @@ fn test_runtime_widget_flags_via_telemetry() {
     harness.build_schema(EVERYTHING_SCHEMA);
     harness.step(50);
 
-    let p = ParamId::TriggerReset;
+    let p = PARAM_TRIGGER_RESET;
     assert_eq!(harness.is_widget_hidden(p), Some(false));
     assert_eq!(harness.is_widget_disabled(p), Some(false));
 
@@ -380,9 +380,9 @@ fn test_declarative_flex_layout() {
     let _guard = TEST_LOCK.lock().unwrap_or_else(|e| e.into_inner());
     let mut harness = HeadlessHarness::new(480, 480);
     let schema = [WidgetDescriptor::win(
-        ParamId::WindowModal, UiAlign::Center, 0, 0, 300, 200, c"Flex",
+        PARAM_WINDOW_MODAL, UiAlign::Center, 0, 0, 300, 200, c"Flex",
     ).with_layout(LayoutFlow::Column)];
     harness.build_schema(&schema);
     harness.step(20);
-    assert_eq!(harness.get_widget_flex_flow(ParamId::WindowModal), Some(LayoutFlow::Column));
+    assert_eq!(harness.get_widget_flex_flow(PARAM_WINDOW_MODAL), Some(LayoutFlow::Column));
 }

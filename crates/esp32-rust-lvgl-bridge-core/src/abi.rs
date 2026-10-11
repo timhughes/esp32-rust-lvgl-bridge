@@ -15,47 +15,12 @@ pub struct ParamId(pub u32);
 
 #[allow(non_upper_case_globals)]
 impl ParamId {
+    /// Sentinel parameter identifier representing an unbound widget or a root container with no parent.
+    pub const NONE: Self = Self(0);
     pub const None: Self = Self(0);
-    pub const SetpointHz: Self = Self(1);
-    pub const SystemEnable: Self = Self(2);
-    pub const TriggerReset: Self = Self(3);
-    pub const CycleCount: Self = Self(4);
-    pub const ArcKnob: Self = Self(5);
-    pub const ProgressBar: Self = Self(6);
-    pub const AuxCheckbox: Self = Self(7);
-    pub const StatusLed: Self = Self(8);
-    pub const BusySpinner: Self = Self(9);
-    pub const ModeDropdown: Self = Self(10);
-    pub const SpeedRoller: Self = Self(11);
-    pub const PrecisionStep: Self = Self(12);
-    // Tier 2: Text, Keypads, Modals & Gauges
-    pub const TextInput: Self = Self(13);
-    pub const Keyboard: Self = Self(14);
-    pub const KeypadMatrix: Self = Self(15);
-    pub const AlertModal: Self = Self(16);
-    pub const GaugeScale: Self = Self(17);
-    // Tier 3: Containers, Navigation & Data Streams
-    pub const NavTab: Self = Self(18);
-    pub const NavTile: Self = Self(19);
-    pub const MenuNav: Self = Self(20);
-    pub const ItemList: Self = Self(21);
-    pub const TelemetryChart: Self = Self(22);
-    pub const DataTable: Self = Self(23);
-    pub const CalendarDate: Self = Self(24);
-    pub const CanvasDraw: Self = Self(25);
-    pub const TextArea: Self = Self(26);
-    // Phase 1: Visuals & IoT Core
-    pub const ImagePreview: Self = Self(27);
-    pub const LineGraph: Self = Self(28);
-    pub const ArcLabelHeading: Self = Self(29);
-    pub const QrWifiConfig: Self = Self(30);
-    // Phase 2: Complex UI & Rich Media
-    pub const WindowModal: Self = Self(31);
-    pub const ImageTrigger: Self = Self(32);
-    pub const FormattedSpan: Self = Self(33);
-    pub const SpinnerAnim: Self = Self(34);
-    pub const AssetBarcode: Self = Self(35);
-    // Phase 3: Engine Power & Modern LVGL Features
+
+    /// Special framework protocol parameter ID for dynamic runtime widget flag updates.
+    pub const WIDGET_FLAGS: Self = Self(36);
     pub const WidgetFlags: Self = Self(36);
 
     /// Creates a custom application parameter ID.
@@ -69,6 +34,84 @@ impl ParamId {
     pub const fn as_u32(self) -> u32 {
         self.0
     }
+}
+
+// ----------------------------------------------------------------------------
+// Backward Compatibility: Deprecated Application-Specific Identifiers
+// ----------------------------------------------------------------------------
+// Note: Applications should define custom ParamId constants using ParamId::new(id).
+#[allow(deprecated, non_upper_case_globals)]
+impl ParamId {
+    #[deprecated(note = "Application-specific demo constant. Define custom ParamId in your application crate instead.")]
+    pub const SetpointHz: Self = Self(1);
+    #[deprecated(note = "Application-specific demo constant. Define custom ParamId in your application crate instead.")]
+    pub const SystemEnable: Self = Self(2);
+    #[deprecated(note = "Application-specific demo constant. Define custom ParamId in your application crate instead.")]
+    pub const TriggerReset: Self = Self(3);
+    #[deprecated(note = "Application-specific demo constant. Define custom ParamId in your application crate instead.")]
+    pub const CycleCount: Self = Self(4);
+    #[deprecated(note = "Application-specific demo constant. Define custom ParamId in your application crate instead.")]
+    pub const ArcKnob: Self = Self(5);
+    #[deprecated(note = "Application-specific demo constant. Define custom ParamId in your application crate instead.")]
+    pub const ProgressBar: Self = Self(6);
+    #[deprecated(note = "Application-specific demo constant. Define custom ParamId in your application crate instead.")]
+    pub const AuxCheckbox: Self = Self(7);
+    #[deprecated(note = "Application-specific demo constant. Define custom ParamId in your application crate instead.")]
+    pub const StatusLed: Self = Self(8);
+    #[deprecated(note = "Application-specific demo constant. Define custom ParamId in your application crate instead.")]
+    pub const BusySpinner: Self = Self(9);
+    #[deprecated(note = "Application-specific demo constant. Define custom ParamId in your application crate instead.")]
+    pub const ModeDropdown: Self = Self(10);
+    #[deprecated(note = "Application-specific demo constant. Define custom ParamId in your application crate instead.")]
+    pub const SpeedRoller: Self = Self(11);
+    #[deprecated(note = "Application-specific demo constant. Define custom ParamId in your application crate instead.")]
+    pub const PrecisionStep: Self = Self(12);
+    #[deprecated(note = "Application-specific demo constant. Define custom ParamId in your application crate instead.")]
+    pub const TextInput: Self = Self(13);
+    #[deprecated(note = "Application-specific demo constant. Define custom ParamId in your application crate instead.")]
+    pub const Keyboard: Self = Self(14);
+    #[deprecated(note = "Application-specific demo constant. Define custom ParamId in your application crate instead.")]
+    pub const KeypadMatrix: Self = Self(15);
+    #[deprecated(note = "Application-specific demo constant. Define custom ParamId in your application crate instead.")]
+    pub const AlertModal: Self = Self(16);
+    #[deprecated(note = "Application-specific demo constant. Define custom ParamId in your application crate instead.")]
+    pub const GaugeScale: Self = Self(17);
+    #[deprecated(note = "Application-specific demo constant. Define custom ParamId in your application crate instead.")]
+    pub const NavTab: Self = Self(18);
+    #[deprecated(note = "Application-specific demo constant. Define custom ParamId in your application crate instead.")]
+    pub const NavTile: Self = Self(19);
+    #[deprecated(note = "Application-specific demo constant. Define custom ParamId in your application crate instead.")]
+    pub const MenuNav: Self = Self(20);
+    #[deprecated(note = "Application-specific demo constant. Define custom ParamId in your application crate instead.")]
+    pub const ItemList: Self = Self(21);
+    #[deprecated(note = "Application-specific demo constant. Define custom ParamId in your application crate instead.")]
+    pub const TelemetryChart: Self = Self(22);
+    #[deprecated(note = "Application-specific demo constant. Define custom ParamId in your application crate instead.")]
+    pub const DataTable: Self = Self(23);
+    #[deprecated(note = "Application-specific demo constant. Define custom ParamId in your application crate instead.")]
+    pub const CalendarDate: Self = Self(24);
+    #[deprecated(note = "Application-specific demo constant. Define custom ParamId in your application crate instead.")]
+    pub const CanvasDraw: Self = Self(25);
+    #[deprecated(note = "Application-specific demo constant. Define custom ParamId in your application crate instead.")]
+    pub const TextArea: Self = Self(26);
+    #[deprecated(note = "Application-specific demo constant. Define custom ParamId in your application crate instead.")]
+    pub const ImagePreview: Self = Self(27);
+    #[deprecated(note = "Application-specific demo constant. Define custom ParamId in your application crate instead.")]
+    pub const LineGraph: Self = Self(28);
+    #[deprecated(note = "Application-specific demo constant. Define custom ParamId in your application crate instead.")]
+    pub const ArcLabelHeading: Self = Self(29);
+    #[deprecated(note = "Application-specific demo constant. Define custom ParamId in your application crate instead.")]
+    pub const QrWifiConfig: Self = Self(30);
+    #[deprecated(note = "Application-specific demo constant. Define custom ParamId in your application crate instead.")]
+    pub const WindowModal: Self = Self(31);
+    #[deprecated(note = "Application-specific demo constant. Define custom ParamId in your application crate instead.")]
+    pub const ImageTrigger: Self = Self(32);
+    #[deprecated(note = "Application-specific demo constant. Define custom ParamId in your application crate instead.")]
+    pub const FormattedSpan: Self = Self(33);
+    #[deprecated(note = "Application-specific demo constant. Define custom ParamId in your application crate instead.")]
+    pub const SpinnerAnim: Self = Self(34);
+    #[deprecated(note = "Application-specific demo constant. Define custom ParamId in your application crate instead.")]
+    pub const AssetBarcode: Self = Self(35);
 }
 
 impl From<u32> for ParamId {
@@ -1399,6 +1442,7 @@ mod tests {
     use std::ffi::CStr;
 
     #[test]
+    #[allow(deprecated)]
     fn test_param_id_conversions_and_constants() {
         let p = ParamId::new(42);
         assert_eq!(p.as_u32(), 42);

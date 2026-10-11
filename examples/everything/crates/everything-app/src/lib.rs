@@ -36,10 +36,49 @@ use bridge_core::abi::{
     DeviceTelemetry, ParamId, ParamVal, UiCommand, UiAlign, WidgetDescriptor,
 };
 
+// ----------------------------------------------------------------------------
+// Custom Domain Parameter Identifiers (Open ParamId Architecture)
+// ----------------------------------------------------------------------------
+pub const PARAM_SETPOINT_HZ: ParamId       = ParamId::new(1);
+pub const PARAM_SYSTEM_ENABLE: ParamId     = ParamId::new(2);
+pub const PARAM_TRIGGER_RESET: ParamId     = ParamId::new(3);
+pub const PARAM_CYCLE_COUNT: ParamId       = ParamId::new(4);
+pub const PARAM_ARC_KNOB: ParamId          = ParamId::new(5);
+pub const PARAM_PROGRESS_BAR: ParamId      = ParamId::new(6);
+pub const PARAM_AUX_CHECKBOX: ParamId      = ParamId::new(7);
+pub const PARAM_STATUS_LED: ParamId        = ParamId::new(8);
+pub const PARAM_BUSY_SPINNER: ParamId      = ParamId::new(9);
+pub const PARAM_MODE_DROPDOWN: ParamId     = ParamId::new(10);
+pub const PARAM_SPEED_ROLLER: ParamId      = ParamId::new(11);
+pub const PARAM_PRECISION_STEP: ParamId    = ParamId::new(12);
+pub const PARAM_TEXT_INPUT: ParamId        = ParamId::new(13);
+pub const PARAM_KEYBOARD: ParamId          = ParamId::new(14);
+pub const PARAM_KEYPAD_MATRIX: ParamId     = ParamId::new(15);
+pub const PARAM_ALERT_MODAL: ParamId       = ParamId::new(16);
+pub const PARAM_GAUGE_SCALE: ParamId       = ParamId::new(17);
+pub const PARAM_NAV_TAB: ParamId           = ParamId::new(18);
+pub const PARAM_NAV_TILE: ParamId          = ParamId::new(19);
+pub const PARAM_MENU_NAV: ParamId          = ParamId::new(20);
+pub const PARAM_ITEM_LIST: ParamId         = ParamId::new(21);
+pub const PARAM_TELEMETRY_CHART: ParamId   = ParamId::new(22);
+pub const PARAM_DATA_TABLE: ParamId        = ParamId::new(23);
+pub const PARAM_CALENDAR_DATE: ParamId     = ParamId::new(24);
+pub const PARAM_CANVAS_DRAW: ParamId       = ParamId::new(25);
+pub const PARAM_TEXT_AREA: ParamId         = ParamId::new(26);
+pub const PARAM_IMAGE_PREVIEW: ParamId     = ParamId::new(27);
+pub const PARAM_LINE_GRAPH: ParamId        = ParamId::new(28);
+pub const PARAM_ARC_LABEL_HEADING: ParamId = ParamId::new(29);
+pub const PARAM_QR_WIFI_CONFIG: ParamId    = ParamId::new(30);
+pub const PARAM_WINDOW_MODAL: ParamId      = ParamId::new(31);
+pub const PARAM_IMAGE_TRIGGER: ParamId     = ParamId::new(32);
+pub const PARAM_FORMATTED_SPAN: ParamId    = ParamId::new(33);
+pub const PARAM_SPINNER_ANIM: ParamId      = ParamId::new(34);
+pub const PARAM_ASSET_BARCODE: ParamId     = ParamId::new(35);
+
 /// Root Navigation Container: 7-Tab TabView across 480x480 display
 pub static NAV_CONTAINER_SCHEMA: &[WidgetDescriptor] = &[
     WidgetDescriptor::tabview(
-        ParamId::NavTab,
+        PARAM_NAV_TAB,
         c"Controls\nSelectors\nInputs\nTelemetry\nTools\nMedia\nSystem",
         480,
         480,
@@ -49,29 +88,29 @@ pub static NAV_CONTAINER_SCHEMA: &[WidgetDescriptor] = &[
 /// Tab 0: Controls (Core scalar controls & readouts)
 pub static TAB0_CONTROLS_SCHEMA: &[WidgetDescriptor] = &[
     WidgetDescriptor::switch(
-        ParamId::SystemEnable,
+        PARAM_SYSTEM_ENABLE,
         UiAlign::TopLeft,
         20,
         15,
         c"System: RUNNING",
         c"System: STOPPED",
-    ).with_parent(ParamId::NavTab, 0),
+    ).with_parent(PARAM_NAV_TAB, 0),
     WidgetDescriptor::led(
-        ParamId::StatusLed,
+        PARAM_STATUS_LED,
         UiAlign::TopRight,
         -20,
         18,
         true,
-    ).with_parent(ParamId::NavTab, 0),
+    ).with_parent(PARAM_NAV_TAB, 0),
     WidgetDescriptor::spinner(
-        ParamId::BusySpinner,
+        PARAM_BUSY_SPINNER,
         UiAlign::TopRight,
         -65,
         14,
         true,
-    ).with_parent(ParamId::NavTab, 0),
+    ).with_parent(PARAM_NAV_TAB, 0),
     WidgetDescriptor::arc(
-        ParamId::ArcKnob,
+        PARAM_ARC_KNOB,
         UiAlign::Center,
         0,
         -45,
@@ -81,9 +120,9 @@ pub static TAB0_CONTROLS_SCHEMA: &[WidgetDescriptor] = &[
         500,
         c"%ld%% (Setting)",
         c"%ld%% (Actual)",
-    ).with_parent(ParamId::NavTab, 0),
+    ).with_parent(PARAM_NAV_TAB, 0),
     WidgetDescriptor::arc_label(
-        ParamId::ArcLabelHeading,
+        PARAM_ARC_LABEL_HEADING,
         UiAlign::Center,
         0,
         -45,
@@ -91,9 +130,9 @@ pub static TAB0_CONTROLS_SCHEMA: &[WidgetDescriptor] = &[
         245,
         50,
         c"POWER",
-    ).with_parent(ParamId::NavTab, 0),
+    ).with_parent(PARAM_NAV_TAB, 0),
     WidgetDescriptor::bar(
-        ParamId::ProgressBar,
+        PARAM_PROGRESS_BAR,
         UiAlign::Center,
         0,
         36,
@@ -101,9 +140,9 @@ pub static TAB0_CONTROLS_SCHEMA: &[WidgetDescriptor] = &[
         100,
         25,
         c"Load: %ld%%",
-    ).with_parent(ParamId::NavTab, 0),
+    ).with_parent(PARAM_NAV_TAB, 0),
     WidgetDescriptor::slider(
-        ParamId::SetpointHz,
+        PARAM_SETPOINT_HZ,
         UiAlign::Center,
         0,
         112,
@@ -113,69 +152,69 @@ pub static TAB0_CONTROLS_SCHEMA: &[WidgetDescriptor] = &[
         500,
         c"%ld Hz (Setting)",
         c"%ld Hz (Actual)",
-    ).with_parent(ParamId::NavTab, 0),
+    ).with_parent(PARAM_NAV_TAB, 0),
     WidgetDescriptor::button(
-        ParamId::TriggerReset,
+        PARAM_TRIGGER_RESET,
         UiAlign::BottomLeft,
         20,
         -15,
         c"Reset Counter",
         1,
-    ).with_parent(ParamId::NavTab, 0),
+    ).with_parent(PARAM_NAV_TAB, 0),
     WidgetDescriptor::image_button(
-        ParamId::ImageTrigger,
+        PARAM_IMAGE_TRIGGER,
         UiAlign::BottomMid,
         0,
         -15,
         c"\xEF\x80\x91",
         1,
-    ).with_parent(ParamId::NavTab, 0),
+    ).with_parent(PARAM_NAV_TAB, 0),
     WidgetDescriptor::label(
-        ParamId::CycleCount,
+        PARAM_CYCLE_COUNT,
         UiAlign::BottomRight,
         -20,
         -22,
         c"Cycles: %lu",
-    ).with_parent(ParamId::NavTab, 0),
+    ).with_parent(PARAM_NAV_TAB, 0),
 ];
 
 /// Tab 1: Selectors (Discrete selectors & analog scale)
 pub static TAB1_SELECTORS_SCHEMA: &[WidgetDescriptor] = &[
     WidgetDescriptor::checkbox(
-        ParamId::AuxCheckbox,
+        PARAM_AUX_CHECKBOX,
         UiAlign::TopLeft,
         20,
         15,
         c"Auxiliary Motor",
         true,
-    ).with_parent(ParamId::NavTab, 1),
+    ).with_parent(PARAM_NAV_TAB, 1),
     WidgetDescriptor::dropdown(
-        ParamId::ModeDropdown,
+        PARAM_MODE_DROPDOWN,
         UiAlign::TopLeft,
         20,
         60,
         c"Normal\nBoost\nEco\nSilent",
         0,
-    ).with_parent(ParamId::NavTab, 1),
+    ).with_parent(PARAM_NAV_TAB, 1),
     WidgetDescriptor::roller(
-        ParamId::SpeedRoller,
+        PARAM_SPEED_ROLLER,
         UiAlign::TopLeft,
         20,
         135,
         c"Slow\nMedium\nFast\nUltra",
         1,
-    ).with_parent(ParamId::NavTab, 1),
+    ).with_parent(PARAM_NAV_TAB, 1),
     WidgetDescriptor::spinbox(
-        ParamId::PrecisionStep,
+        PARAM_PRECISION_STEP,
         UiAlign::BottomLeft,
         25,
         -25,
         0,
         9999,
         1250,
-    ).with_parent(ParamId::NavTab, 1),
+    ).with_parent(PARAM_NAV_TAB, 1),
     WidgetDescriptor::scale(
-        ParamId::GaugeScale,
+        PARAM_GAUGE_SCALE,
         UiAlign::Center,
         105,
         10,
@@ -184,20 +223,20 @@ pub static TAB1_SELECTORS_SCHEMA: &[WidgetDescriptor] = &[
         0,
         100,
         65,
-    ).with_parent(ParamId::NavTab, 1),
+    ).with_parent(PARAM_NAV_TAB, 1),
     WidgetDescriptor::anim_image(
-        ParamId::SpinnerAnim,
+        PARAM_SPINNER_ANIM,
         UiAlign::TopRight,
         -35,
         20,
         1000,
-    ).with_parent(ParamId::NavTab, 1),
+    ).with_parent(PARAM_NAV_TAB, 1),
 ];
 
 /// Tab 2: Inputs (Text inputs, virtual keyboard & alert modal)
 pub static TAB2_INPUTS_SCHEMA: &[WidgetDescriptor] = &[
     WidgetDescriptor::text_input(
-        ParamId::TextInput,
+        PARAM_TEXT_INPUT,
         UiAlign::TopMid,
         0,
         10,
@@ -206,9 +245,9 @@ pub static TAB2_INPUTS_SCHEMA: &[WidgetDescriptor] = &[
         c"Single-line command...",
         Some(c"SYS:STATUS"),
         31,
-    ).with_parent(ParamId::NavTab, 2),
+    ).with_parent(PARAM_NAV_TAB, 2),
     WidgetDescriptor::text_area(
-        ParamId::TextArea,
+        PARAM_TEXT_AREA,
         UiAlign::TopMid,
         0,
         58,
@@ -218,38 +257,38 @@ pub static TAB2_INPUTS_SCHEMA: &[WidgetDescriptor] = &[
         Some(c"ESP32-S3 LVGL v9\nTouch input active."),
         false,
         127,
-    ).with_parent(ParamId::NavTab, 2),
+    ).with_parent(PARAM_NAV_TAB, 2),
     WidgetDescriptor::keyboard(
-        ParamId::Keyboard,
-        ParamId::TextInput,
+        PARAM_KEYBOARD,
+        PARAM_TEXT_INPUT,
         UiAlign::BottomMid,
         0,
         -5,
         460,
         165,
-    ).with_parent(ParamId::NavTab, 2),
+    ).with_parent(PARAM_NAV_TAB, 2),
     WidgetDescriptor::msgbox(
-        ParamId::AlertModal,
+        PARAM_ALERT_MODAL,
         c"System Notice",
         c"Hardware calibrated.",
         false,
     ),
     WidgetDescriptor::span_group(
-        ParamId::FormattedSpan,
+        PARAM_FORMATTED_SPAN,
         UiAlign::TopMid,
         0,
         140,
         440,
         35,
         c"Console: |Online |Speed: |High",
-    ).with_parent(ParamId::NavTab, 2),
+    ).with_parent(PARAM_NAV_TAB, 2),
 ];
 
 /// Tab 3: Telemetry (Streaming waveforms, diagnostics table & list)
 pub static TAB3_TELEMETRY_SCHEMA: &[WidgetDescriptor] = &[
     WidgetDescriptor::chart(
-        ParamId::TelemetryChart,
-        ParamId::NavTab,
+        PARAM_TELEMETRY_CHART,
+        PARAM_NAV_TAB,
         3,
         UiAlign::TopMid,
         0,
@@ -260,17 +299,17 @@ pub static TAB3_TELEMETRY_SCHEMA: &[WidgetDescriptor] = &[
         100,
     ),
     WidgetDescriptor::line(
-        ParamId::LineGraph,
+        PARAM_LINE_GRAPH,
         UiAlign::TopMid,
         0,
         140,
         430,
         4,
         Some(c"0,0; 430,0"),
-    ).with_parent(ParamId::NavTab, 3),
+    ).with_parent(PARAM_NAV_TAB, 3),
     WidgetDescriptor::table(
-        ParamId::DataTable,
-        ParamId::NavTab,
+        PARAM_DATA_TABLE,
+        PARAM_NAV_TAB,
         3,
         UiAlign::Center,
         0,
@@ -281,8 +320,8 @@ pub static TAB3_TELEMETRY_SCHEMA: &[WidgetDescriptor] = &[
         c"Module;Status;Core 0;OK;Core 1;OK;PSRAM;8MB",
     ),
     WidgetDescriptor::list(
-        ParamId::ItemList,
-        ParamId::NavTab,
+        PARAM_ITEM_LIST,
+        PARAM_NAV_TAB,
         3,
         UiAlign::BottomMid,
         0,
@@ -296,8 +335,8 @@ pub static TAB3_TELEMETRY_SCHEMA: &[WidgetDescriptor] = &[
 /// Tab 4: Tools (Maintenance calendar, keypad matrix & pixel canvas)
 pub static TAB4_TOOLS_SCHEMA: &[WidgetDescriptor] = &[
     WidgetDescriptor::calendar(
-        ParamId::CalendarDate,
-        ParamId::NavTab,
+        PARAM_CALENDAR_DATE,
+        PARAM_NAV_TAB,
         4,
         UiAlign::TopLeft,
         12,
@@ -306,17 +345,17 @@ pub static TAB4_TOOLS_SCHEMA: &[WidgetDescriptor] = &[
         220,
     ),
     WidgetDescriptor::button_matrix(
-        ParamId::KeypadMatrix,
+        PARAM_KEYPAD_MATRIX,
         UiAlign::TopRight,
         -12,
         10,
         195,
         220,
         c"1 2 3 \n 4 5 6 \n 7 8 9 \n * 0 #",
-    ).with_parent(ParamId::NavTab, 4),
+    ).with_parent(PARAM_NAV_TAB, 4),
     WidgetDescriptor::canvas(
-        ParamId::CanvasDraw,
-        ParamId::NavTab,
+        PARAM_CANVAS_DRAW,
+        PARAM_NAV_TAB,
         4,
         UiAlign::BottomLeft,
         20,
@@ -325,77 +364,77 @@ pub static TAB4_TOOLS_SCHEMA: &[WidgetDescriptor] = &[
         110,
     ),
     WidgetDescriptor::label(
-        ParamId::CycleCount,
+        PARAM_CYCLE_COUNT,
         UiAlign::BottomRight,
         -20,
         -40,
         c"Calendar, Matrix & Canvas\nEngine Ticks: %lu",
-    ).with_parent(ParamId::NavTab, 4),
+    ).with_parent(PARAM_NAV_TAB, 4),
 ];
 
 /// Tab 5: Media (Diagnostics window, barcode asset tag & image preview)
 pub static TAB5_MEDIA_SCHEMA: &[WidgetDescriptor] = &[
     WidgetDescriptor::win(
-        ParamId::WindowModal,
+        PARAM_WINDOW_MODAL,
         UiAlign::TopMid,
         0,
         10,
         440,
         180,
         c"Diagnostics Window",
-    ).with_parent(ParamId::NavTab, 5),
+    ).with_parent(PARAM_NAV_TAB, 5),
     WidgetDescriptor::barcode(
-        ParamId::AssetBarcode,
+        PARAM_ASSET_BARCODE,
         UiAlign::BottomLeft,
         25,
         -25,
         180,
         70,
         c"ESP32-S3-4848",
-    ).with_parent(ParamId::NavTab, 5),
+    ).with_parent(PARAM_NAV_TAB, 5),
     WidgetDescriptor::image(
-        ParamId::ImagePreview,
+        PARAM_IMAGE_PREVIEW,
         UiAlign::BottomMid,
         50,
         -40,
         c"\xEF\x80\xBE",
-    ).with_parent(ParamId::NavTab, 5),
+    ).with_parent(PARAM_NAV_TAB, 5),
     WidgetDescriptor::label(
-        ParamId::CycleCount,
+        PARAM_CYCLE_COUNT,
         UiAlign::BottomRight,
         -20,
         -35,
         c"Asset Tag & Icons\nFrames: %lu",
-    ).with_parent(ParamId::NavTab, 5),
+    ).with_parent(PARAM_NAV_TAB, 5),
 ];
 
 /// Tab 6: System (Settings menu, WiFi onboarding QR code & swipeable tileview)
 pub static TAB6_SYSTEM_SCHEMA: &[WidgetDescriptor] = &[
     WidgetDescriptor::menu(
-        ParamId::MenuNav,
+        PARAM_MENU_NAV,
         UiAlign::TopLeft,
         15,
         10,
         250,
         180,
         c"System Settings",
-    ).with_parent(ParamId::NavTab, 6),
+    ).with_parent(PARAM_NAV_TAB, 6),
     WidgetDescriptor::qr_code(
-        ParamId::QrWifiConfig,
+        PARAM_QR_WIFI_CONFIG,
         UiAlign::TopRight,
         -15,
         15,
         140,
         c"WIFI:S:ESP32-S3-LAB;T:WPA;P:lvgl_rust;;",
-    ).with_parent(ParamId::NavTab, 6),
+    ).with_parent(PARAM_NAV_TAB, 6),
     WidgetDescriptor::tileview(
-        ParamId::NavTile,
+        PARAM_NAV_TILE,
         UiAlign::BottomMid,
         0,
         -10,
         440,
         180,
-    ).with_parent(ParamId::NavTab, 6),
+    ).with_parent(PARAM_NAV_TAB, 6),
 ];
 
 const fn concat_schemas<const N: usize>(tables: &[&'static [WidgetDescriptor]]) -> [WidgetDescriptor; N] {
@@ -505,68 +544,68 @@ impl SystemEngine {
     pub fn process_command(&mut self, cmd: UiCommand) {
         self.active_seq_id = cmd.seq_id;
         match cmd.param_id {
-            ParamId::SetpointHz => {
+            PARAM_SETPOINT_HZ => {
                 self.target_hz = unsafe { cmd.value.i32_val };
             }
-            ParamId::SystemEnable => {
+            PARAM_SYSTEM_ENABLE => {
                 self.is_enabled = unsafe { cmd.value.bool_val };
                 self.spinner_busy = self.is_enabled;
             }
-            ParamId::TriggerReset => {
+            PARAM_TRIGGER_RESET => {
                 self.cycle_counter = 0;
                 self.progress_val = 0;
             }
-            ParamId::CycleCount => {}
-            ParamId::ArcKnob => {
+            PARAM_CYCLE_COUNT => {}
+            PARAM_ARC_KNOB => {
                 self.arc_knob_val = unsafe { cmd.value.i32_val };
             }
-            ParamId::ProgressBar => {}
-            ParamId::AuxCheckbox => {
+            PARAM_PROGRESS_BAR => {}
+            PARAM_AUX_CHECKBOX => {
                 self.aux_enabled = unsafe { cmd.value.bool_val };
                 self.led_state = self.aux_enabled;
             }
-            ParamId::StatusLed => {}
-            ParamId::BusySpinner => {}
-            ParamId::ModeDropdown => {
+            PARAM_STATUS_LED => {}
+            PARAM_BUSY_SPINNER => {}
+            PARAM_MODE_DROPDOWN => {
                 self.mode_dropdown_idx = unsafe { cmd.value.i32_val };
             }
-            ParamId::SpeedRoller => {
+            PARAM_SPEED_ROLLER => {
                 self.speed_roller_idx = unsafe { cmd.value.i32_val };
             }
-            ParamId::PrecisionStep => {
+            PARAM_PRECISION_STEP => {
                 self.spinbox_step_val = unsafe { cmd.value.i32_val };
             }
-            ParamId::TextInput => {
+            PARAM_TEXT_INPUT => {
                 self.text_buffer = unsafe { cmd.value.str_val };
             }
-            ParamId::TextArea => {
+            PARAM_TEXT_AREA => {
                 self.textarea_buffer = unsafe { cmd.value.str_val };
             }
-            ParamId::Keyboard => {
+            PARAM_KEYBOARD => {
                 self.keyboard_action = unsafe { cmd.value.i32_val };
             }
-            ParamId::KeypadMatrix => {
+            PARAM_KEYPAD_MATRIX => {
                 self.keypad_last_key = unsafe { cmd.value.i32_val };
             }
-            ParamId::AlertModal => {
+            PARAM_ALERT_MODAL => {
                 self.modal_open = unsafe { cmd.value.i32_val != 0 };
             }
-            ParamId::GaugeScale => {
+            PARAM_GAUGE_SCALE => {
                 self.gauge_val = unsafe { cmd.value.i32_val };
             }
-            ParamId::NavTab => {
+            PARAM_NAV_TAB => {
                 self.active_tab = unsafe { cmd.value.i32_val };
             }
-            ParamId::CalendarDate => {
+            PARAM_CALENDAR_DATE => {
                 self.selected_date = unsafe { cmd.value.u32_val };
             }
             ParamId::None
-            | ParamId::NavTile
-            | ParamId::MenuNav
-            | ParamId::ItemList
-            | ParamId::TelemetryChart
-            | ParamId::DataTable
-            | ParamId::CanvasDraw
+            | PARAM_NAV_TILE
+            | PARAM_MENU_NAV
+            | PARAM_ITEM_LIST
+            | PARAM_TELEMETRY_CHART
+            | PARAM_DATA_TABLE
+            | PARAM_CANVAS_DRAW
             | _ => {}
         }
     }
@@ -591,98 +630,98 @@ impl SystemEngine {
 
     pub fn emit_telemetry(&self) {
         let telem_hz = DeviceTelemetry {
-            param_id: ParamId::SetpointHz,
+            param_id: PARAM_SETPOINT_HZ,
             ack_seq_id: self.active_seq_id,
             value: ParamVal { i32_val: self.current_hz },
         };
         unsafe { bridge_send_telemetry(&telem_hz) };
 
         let telem_en = DeviceTelemetry {
-            param_id: ParamId::SystemEnable,
+            param_id: PARAM_SYSTEM_ENABLE,
             ack_seq_id: self.active_seq_id,
             value: ParamVal { bool_val: self.is_enabled },
         };
         unsafe { bridge_send_telemetry(&telem_en) };
 
         let telem_cnt = DeviceTelemetry {
-            param_id: ParamId::CycleCount,
+            param_id: PARAM_CYCLE_COUNT,
             ack_seq_id: self.active_seq_id,
             value: ParamVal { u32_val: self.cycle_counter },
         };
         unsafe { bridge_send_telemetry(&telem_cnt) };
 
         let telem_arc = DeviceTelemetry {
-            param_id: ParamId::ArcKnob,
+            param_id: PARAM_ARC_KNOB,
             ack_seq_id: self.active_seq_id,
             value: ParamVal { i32_val: self.arc_knob_val },
         };
         unsafe { bridge_send_telemetry(&telem_arc) };
 
         let telem_bar = DeviceTelemetry {
-            param_id: ParamId::ProgressBar,
+            param_id: PARAM_PROGRESS_BAR,
             ack_seq_id: self.active_seq_id,
             value: ParamVal { i32_val: self.progress_val },
         };
         unsafe { bridge_send_telemetry(&telem_bar) };
 
         let telem_aux = DeviceTelemetry {
-            param_id: ParamId::AuxCheckbox,
+            param_id: PARAM_AUX_CHECKBOX,
             ack_seq_id: self.active_seq_id,
             value: ParamVal { bool_val: self.aux_enabled },
         };
         unsafe { bridge_send_telemetry(&telem_aux) };
 
         let telem_led = DeviceTelemetry {
-            param_id: ParamId::StatusLed,
+            param_id: PARAM_STATUS_LED,
             ack_seq_id: self.active_seq_id,
             value: ParamVal { bool_val: self.led_state },
         };
         unsafe { bridge_send_telemetry(&telem_led) };
 
         let telem_spin = DeviceTelemetry {
-            param_id: ParamId::BusySpinner,
+            param_id: PARAM_BUSY_SPINNER,
             ack_seq_id: self.active_seq_id,
             value: ParamVal { bool_val: self.spinner_busy },
         };
         unsafe { bridge_send_telemetry(&telem_spin) };
 
         let telem_drop = DeviceTelemetry {
-            param_id: ParamId::ModeDropdown,
+            param_id: PARAM_MODE_DROPDOWN,
             ack_seq_id: self.active_seq_id,
             value: ParamVal { i32_val: self.mode_dropdown_idx },
         };
         unsafe { bridge_send_telemetry(&telem_drop) };
 
         let telem_roll = DeviceTelemetry {
-            param_id: ParamId::SpeedRoller,
+            param_id: PARAM_SPEED_ROLLER,
             ack_seq_id: self.active_seq_id,
             value: ParamVal { i32_val: self.speed_roller_idx },
         };
         unsafe { bridge_send_telemetry(&telem_roll) };
 
         let telem_step = DeviceTelemetry {
-            param_id: ParamId::PrecisionStep,
+            param_id: PARAM_PRECISION_STEP,
             ack_seq_id: self.active_seq_id,
             value: ParamVal { i32_val: self.spinbox_step_val },
         };
         unsafe { bridge_send_telemetry(&telem_step) };
 
         let telem_scale = DeviceTelemetry {
-            param_id: ParamId::GaugeScale,
+            param_id: PARAM_GAUGE_SCALE,
             ack_seq_id: self.active_seq_id,
             value: ParamVal { i32_val: self.gauge_val },
         };
         unsafe { bridge_send_telemetry(&telem_scale) };
 
         let telem_chart = DeviceTelemetry {
-            param_id: ParamId::TelemetryChart,
+            param_id: PARAM_TELEMETRY_CHART,
             ack_seq_id: self.active_seq_id,
             value: ParamVal { i32_val: self.chart_sample },
         };
         unsafe { bridge_send_telemetry(&telem_chart) };
 
         let telem_tab = DeviceTelemetry {
-            param_id: ParamId::NavTab,
+            param_id: PARAM_NAV_TAB,
             ack_seq_id: self.active_seq_id,
             value: ParamVal { i32_val: self.active_tab },
         };
@@ -730,7 +769,7 @@ mod tests {
 
         // Root widget of EVERYTHING schema must be TabView
         assert_eq!(EVERYTHING_SCHEMA[0].widget_type, WidgetType::TabView);
-        assert_eq!(EVERYTHING_SCHEMA[0].param_id, ParamId::NavTab);
+        assert_eq!(EVERYTHING_SCHEMA[0].param_id, PARAM_NAV_TAB);
     }
 
     #[test]
@@ -755,7 +794,7 @@ mod tests {
 
         // Turn system ON
         engine.process_command(UiCommand {
-            param_id: ParamId::SystemEnable,
+            param_id: PARAM_SYSTEM_ENABLE,
             seq_id: 1,
             value: ParamVal::from_bool(true),
         });
@@ -764,7 +803,7 @@ mod tests {
 
         // Request 15 Hz
         engine.process_command(UiCommand {
-            param_id: ParamId::SetpointHz,
+            param_id: PARAM_SETPOINT_HZ,
             seq_id: 2,
             value: ParamVal::from_i32(15),
         });
@@ -782,7 +821,7 @@ mod tests {
     fn test_system_engine_reset_trigger() {
         let mut engine = SystemEngine::new();
         engine.process_command(UiCommand {
-            param_id: ParamId::SystemEnable,
+            param_id: PARAM_SYSTEM_ENABLE,
             seq_id: 1,
             value: ParamVal::from_bool(true),
         });
@@ -793,7 +832,7 @@ mod tests {
 
         // Trigger reset
         engine.process_command(UiCommand {
-            param_id: ParamId::TriggerReset,
+            param_id: PARAM_TRIGGER_RESET,
             seq_id: 2,
             value: ParamVal::from_i32(1),
         });
@@ -807,7 +846,7 @@ mod tests {
 
         // Aux power checkbox synchronizes status LED
         engine.process_command(UiCommand {
-            param_id: ParamId::AuxCheckbox,
+            param_id: PARAM_AUX_CHECKBOX,
             seq_id: 3,
             value: ParamVal::from_bool(true),
         });
@@ -816,7 +855,7 @@ mod tests {
 
         // Mode dropdown
         engine.process_command(UiCommand {
-            param_id: ParamId::ModeDropdown,
+            param_id: PARAM_MODE_DROPDOWN,
             seq_id: 4,
             value: ParamVal::from_i32(2),
         });
@@ -824,7 +863,7 @@ mod tests {
 
         // Tab navigation
         engine.process_command(UiCommand {
-            param_id: ParamId::NavTab,
+            param_id: PARAM_NAV_TAB,
             seq_id: 5,
             value: ParamVal::from_i32(3),
         });
@@ -832,7 +871,7 @@ mod tests {
 
         // Modal dialog toggle
         engine.process_command(UiCommand {
-            param_id: ParamId::AlertModal,
+            param_id: PARAM_ALERT_MODAL,
             seq_id: 6,
             value: ParamVal::from_i32(1),
         });
