@@ -92,6 +92,7 @@ extern "C" {
     fn bridge_recv_command(out_cmd: *mut UiCommand, timeout_ms: u32) -> bool;
     fn bridge_send_telemetry(telem: *const DeviceTelemetry) -> bool;
     fn bridge_recv_telemetry_in_ui(out_telem: *mut DeviceTelemetry) -> bool;
+    fn bridge_transport_get_stats(out_stats: *mut esp32_rust_lvgl_bridge_core::abi::BridgeTransportStats);
 
     fn bsp_4848s040_get_ops() -> *const EspLvglBspOps;
     fn bsp_backlight_set(percent: u8);
@@ -278,6 +279,50 @@ fn test_bridge_transport_null_guards() {
     assert!(!unsafe { bridge_recv_command(std::ptr::null_mut(), 0) });
     assert!(!unsafe { bridge_send_telemetry(std::ptr::null()) });
     assert!(!unsafe { bridge_recv_telemetry_in_ui(std::ptr::null_mut()) });
+}
+
+#[test]
+fn test_bridge_transport_stats_counters() {
+    let _guard = TEST_LOCK.lock().unwrap_or_else(|e| e.into_inner());
+
+    unsafe { bridge_transport_init(8, 8) };
+
+    let mut stats_before = esp32_rust_lvgl_bridge_core::abi::BridgeTransportStats::default();
+    unsafe { bridge_transport_get_stats(&mut stats_before) };
+
+    let send_cmd = UiCommand {
+        param_id: ParamId::new(99),
+        seq_id: 1,
+        value: ParamVal::from_i32(42),
+    };
+    assert!(unsafe { bridge_send_command_from_ui(&send_cmd) });
+
+    let send_telem = DeviceTelemetry {
+        param_id: ParamId::new(99),
+        ack_seq_id: 1,
+        value: ParamVal::from_i32(42),
+    };
+    assert!(unsafe { bridge_send_telemetry(&send_telem) });
+
+    let mut stats_after = esp32_rust_lvgl_bridge_core::abi::BridgeTransportStats::default();
+    unsafe { bridge_transport_get_stats(&mut stats_after) };
+
+    assert!(stats_after.cmd_sent > stats_before.cmd_sent);
+    assert!(stats_after.telem_sent > stats_before.telem_sent);
+
+    // Drain queues
+    let mut recv_cmd = UiCommand {
+        param_id: ParamId::NONE,
+        seq_id: 0,
+        value: ParamVal::from_i32(0),
+    };
+    let _ = unsafe { bridge_recv_command(&mut recv_cmd, 0) };
+    let mut recv_telem = DeviceTelemetry {
+        param_id: ParamId::NONE,
+        ack_seq_id: 0,
+        value: ParamVal::from_i32(0),
+    };
+    let _ = unsafe { bridge_recv_telemetry_in_ui(&mut recv_telem) };
 }
 
 #[test]
