@@ -6,7 +6,7 @@ runner = "espflash flash"
 
 [target.xtensa-esp32s3-none-elf]
 runner = "espflash flash"
-rustflags = ["-C", "target-feature=+exception"]
+rustflags = ["-C", "target-feature=+windowed,+exception"]
 
 #[unstable]
 #build-std = ["core", "alloc"]
