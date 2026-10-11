@@ -13,18 +13,15 @@
 #[derive(Copy, Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash, Default)]
 pub struct ParamId(pub(crate) u32);
 
-#[allow(non_upper_case_globals)]
 impl ParamId {
     /// Sentinel parameter identifier representing an unbound widget or a root container with no parent.
     pub const NONE: Self = Self(0);
-    pub const None: Self = Self(0);
 
     /// Start of the reserved framework protocol block (`0xFFFF_0000..=u32::MAX`, top 64K IDs).
     pub const PROTOCOL_RESERVED_START: u32 = 0xFFFF_0000;
 
     /// Special framework protocol parameter ID for dynamic runtime widget flag updates.
     pub const WIDGET_FLAGS: Self = Self(u32::MAX);
-    pub const WidgetFlags: Self = Self(u32::MAX);
 
     /// Returns `true` if `id` falls into the framework-reserved space (`0` or `>= 0xFFFF_0000`).
     #[inline]
@@ -159,14 +156,14 @@ impl DeviceTelemetry {
     ///     target_param,
     ///     WidgetFlagOp::Hidden as u32 | WidgetFlagOp::Disabled as u32,
     /// );
-    /// assert_eq!(t.param_id, ParamId::WidgetFlags);
+    /// assert_eq!(t.param_id, ParamId::WIDGET_FLAGS);
     /// assert_eq!(t.ack_seq_id, target_param.as_u32());
     /// assert_eq!(unsafe { t.value.u32_val }, 0b101);
     /// ```
     #[inline]
     pub const fn widget_flag_update(target: ParamId, flags: u32) -> Self {
         Self {
-            param_id: ParamId::WidgetFlags,
+            param_id: ParamId::WIDGET_FLAGS,
             ack_seq_id: target.0,
             value: ParamVal::from_u32(flags),
         }
@@ -344,7 +341,7 @@ impl WidgetDescriptor {
             holdoff_ms: 0,
             label_primary: label_on.as_ptr(),
             label_secondary: label_off.as_ptr(),
-            parent_param_id: ParamId::None,
+            parent_param_id: ParamId::NONE,
             width: 0,
             height: 0,
             tab_index: 0,
@@ -376,7 +373,7 @@ impl WidgetDescriptor {
             holdoff_ms,
             label_primary: fmt_setting.as_ptr(),
             label_secondary: fmt_actual.as_ptr(),
-            parent_param_id: ParamId::None,
+            parent_param_id: ParamId::NONE,
             width: 0,
             height: 0,
             tab_index: 0,
@@ -404,7 +401,7 @@ impl WidgetDescriptor {
             holdoff_ms: 0,
             label_primary: text.as_ptr(),
             label_secondary: core::ptr::null(),
-            parent_param_id: ParamId::None,
+            parent_param_id: ParamId::NONE,
             width: 0,
             height: 0,
             tab_index: 0,
@@ -431,7 +428,7 @@ impl WidgetDescriptor {
             holdoff_ms: 0,
             label_primary: format.as_ptr(),
             label_secondary: core::ptr::null(),
-            parent_param_id: ParamId::None,
+            parent_param_id: ParamId::NONE,
             width: 0,
             height: 0,
             tab_index: 0,
@@ -463,7 +460,7 @@ impl WidgetDescriptor {
             holdoff_ms,
             label_primary: fmt_setting.as_ptr(),
             label_secondary: fmt_actual.as_ptr(),
-            parent_param_id: ParamId::None,
+            parent_param_id: ParamId::NONE,
             width: 0,
             height: 0,
             tab_index: 0,
@@ -493,7 +490,7 @@ impl WidgetDescriptor {
             holdoff_ms: 0,
             label_primary: format.as_ptr(),
             label_secondary: core::ptr::null(),
-            parent_param_id: ParamId::None,
+            parent_param_id: ParamId::NONE,
             width: 0,
             height: 0,
             tab_index: 0,
@@ -521,7 +518,7 @@ impl WidgetDescriptor {
             holdoff_ms: 0,
             label_primary: text.as_ptr(),
             label_secondary: core::ptr::null(),
-            parent_param_id: ParamId::None,
+            parent_param_id: ParamId::NONE,
             width: 0,
             height: 0,
             tab_index: 0,
@@ -548,7 +545,7 @@ impl WidgetDescriptor {
             holdoff_ms: 0,
             label_primary: core::ptr::null(),
             label_secondary: core::ptr::null(),
-            parent_param_id: ParamId::None,
+            parent_param_id: ParamId::NONE,
             width: 0,
             height: 0,
             tab_index: 0,
@@ -575,7 +572,7 @@ impl WidgetDescriptor {
             holdoff_ms: 0,
             label_primary: core::ptr::null(),
             label_secondary: core::ptr::null(),
-            parent_param_id: ParamId::None,
+            parent_param_id: ParamId::NONE,
             width: 0,
             height: 0,
             tab_index: 0,
@@ -603,7 +600,7 @@ impl WidgetDescriptor {
             holdoff_ms: 0,
             label_primary: options.as_ptr(),
             label_secondary: core::ptr::null(),
-            parent_param_id: ParamId::None,
+            parent_param_id: ParamId::NONE,
             width: 0,
             height: 0,
             tab_index: 0,
@@ -631,7 +628,7 @@ impl WidgetDescriptor {
             holdoff_ms: 0,
             label_primary: options.as_ptr(),
             label_secondary: core::ptr::null(),
-            parent_param_id: ParamId::None,
+            parent_param_id: ParamId::NONE,
             width: 0,
             height: 0,
             tab_index: 0,
@@ -660,7 +657,7 @@ impl WidgetDescriptor {
             holdoff_ms: 0,
             label_primary: core::ptr::null(),
             label_secondary: core::ptr::null(),
-            parent_param_id: ParamId::None,
+            parent_param_id: ParamId::NONE,
             width: 0,
             height: 0,
             tab_index: 0,
@@ -699,7 +696,7 @@ impl WidgetDescriptor {
                 Some(t) => t.as_ptr(),
                 None => core::ptr::null(),
             },
-            parent_param_id: ParamId::None,
+            parent_param_id: ParamId::NONE,
             width,
             height,
             tab_index: 0,
@@ -753,7 +750,7 @@ impl WidgetDescriptor {
             holdoff_ms: 0,
             label_primary: core::ptr::null(),
             label_secondary: core::ptr::null(),
-            parent_param_id: ParamId::None,
+            parent_param_id: ParamId::NONE,
             width,
             height,
             tab_index: 0,
@@ -782,7 +779,7 @@ impl WidgetDescriptor {
             holdoff_ms: 0,
             label_primary: map_str.as_ptr(),
             label_secondary: core::ptr::null(),
-            parent_param_id: ParamId::None,
+            parent_param_id: ParamId::NONE,
             width,
             height,
             tab_index: 0,
@@ -808,7 +805,7 @@ impl WidgetDescriptor {
             holdoff_ms: 0,
             label_primary: title.as_ptr(),
             label_secondary: message.as_ptr(),
-            parent_param_id: ParamId::None,
+            parent_param_id: ParamId::NONE,
             width: 0,
             height: 0,
             tab_index: 0,
@@ -839,7 +836,7 @@ impl WidgetDescriptor {
             holdoff_ms: 0,
             label_primary: core::ptr::null(),
             label_secondary: core::ptr::null(),
-            parent_param_id: ParamId::None,
+            parent_param_id: ParamId::NONE,
             width,
             height,
             tab_index: 0,
@@ -869,7 +866,7 @@ impl WidgetDescriptor {
             holdoff_ms: 0,
             label_primary: tab_names.as_ptr(),
             label_secondary: core::ptr::null(),
-            parent_param_id: ParamId::None,
+            parent_param_id: ParamId::NONE,
             width,
             height,
             tab_index: 0,
@@ -897,7 +894,7 @@ impl WidgetDescriptor {
             holdoff_ms: 0,
             label_primary: core::ptr::null(),
             label_secondary: core::ptr::null(),
-            parent_param_id: ParamId::None,
+            parent_param_id: ParamId::NONE,
             width,
             height,
             tab_index: 0,
@@ -926,7 +923,7 @@ impl WidgetDescriptor {
             holdoff_ms: 0,
             label_primary: title.as_ptr(),
             label_secondary: core::ptr::null(),
-            parent_param_id: ParamId::None,
+            parent_param_id: ParamId::NONE,
             width,
             height,
             tab_index: 0,
@@ -1115,7 +1112,7 @@ impl WidgetDescriptor {
             holdoff_ms: 0,
             label_primary: src.as_ptr(),
             label_secondary: core::ptr::null(),
-            parent_param_id: ParamId::None,
+            parent_param_id: ParamId::NONE,
             width: 0,
             height: 0,
             tab_index: 0,
@@ -1151,7 +1148,7 @@ impl WidgetDescriptor {
                 None => core::ptr::null(),
             },
             label_secondary: core::ptr::null(),
-            parent_param_id: ParamId::None,
+            parent_param_id: ParamId::NONE,
             width,
             height,
             tab_index: 0,
@@ -1184,7 +1181,7 @@ impl WidgetDescriptor {
             holdoff_ms: 0,
             label_primary: text.as_ptr(),
             label_secondary: core::ptr::null(),
-            parent_param_id: ParamId::None,
+            parent_param_id: ParamId::NONE,
             width: 0,
             height: 0,
             tab_index: 0,
@@ -1215,7 +1212,7 @@ impl WidgetDescriptor {
             holdoff_ms: 0,
             label_primary: payload.as_ptr(),
             label_secondary: core::ptr::null(),
-            parent_param_id: ParamId::None,
+            parent_param_id: ParamId::NONE,
             width: size,
             height: size,
             tab_index: 0,
@@ -1249,7 +1246,7 @@ impl WidgetDescriptor {
             holdoff_ms: 0,
             label_primary: title.as_ptr(),
             label_secondary: core::ptr::null(),
-            parent_param_id: ParamId::None,
+            parent_param_id: ParamId::NONE,
             width,
             height,
             tab_index: 0,
@@ -1278,7 +1275,7 @@ impl WidgetDescriptor {
             holdoff_ms: 0,
             label_primary: src.as_ptr(),
             label_secondary: core::ptr::null(),
-            parent_param_id: ParamId::None,
+            parent_param_id: ParamId::NONE,
             width: 0,
             height: 0,
             tab_index: 0,
@@ -1310,7 +1307,7 @@ impl WidgetDescriptor {
             holdoff_ms: 0,
             label_primary: spans_text.as_ptr(),
             label_secondary: core::ptr::null(),
-            parent_param_id: ParamId::None,
+            parent_param_id: ParamId::NONE,
             width,
             height,
             tab_index: 0,
@@ -1338,7 +1335,7 @@ impl WidgetDescriptor {
             holdoff_ms: 0,
             label_primary: core::ptr::null(),
             label_secondary: core::ptr::null(),
-            parent_param_id: ParamId::None,
+            parent_param_id: ParamId::NONE,
             width: 0,
             height: 0,
             tab_index: 0,
@@ -1368,7 +1365,7 @@ impl WidgetDescriptor {
             holdoff_ms: 0,
             label_primary: data.as_ptr(),
             label_secondary: core::ptr::null(),
-            parent_param_id: ParamId::None,
+            parent_param_id: ParamId::NONE,
             width,
             height,
             tab_index: 0,
@@ -1424,9 +1421,7 @@ mod tests {
         assert_eq!(u32::from(ParamId(200)), 200u32);
 
         assert_eq!(ParamId::NONE, ParamId(0));
-        assert_eq!(ParamId::None, ParamId(0));
         assert_eq!(ParamId::WIDGET_FLAGS, ParamId(u32::MAX));
-        assert_eq!(ParamId::WidgetFlags, ParamId(u32::MAX));
 
         // Reservation checks
         assert!(ParamId::NONE.is_none());

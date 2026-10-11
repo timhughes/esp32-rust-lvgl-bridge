@@ -599,7 +599,7 @@ impl SystemEngine {
             PARAM_CALENDAR_DATE => {
                 self.selected_date = unsafe { cmd.value.u32_val };
             }
-            ParamId::None
+            ParamId::NONE
             | PARAM_NAV_TILE
             | PARAM_MENU_NAV
             | PARAM_ITEM_LIST
