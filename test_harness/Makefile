@@ -32,7 +32,7 @@ all: $(TARGET)
 
 $(LVGL_DIR):
 	@echo "Fetching LVGL v9 for host harness..."
-	git clone --depth 1 --branch release/v9.2 https://github.com/lvgl/lvgl.git $(LVGL_DIR)
+	git clone --depth 1 --branch release/v9.4 https://github.com/lvgl/lvgl.git $(LVGL_DIR)
 
 $(RUST_LIB): FORCE
 	@echo "Building Rust app-core staticlib..."

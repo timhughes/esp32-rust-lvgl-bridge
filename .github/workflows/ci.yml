@@ -55,7 +55,7 @@ jobs:
 
       - name: Clone LVGL v9 for Host Test Harness
         run: |
-          git clone --depth 1 --branch release/v9.2 https://github.com/lvgl/lvgl.git test_harness/lvgl
+          git clone --depth 1 --branch release/v9.4 https://github.com/lvgl/lvgl.git test_harness/lvgl
 
       - name: Build & Run Headless Visual Test Harness
         run: |
@@ -66,17 +66,18 @@ jobs:
       - name: Verify Generated Snapshots
         run: |
           ls -lh test_harness/artifacts/*.png
-          test -f test_harness/artifacts/01_initial_state.png
-          test -f test_harness/artifacts/02_switch_toggled.png
-          test -f test_harness/artifacts/03_slider_dragging.png
-          test -f test_harness/artifacts/04_slider_released.png
-          test -f test_harness/artifacts/05_slider_telemetry_settled.png
-          test -f test_harness/artifacts/06_counter_reset.png
-          test -f test_harness/artifacts/07_tier1_showcase.png
-          test -f test_harness/artifacts/08_tier2_showcase.png
-          test -f test_harness/artifacts/09_tier3_telemetry.png
-          test -f test_harness/artifacts/10_tier3_diagnostics.png
-          test -f test_harness/artifacts/11_tier3_config.png
+          test -f test_harness/artifacts/01_s3_tab0_controls_init.png
+          test -f test_harness/artifacts/02_s3_tab0_controls_running.png
+          test -f test_harness/artifacts/03_s3_tab1_selectors.png
+          test -f test_harness/artifacts/04_s3_tab2_inputs_typing.png
+          test -f test_harness/artifacts/05_s3_tab3_telemetry_waveforms.png
+          test -f test_harness/artifacts/06_s3_tab4_tools.png
+          test -f test_harness/artifacts/07_s3_tab5_system.png
+          test -f test_harness/artifacts/08_s3_screen_blanked.png
+          test -f test_harness/artifacts/09_s3_screen_woken.png
+          test -f test_harness/artifacts/10_tier1_showcase.png
+          test -f test_harness/artifacts/11_tier2_showcase.png
+          test -f test_harness/artifacts/12_tier3_showcase.png
 
       - name: Upload Visual Test Snapshots
         uses: actions/upload-artifact@v4

@@ -4,14 +4,46 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include "widgets/buttonmatrix/lv_buttonmatrix_private.h"
 
-static uint8_t s_framebuffer[HARNESS_HOR_RES * HARNESS_VER_RES * 3];
+#define HARNESS_MAX_HOR_RES 800
+#define HARNESS_MAX_VER_RES 480
+
+static uint8_t s_framebuffer[HARNESS_MAX_HOR_RES * HARNESS_MAX_VER_RES * 3];
+static int32_t s_hor_res = HARNESS_HOR_RES;
+static int32_t s_ver_res = HARNESS_VER_RES;
 static lv_display_t *s_disp = NULL;
 static lv_indev_t *s_indev = NULL;
+static lv_timer_t *s_screensaver_timer = NULL;
+static uint32_t s_screensaver_timeout_ms = 60000;
 
 static int32_t s_touch_x = 0;
 static int32_t s_touch_y = 0;
 static bool s_touch_pressed = false;
+static bool s_backlight_on = true;
+
+void bsp_backlight_set(uint8_t percent) {
+    s_backlight_on = (percent > 0);
+}
+
+bool bsp_backlight_is_on(void) {
+    return s_backlight_on;
+}
+
+static void screen_saver_timer_cb(lv_timer_t *timer) {
+    lv_display_t *disp = (lv_display_t *)lv_timer_get_user_data(timer);
+    uint32_t inactive_ms = lv_display_get_inactive_time(disp);
+    if (s_backlight_on && inactive_ms >= s_screensaver_timeout_ms) {
+        bsp_backlight_set(0);
+    }
+}
+
+void harness_register_screensaver(uint32_t timeout_ms) {
+    s_screensaver_timeout_ms = timeout_ms;
+    if (!s_screensaver_timer && s_disp) {
+        s_screensaver_timer = lv_timer_create(screen_saver_timer_cb, 500, s_disp);
+    }
+}
 
 static void harness_flush_cb(lv_display_t *disp, const lv_area_t *area, uint8_t *px_map) {
     (void)area;
@@ -21,16 +53,27 @@ static void harness_flush_cb(lv_display_t *disp, const lv_area_t *area, uint8_t 
 
 static void harness_touch_read_cb(lv_indev_t *indev, lv_indev_data_t *data) {
     (void)indev;
-    data->point.x = s_touch_x;
-    data->point.y = s_touch_y;
-    data->state = s_touch_pressed ? LV_INDEV_STATE_PRESSED : LV_INDEV_STATE_RELEASED;
+    if (s_touch_pressed) {
+        if (!s_backlight_on) {
+            // Wake on touch: restore backlight, reset inactivity timer, swallow blind tap!
+            s_backlight_on = true;
+            lv_display_trigger_activity(s_disp);
+            data->state = LV_INDEV_STATE_RELEASED;
+            return;
+        }
+        data->point.x = s_touch_x;
+        data->point.y = s_touch_y;
+        data->state = LV_INDEV_STATE_PRESSED;
+    } else {
+        data->state = LV_INDEV_STATE_RELEASED;
+    }
 }
 
 void harness_init(void) {
     lv_init();
 
     // Create offscreen display with RGB888 buffer
-    s_disp = lv_display_create(HARNESS_HOR_RES, HARNESS_VER_RES);
+    s_disp = lv_display_create(s_hor_res, s_ver_res);
     lv_display_set_color_format(s_disp, LV_COLOR_FORMAT_RGB888);
     lv_display_set_buffers(s_disp, s_framebuffer, NULL, sizeof(s_framebuffer), LV_DISPLAY_RENDER_MODE_DIRECT);
     lv_display_set_flush_cb(s_disp, harness_flush_cb);
@@ -41,8 +84,32 @@ void harness_init(void) {
     lv_indev_set_display(s_indev, s_disp);
     lv_indev_set_read_cb(s_indev, harness_touch_read_cb);
 
+    s_backlight_on = true;
+
     // Initial render pass
     harness_step(50);
+}
+
+void harness_set_resolution(int32_t hor_res, int32_t ver_res) {
+    if (hor_res <= 0 || ver_res <= 0) return;
+    if (hor_res > HARNESS_MAX_HOR_RES || ver_res > HARNESS_MAX_VER_RES) return;
+
+    s_hor_res = hor_res;
+    s_ver_res = ver_res;
+    if (s_disp) {
+        lv_display_set_resolution(s_disp, hor_res, ver_res);
+        lv_obj_set_size(lv_screen_active(), hor_res, ver_res);
+        lv_obj_invalidate(lv_screen_active());
+        harness_step(50);
+    }
+}
+
+int32_t harness_get_hor_res(void) {
+    return s_hor_res;
+}
+
+int32_t harness_get_ver_res(void) {
+    return s_ver_res;
 }
 
 void harness_step(uint32_t elapsed_ms) {
@@ -89,6 +156,42 @@ void harness_click_widget(lv_obj_t *obj) {
     harness_step(30);
 }
 
+bool harness_click_buttonmatrix_by_id(lv_obj_t *bm, uint32_t btn_id) {
+    if (!bm) return false;
+    lv_obj_update_layout(lv_screen_active());
+    struct _lv_buttonmatrix_t *bm_p = (struct _lv_buttonmatrix_t *)bm;
+    if (btn_id >= bm_p->btn_cnt || !bm_p->button_areas) return false;
+
+    lv_area_t obj_coords;
+    lv_obj_get_coords(bm, &obj_coords);
+    lv_area_t btn_area = bm_p->button_areas[btn_id];
+
+    int32_t cx = obj_coords.x1 + (btn_area.x1 + btn_area.x2) / 2;
+    int32_t cy = obj_coords.y1 + (btn_area.y1 + btn_area.y2) / 2;
+
+    harness_touch_set(cx, cy, true);
+    harness_step(30);
+
+    harness_touch_release();
+    harness_step(30);
+    return true;
+}
+
+bool harness_click_buttonmatrix_by_text(lv_obj_t *bm, const char *text) {
+    if (!bm || !text) return false;
+    lv_obj_update_layout(lv_screen_active());
+    struct _lv_buttonmatrix_t *bm_p = (struct _lv_buttonmatrix_t *)bm;
+    if (!bm_p->button_areas) return false;
+
+    for (uint32_t i = 0; i < bm_p->btn_cnt; i++) {
+        const char *t = lv_buttonmatrix_get_button_text(bm, i);
+        if (t && strcmp(t, text) == 0) {
+            return harness_click_buttonmatrix_by_id(bm, i);
+        }
+    }
+    return false;
+}
+
 void harness_drag_slider_to_val(lv_obj_t *slider, int32_t target_val) {
     if (!slider) return;
     lv_obj_update_layout(lv_screen_active());
@@ -124,7 +227,12 @@ bool harness_save_png(const char *filename) {
     lv_obj_invalidate(lv_screen_active());
     lv_timer_handler();
 
-    int res = stbi_write_png(filename, HARNESS_HOR_RES, HARNESS_VER_RES, 3, s_framebuffer, HARNESS_HOR_RES * 3);
+    if (!s_backlight_on) {
+        // Display backlight is turned off: clear framebuffer to black for visual QA
+        memset(s_framebuffer, 0, s_hor_res * s_ver_res * 3);
+    }
+
+    int res = stbi_write_png(filename, s_hor_res, s_ver_res, 3, s_framebuffer, s_hor_res * 3);
     return res != 0;
 }
 

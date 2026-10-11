@@ -53,6 +53,46 @@ void harness_drag_slider_to_val(lv_obj_t *slider, int32_t target_val);
 bool harness_save_png(const char *filename);
 
 /**
+ * @brief Set display resolution (e.g. 480x480 for S3-4848 or 800x480 for wide screens).
+ */
+void harness_set_resolution(int32_t hor_res, int32_t ver_res);
+
+/**
+ * @brief Get current horizontal resolution.
+ */
+int32_t harness_get_hor_res(void);
+
+/**
+ * @brief Get current vertical resolution.
+ */
+int32_t harness_get_ver_res(void);
+
+/**
+ * @brief Simulate a touch click on a specific button within an LVGL button matrix or keyboard by label text.
+ */
+bool harness_click_buttonmatrix_by_text(lv_obj_t *bm, const char *text);
+
+/**
+ * @brief Simulate a touch click on a specific button within an LVGL button matrix by button index.
+ */
+bool harness_click_buttonmatrix_by_id(lv_obj_t *bm, uint32_t btn_id);
+
+/**
+ * @brief Set mock display backlight brightness (0 to 100).
+ */
+void bsp_backlight_set(uint8_t percent);
+
+/**
+ * @brief Check if mock display backlight is currently turned on.
+ */
+bool bsp_backlight_is_on(void);
+
+/**
+ * @brief Register inactivity screensaver timer on the harness display.
+ */
+void harness_register_screensaver(uint32_t timeout_ms);
+
+/**
  * @brief Get pointer to raw RGB888 framebuffer.
  */
 const uint8_t *harness_get_framebuffer(void);

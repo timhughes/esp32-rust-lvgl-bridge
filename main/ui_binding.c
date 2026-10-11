@@ -2,6 +2,15 @@
 #include <stdio.h>
 #include <string.h>
 
+static inline void ui_set_obj_hidden(lv_obj_t *obj, bool hidden) {
+    if (!obj) return;
+    if (hidden) {
+        lv_obj_add_flag(obj, LV_OBJ_FLAG_HIDDEN);
+    } else {
+        lv_obj_remove_flag(obj, LV_OBJ_FLAG_HIDDEN);
+    }
+}
+
 #define MAX_BINDINGS 16
 #define MAX_LABEL_BINDINGS 16
 #define MAX_PARAM_LOOKUPS 64
@@ -545,7 +554,7 @@ static void on_msgbox_close_clicked(lv_event_t *e) {
         .value.i32_val = 0,
     };
     bridge_send_command_from_ui(&cmd);
-    lv_obj_set_hidden(b->msgbox, true);
+    ui_set_obj_hidden(b->msgbox, true);
 }
 
 static void on_msgbox_ok_clicked(lv_event_t *e) {
@@ -559,7 +568,7 @@ static void on_msgbox_ok_clicked(lv_event_t *e) {
         .value.i32_val = 1,
     };
     bridge_send_command_from_ui(&cmd);
-    lv_obj_set_hidden(b->msgbox, true);
+    ui_set_obj_hidden(b->msgbox, true);
 }
 
 // ----------------------------------------------------------------------
@@ -861,7 +870,7 @@ void ui_engine_dispatch_telemetry(const device_telemetry_t *telem) {
     for (size_t i = 0; i < s_num_spinners; i++) {
         bound_spinner_t *b = &s_spinners[i];
         if (b->param_id == telem->param_id) {
-            lv_obj_set_hidden(b->spinner, !telem->value.bool_val);
+            ui_set_obj_hidden(b->spinner, !telem->value.bool_val);
         }
     }
 
@@ -923,7 +932,7 @@ void ui_engine_dispatch_telemetry(const device_telemetry_t *telem) {
     for (size_t i = 0; i < s_num_msgboxes; i++) {
         bound_msgbox_t *b = &s_msgboxes[i];
         if (b->param_id == telem->param_id) {
-            lv_obj_set_hidden(b->msgbox, !telem->value.bool_val);
+            ui_set_obj_hidden(b->msgbox, !telem->value.bool_val);
         }
     }
 
@@ -1193,7 +1202,7 @@ void ui_engine_build_from_schema(const widget_descriptor_t *schema, size_t count
             lv_obj_set_size(sp, 40, 40);
             lv_obj_align(sp, align, d->offset_x, d->offset_y);
             if (!d->initial_val) {
-                lv_obj_set_hidden(sp, true);
+                ui_set_obj_hidden(sp, true);
             }
 
             if (s_num_spinners < MAX_BINDINGS) {
@@ -1367,7 +1376,7 @@ void ui_engine_build_from_schema(const widget_descriptor_t *schema, size_t count
             lv_obj_t *ok_btn = lv_msgbox_add_footer_button(mbox, "OK");
 
             if (d->initial_val == 0) {
-                lv_obj_set_hidden(mbox, true);
+                ui_set_obj_hidden(mbox, true);
             }
 
             if (s_num_msgboxes < MAX_BINDINGS) {

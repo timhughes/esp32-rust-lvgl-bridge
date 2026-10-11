@@ -1,7 +1,7 @@
 #include "host_transport.h"
 #include <string.h>
 
-#define MAX_QUEUE_DEPTH 64
+#define MAX_QUEUE_DEPTH 256
 
 static ui_command_t s_cmd_queue[MAX_QUEUE_DEPTH];
 static size_t s_cmd_head = 0;

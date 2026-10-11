@@ -1,7 +1,13 @@
 #ifndef BSP_4848S040_H
 #define BSP_4848S040_H
 
+#ifdef ESP_PLATFORM
 #include "esp_err.h"
+#else
+typedef int esp_err_t;
+#define ESP_OK 0
+#define ESP_FAIL -1
+#endif
 #include "lvgl.h"
 
 #ifdef __cplusplus
