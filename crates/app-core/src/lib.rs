@@ -1,3 +1,27 @@
+//! # Application Core: Domain Logic & Declarative UI Schemas
+//!
+//! This crate implements the core business logic, closed-loop state machines, and
+//! declarative UI schemas for the **ESP32 Hybrid C/Rust LVGL Framework**.
+//!
+//! ## Architectural Principle: "C owns the display; Rust owns the system"
+//!
+//! - **C / ESP-IDF**: Drives display hardware (ST7701S RGB parallel bus, GT911 touch digitizer,
+//!   FreeRTOS tasks, and the LVGL v9 scene graph).
+//! - **Rust (`no_std`)**: Implements closed-loop state machines, domain models, protocol decoders,
+//!   and deterministic hardware controllers.
+//!
+//! ## Declarative UI Schemas
+//!
+//! Instead of procedural C UI assembly, UI layouts are declared as static data tables:
+//! - [`UI_SCHEMA`]: Baseline interactive schema (Switch, Slider, Reset Button, Cycle Counter).
+//! - [`TIER1_SHOWCASE_SCHEMA`]: Comprehensive 12-widget layout covering all Tier 1 LVGL widgets.
+//! - [`S3_4848_SCHEMA`]: Hardware-tuned 480×480 layout for the Guition ESP32-S3 smart display.
+//!
+//! ## Exported C FFI Entry Points
+//! - [`rust_worker_init`]: Allocates and initializes the static state engine.
+//! - [`rust_worker_step`]: Advances the control loop by one tick (processes incoming commands, steps simulation).
+//! - [`rust_get_s3_schema`]: Provides the C UI engine with the 480×480 S3 widget descriptor table.
+
 #![cfg_attr(not(feature = "std"), no_std)]
 #![allow(static_mut_refs)]
 
