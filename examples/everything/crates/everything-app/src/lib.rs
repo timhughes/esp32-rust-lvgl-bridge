@@ -74,6 +74,7 @@ pub const PARAM_IMAGE_TRIGGER: ParamId     = ParamId::new(32);
 pub const PARAM_FORMATTED_SPAN: ParamId    = ParamId::new(33);
 pub const PARAM_SPINNER_ANIM: ParamId      = ParamId::new(34);
 pub const PARAM_ASSET_BARCODE: ParamId     = ParamId::new(35);
+pub const PARAM_TRANSPORT_STATS: ParamId   = ParamId::new(36);
 
 /// Root Navigation Container: 7-Tab TabView across 480x480 display
 pub static NAV_CONTAINER_SCHEMA: &[WidgetDescriptor] = &[
@@ -408,7 +409,7 @@ pub static TAB5_MEDIA_SCHEMA: &[WidgetDescriptor] = &[
     ).with_parent(PARAM_NAV_TAB, 5),
 ];
 
-/// Tab 6: System (Settings menu, WiFi onboarding QR code & swipeable tileview)
+/// Tab 6: System (Settings menu, WiFi onboarding QR code, transport stats & swipeable tileview)
 pub static TAB6_SYSTEM_SCHEMA: &[WidgetDescriptor] = &[
     WidgetDescriptor::menu(
         PARAM_MENU_NAV,
@@ -426,6 +427,13 @@ pub static TAB6_SYSTEM_SCHEMA: &[WidgetDescriptor] = &[
         15,
         140,
         c"https://github.com/timhughes/esp32-rust-lvgl-bridge",
+    ).with_parent(PARAM_NAV_TAB, 6),
+    WidgetDescriptor::label(
+        PARAM_TRANSPORT_STATS,
+        UiAlign::TopRight,
+        -15,
+        165,
+        c"Bridge: %s",
     ).with_parent(PARAM_NAV_TAB, 6),
     WidgetDescriptor::tileview(
         PARAM_NAV_TILE,
@@ -454,7 +462,7 @@ const fn concat_schemas<const N: usize>(tables: &[&'static [WidgetDescriptor]]) 
     out
 }
 
-static EVERYTHING_SCHEMA_ARRAY: [WidgetDescriptor; 37] = concat_schemas(&[
+static EVERYTHING_SCHEMA_ARRAY: [WidgetDescriptor; 38] = concat_schemas(&[
     NAV_CONTAINER_SCHEMA,
     TAB0_CONTROLS_SCHEMA,
     TAB1_SELECTORS_SCHEMA,
@@ -465,7 +473,7 @@ static EVERYTHING_SCHEMA_ARRAY: [WidgetDescriptor; 37] = concat_schemas(&[
     TAB6_SYSTEM_SCHEMA,
 ]);
 
-/// Complete 37-widget descriptor table joining all tab schemas and navigation container
+/// Complete 38-widget descriptor table joining all tab schemas and navigation container
 pub static EVERYTHING_SCHEMA: &[WidgetDescriptor] = &EVERYTHING_SCHEMA_ARRAY;
 
 #[no_mangle]
@@ -734,6 +742,36 @@ impl SystemEngine {
             value: ParamVal { i32_val: self.active_tab },
         };
         unsafe { bridge_send_telemetry(&telem_tab) };
+
+        let mut stats = bridge_core::abi::BridgeTransportStats::default();
+        unsafe { bridge_transport_get_stats(&mut stats) };
+
+        let mut stats_buf = [0u8; 32];
+        struct BufWriter<'a> {
+            buf: &'a mut [u8],
+            pos: usize,
+        }
+        impl<'a> core::fmt::Write for BufWriter<'a> {
+            fn write_str(&mut self, s: &str) -> core::fmt::Result {
+                let bytes = s.as_bytes();
+                let rem = self.buf.len().saturating_sub(self.pos);
+                let count = bytes.len().min(rem);
+                self.buf[self.pos..self.pos + count].copy_from_slice(&bytes[..count]);
+                self.pos += count;
+                Ok(())
+            }
+        }
+        use core::fmt::Write;
+        let mut writer = BufWriter { buf: &mut stats_buf, pos: 0 };
+        let _ = write!(writer, "C:{} D:{} | T:{} D:{}", stats.cmd_sent, stats.cmd_dropped, stats.telem_sent, stats.telem_dropped);
+        stats_buf[31] = 0;
+
+        let telem_stats = DeviceTelemetry {
+            param_id: PARAM_TRANSPORT_STATS,
+            ack_seq_id: self.active_seq_id,
+            value: ParamVal { str_val: stats_buf },
+        };
+        unsafe { bridge_send_telemetry(&telem_stats) };
     }
 }
 
@@ -766,14 +804,14 @@ mod tests {
 
     #[test]
     fn test_schemas_integrity() {
-        assert_eq!(EVERYTHING_SCHEMA.len(), 37);
+        assert_eq!(EVERYTHING_SCHEMA.len(), 38);
         assert_eq!(TAB0_CONTROLS_SCHEMA.len(), 10);
         assert_eq!(TAB1_SELECTORS_SCHEMA.len(), 6);
         assert_eq!(TAB2_INPUTS_SCHEMA.len(), 5);
         assert_eq!(TAB3_TELEMETRY_SCHEMA.len(), 4);
         assert_eq!(TAB4_TOOLS_SCHEMA.len(), 4);
         assert_eq!(TAB5_MEDIA_SCHEMA.len(), 4);
-        assert_eq!(TAB6_SYSTEM_SCHEMA.len(), 3);
+        assert_eq!(TAB6_SYSTEM_SCHEMA.len(), 4);
 
         // Root widget of EVERYTHING schema must be TabView
         assert_eq!(EVERYTHING_SCHEMA[0].widget_type, WidgetType::TabView);

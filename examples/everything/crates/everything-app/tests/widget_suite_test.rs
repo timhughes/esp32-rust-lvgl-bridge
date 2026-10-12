@@ -34,7 +34,7 @@ fn test_everything_covers_every_widget_type() {
 
     assert_eq!(WidgetType::ALL.len(), 34, "Expected 34 distinct supported widget types");
     assert_eq!(used_types.len(), 34, "EVERYTHING_SCHEMA must utilize all 34 widget types");
-    assert_eq!(EVERYTHING_SCHEMA.len(), 37, "EVERYTHING_SCHEMA contains 37 total descriptors");
+    assert_eq!(EVERYTHING_SCHEMA.len(), 38, "EVERYTHING_SCHEMA contains 38 total descriptors");
 }
 
 /// 2. Headless Scene Graph Construction & Lookup Test
@@ -302,10 +302,20 @@ fn test_tab6_system_navigation() {
     assert!(harness.set_active_tab(PARAM_NAV_TAB, 6));
     assert_eq!(harness.get_active_tab(PARAM_NAV_TAB), Some(6));
 
-    // Verify Menu, QRCode and TileView exist
+    // Verify Menu, QRCode, Transport Stats and TileView exist
     assert!(harness.widget_exists(PARAM_MENU_NAV));
     assert!(harness.widget_exists(PARAM_QR_REPO));
+    assert!(harness.widget_exists(PARAM_TRANSPORT_STATS));
     assert!(harness.widget_exists(PARAM_NAV_TILE));
+
+    // Verify updating transport stats via string telemetry
+    let telem = DeviceTelemetry {
+        param_id: PARAM_TRANSPORT_STATS,
+        ack_seq_id: 0,
+        value: ParamVal::from_str(b"C:42 D:0 | T:99 D:0"),
+    };
+    harness.dispatch_telemetry(&telem);
+    harness.step(20);
 }
 
 /// 10. Full Visual Regression Snapshot Suite

@@ -743,6 +743,17 @@ static void on_list_button_clicked(lv_event_t *e) {
     param_id_t param_id = (param_id_t)(intptr_t)lv_event_get_user_data(e);
     lv_obj_t *target = lv_event_get_current_target(e);
     const char *txt = lv_list_get_button_text(lv_obj_get_parent(target), target);
+    if (!txt && target) {
+        // Fallback for modern flex container buttons
+        uint32_t cnt = lv_obj_get_child_count(target);
+        for (uint32_t i = 0; i < cnt; i++) {
+            lv_obj_t *child = lv_obj_get_child(target, (int32_t)i);
+            if (child && lv_obj_check_type(child, &lv_label_class)) {
+                txt = lv_label_get_text(child);
+                break;
+            }
+        }
+    }
 
     ui_command_t cmd = {
         .param_id = param_id,
@@ -1107,8 +1118,16 @@ void ui_engine_dispatch_telemetry(const device_telemetry_t *telem) {
     // 11. Labels
     for (size_t i = 0; i < s_num_labels; i++) {
         bound_label_t *b = &s_labels[i];
-        if (b->opts.param_id == telem->param_id && b->opts.format) {
-            lv_label_set_text_fmt(b->opts.label, b->opts.format, (unsigned long)telem->value.u32_val);
+        if (b->opts.param_id == telem->param_id) {
+            if (b->opts.format) {
+                if (strstr(b->opts.format, "%s")) {
+                    lv_label_set_text_fmt(b->opts.label, b->opts.format, (const char *)telem->value.str_val);
+                } else {
+                    lv_label_set_text_fmt(b->opts.label, b->opts.format, (unsigned long)telem->value.u32_val);
+                }
+            } else {
+                lv_label_set_text(b->opts.label, (const char *)telem->value.str_val);
+            }
         }
     }
 
@@ -1406,7 +1425,13 @@ void ui_engine_build_from_schema(const widget_descriptor_t *schema, size_t count
             lv_obj_t *lbl = lv_label_create(parent_obj);
             lv_obj_align(lbl, align, d->offset_x, d->offset_y);
             if (d->label_primary) {
-                lv_label_set_text_fmt(lbl, d->label_primary, (unsigned long)d->initial_val);
+                if (strstr(d->label_primary, "%s")) {
+                    lv_label_set_text_fmt(lbl, d->label_primary, d->label_secondary ? d->label_secondary : "Init");
+                } else if (strchr(d->label_primary, '%')) {
+                    lv_label_set_text_fmt(lbl, d->label_primary, (unsigned long)d->initial_val);
+                } else {
+                    lv_label_set_text(lbl, d->label_primary);
+                }
             }
 
             ui_engine_bind_label(&(ui_binding_label_opts_t){
@@ -1806,17 +1831,19 @@ void ui_engine_build_from_schema(const widget_descriptor_t *schema, size_t count
             break;
         }
 
-        // Note: LVGL v9 marks lv_menu and lv_list as deprecated in favor of custom flex-container
-        // layouts with standard buttons/labels. We suppress diagnostic warnings for compatibility
-        // while maintaining declarative schema interoperability.
-        case WIDGET_TYPE_MENU: {
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wdeprecated-declarations"
+        case WIDGET_TYPE_MENU: {
             lv_obj_t *menu = lv_menu_create(parent_obj);
             lv_obj_set_size(menu, d->width > 0 ? d->width : 220, d->height > 0 ? d->height : 220);
             lv_obj_align(menu, align, d->offset_x, d->offset_y);
 
             lv_obj_t *page = lv_menu_page_create(menu, d->label_primary ? d->label_primary : "Menu");
+#if LV_USE_FLEX
+            if (d->layout_flow != LAYOUT_FLOW_NONE) {
+                apply_layout_flow(page, d->layout_flow);
+            }
+#endif
             lv_obj_t *cont1 = lv_menu_cont_create(page);
             lv_obj_t *lbl1 = lv_label_create(cont1);
             lv_label_set_text(lbl1, "WiFi: Connected (STA)");
@@ -1830,7 +1857,6 @@ void ui_engine_build_from_schema(const widget_descriptor_t *schema, size_t count
             lv_label_set_text(lbl3, "Core Engine: FreeRTOS + Rust");
 
             lv_menu_set_page(menu, page);
-#pragma GCC diagnostic pop
 
             if (s_num_menus < MAX_BINDINGS) {
                 bound_menu_t *b = &s_menus[s_num_menus++];
@@ -1845,11 +1871,12 @@ void ui_engine_build_from_schema(const widget_descriptor_t *schema, size_t count
         }
 
         case WIDGET_TYPE_LIST: {
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wdeprecated-declarations"
             lv_obj_t *list = lv_list_create(parent_obj);
             lv_obj_set_size(list, d->width > 0 ? d->width : 180, d->height > 0 ? d->height : 160);
             lv_obj_align(list, align, d->offset_x, d->offset_y);
+#if LV_USE_FLEX
+            apply_layout_flow(list, d->layout_flow != LAYOUT_FLOW_NONE ? d->layout_flow : LAYOUT_FLOW_COLUMN);
+#endif
 
             if (d->label_primary) {
                 char buf[128];
@@ -1862,7 +1889,6 @@ void ui_engine_build_from_schema(const widget_descriptor_t *schema, size_t count
                     tok = strtok(NULL, "\n");
                 }
             }
-#pragma GCC diagnostic pop
 
             if (s_num_lists < MAX_BINDINGS) {
                 bound_list_t *b = &s_lists[s_num_lists++];
@@ -1875,6 +1901,7 @@ void ui_engine_build_from_schema(const widget_descriptor_t *schema, size_t count
             register_lookup(d->param_id, list);
             break;
         }
+#pragma GCC diagnostic pop
 
         case WIDGET_TYPE_CHART: {
             lv_obj_t *chart = lv_chart_create(parent_obj);
@@ -2096,11 +2123,10 @@ void ui_engine_build_from_schema(const widget_descriptor_t *schema, size_t count
             break;
         }
 
-        // Note: LVGL v9 marks lv_win as deprecated in favor of standard container + header layouts.
-        case WIDGET_TYPE_WIN: {
-#if LV_USE_WIN
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wdeprecated-declarations"
+        case WIDGET_TYPE_WIN: {
+#if LV_USE_WIN
             lv_obj_t *win = lv_win_create(parent_obj);
             if (d->width > 0 && d->height > 0) {
                 lv_obj_set_size(win, d->width, d->height);
@@ -2115,7 +2141,7 @@ void ui_engine_build_from_schema(const widget_descriptor_t *schema, size_t count
             }
             lv_obj_t *content = lv_win_get_content(win);
 #if LV_USE_FLEX
-            apply_layout_flow(content, d->layout_flow);
+            apply_layout_flow(content, d->layout_flow != LAYOUT_FLOW_NONE ? d->layout_flow : LAYOUT_FLOW_COLUMN);
 #endif
 
             if (s_num_wins < MAX_BINDINGS) {
@@ -2130,11 +2156,11 @@ void ui_engine_build_from_schema(const widget_descriptor_t *schema, size_t count
                 LOG_BIND_ERR("Window bindings capacity exhausted (max %d)! Cannot bind param %lu",
                              MAX_BINDINGS, (unsigned long)d->param_id);
             }
-#pragma GCC diagnostic pop
             register_lookup(d->param_id, win);
 #endif
             break;
         }
+#pragma GCC diagnostic pop
 
         case WIDGET_TYPE_IMAGEBUTTON: {
 #if LV_USE_IMAGEBUTTON
