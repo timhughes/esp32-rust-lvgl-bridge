@@ -39,23 +39,12 @@ Combines the industry-standard **LVGL v9** graphics engine in C with safe, deter
 
 ## Documentation
 
-Full architectural documentation, guides, and API specifications are available online or locally:
+Full architectural documentation, hardware guides, and API specifications are available online or locally:
 
-* **Online Book:** [timhughes.github.io/esp32-rust-lvgl-bridge](https://timhughes.github.io/esp32-rust-lvgl-bridge/)
-* **Developer & Contributor Manual:** [`DEVELOPING.md`](DEVELOPING.md) — build targets, coding standards, and how to extend the framework.
-* **AI Agent Instructions:** [`AGENTS.md`](AGENTS.md) — architectural boundaries and workflows for autonomous coding agents.
-* **Offline mdBook Source:** [`docs/src/`](docs/src/) (serve locally via `make docs-serve`).
-
-### Documentation Topics
-| Guide | Markdown Source | Description |
-|---|---|---|
-| **System Architecture** | [`docs/src/architecture.md`](docs/src/architecture.md) | Dual-core task model, generic BSP interface, CMake integration |
-| **Declarative UI Engine** | [`docs/src/declarative_ui.md`](docs/src/declarative_ui.md) | 34-widget catalog, dynamic keyboard focus, 3-stage arbitration |
-| **FFI Contracts** | [`docs/src/ffi_contracts.md`](docs/src/ffi_contracts.md) | POD structs, serialization layout, FreeRTOS message queues |
-| **Guition 4848S040** | [`docs/src/hardware/esp32s3_4848s040.md`](docs/src/hardware/esp32s3_4848s040.md) | ST7701S parallel RGB pinout, MDT (0xCD) fix, 60s sleep/wake |
-| **P4 + C6 Link** | [`docs/src/hardware/esp32p4_c6.md`](docs/src/hardware/esp32p4_c6.md) | High-speed SDIO/SPI interconnect & virtual channel framing |
-| **Headless Visual QA** | [`docs/src/headless_testing.md`](docs/src/headless_testing.md) | Offscreen framebuffer testing, PNG capture, CI assertions |
-| **Building & Flashing** | [`docs/src/building_and_flashing.md`](docs/src/building_and_flashing.md) | ESP-IDF toolchain export, compilation, flashing, serial monitor |
+* **Online Documentation:** [timhughes.github.io/esp32-rust-lvgl-bridge](https://timhughes.github.io/esp32-rust-lvgl-bridge/)
+* **Offline mdBook Source:** [`docs/src/`](docs/src/) (serve locally via `make docs-serve`)
+* **Developer & Contributor Manual:** [`DEVELOPING.md`](DEVELOPING.md) — build targets, coding standards, and how to extend the framework
+* **AI Agent Instructions:** [`AGENTS.md`](AGENTS.md) — architectural boundaries and workflows for autonomous coding agents
 
 ---
 
@@ -138,30 +127,6 @@ See [`examples/minimal/`](examples/minimal) for the complete 3-widget starter te
 | **ESP32-P4** | Dual RISC-V HP (400MHz, MIPI-DSI, HW 2D PPA) | High-definition MIPI-DSI Displays | High-Performance GUI Host |
 | **ESP32-C6** | Single RISC-V LP (160MHz, Wi-Fi 6, BLE 5.3, 802.15.4) | SDIO 3.0 / High-Speed SPI link to P4 | Wireless Co-Processor |
 | **Host PC** | Native Linux / macOS (`x86_64` / `aarch64`) | Offscreen RGB888 memory buffer | Visual QA & Automated Testing |
-
----
-
-## Repository Structure
-
-```text
-esp32-rust-lvgl-framework/
-├── README.md                   # Quickstart, highlights & documentation hub
-├── DEVELOPING.md               # Developer & contributor manual (builds, tests, coding rules)
-├── AGENTS.md                   # AI agent rules, workflows, and conventions
-├── Makefile                    # Developer shortcuts (test, check, build examples, docs)
-├── components/                 # Reusable Modular ESP-IDF Components
-│   ├── esp_lvgl_bridge/        # Core C bridge transport & UI binding engine
-│   └── bsp_guition_s3_4848s040/ # Board Support Package (ST7701S RGB + GT911 touch)
-├── crates/                     # Reusable Rust Crates
-│   ├── esp32-rust-lvgl-bridge-core/    # no_std ABI contracts & schema descriptors
-│   └── esp32-rust-lvgl-bridge-harness/ # Headless LVGL host test harness
-├── examples/                   # Official Reference Applications
-│   ├── minimal/                # Clean 3-widget starter project
-│   └── everything/             # Full 34-widget 7-tab showcase
-├── test_apps/                  # Target Test Applications
-│   └── component_tests/        # ESP-IDF Unity unit test app
-└── docs/                       # mdBook technical documentation source
-```
 
 ---
 
