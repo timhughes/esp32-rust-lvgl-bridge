@@ -1,18 +1,19 @@
 # Everything Demonstration Application
 
-The **Everything** application is the complete showcase of all 25 supported LVGL widgets in the **ESP32 Rust/LVGL Framework**, configured for the **Guition ESP32-S3-4848S040** 4.0-inch 480×480 smart display (and compatible with any ESP32-S3).
+The **Everything** application is the complete showcase of all 34 supported LVGL widgets in the **ESP32 Rust/LVGL Framework**, configured for the **Guition ESP32-S3-4848S040** 4.0-inch 480×480 smart display (and compatible with any ESP32-S3).
 
 ---
 
 ## Features Demonstrated
 
-1. **Complete 25-Widget LVGL Suite Across 6 Tabs:**
-   * **Tab 0 (Controls):** System Enable switch, LED indicator, activity spinner, arc knob, load progress bar, setpoint frequency slider with 3-stage arbitration, reset button, and cycle readout.
-   * **Tab 1 (Selectors):** Mode dropdown, speed roller, and precision spinbox.
-   * **Tab 2 (Inputs):** Dynamic virtual on-screen QWERTY keyboard with automatic focus retargeting between single-line command fields and multi-line notes areas.
-   * **Tab 3 (Telemetry):** Real-time sine waveform streaming oscilloscope chart and multi-row system diagnostics status table (`Module`, `Status`, `Core 0`, `Core 1`, `PSRAM`).
-   * **Tab 4 (Tools):** Maintenance Calendar date picker, 4×3 PIN security keypad matrix, and raw-pixel graphics Canvas.
-   * **Tab 5 (System):** Hierarchical settings menu and swipeable tileview navigation.
+1. **Complete 34-Widget LVGL Suite Across 7 Tabs:**
+   * **Tab 0 (Controls):** System Enable switch, LED indicator, activity spinner, arc knob, load progress bar, setpoint frequency slider with 3-stage arbitration, reset button, curved ArcLabel, ImageButton, and cycle readout.
+   * **Tab 1 (Selectors):** Mode dropdown, speed roller, precision spinbox, analog Scale needle meter, Checkbox, and animated AnimImage.
+   * **Tab 2 (Inputs):** Dynamic virtual on-screen QWERTY keyboard with automatic focus retargeting between single-line command fields and multi-line notes areas, modal MsgBox alerts, and multi-style SpanGroup text.
+   * **Tab 3 (Telemetry):** Real-time sine waveform streaming oscilloscope chart, vector Line graph, multi-row system diagnostics status table (`Module`, `Status`, `Core 0`, `Core 1`, `PSRAM`), and interactive Item List.
+   * **Tab 4 (Tools):** Maintenance Calendar date picker, 4×3 PIN security keypad matrix, and raw-pixel graphics Canvas with animated test pattern.
+   * **Tab 5 (Media):** Movable modal Window frame, asset Barcode tag, and Image preview.
+   * **Tab 6 (System):** Hierarchical settings menu, Wi-Fi configuration QR code, live hardware transport statistics readout (commands sent/received, telemetry sent/received), and swipeable 2D TileView navigation.
 
 2. **Power Management & Inactivity Lifecycle:**
    * **Automatic 60s Blanking:** Blanks the display backlight (`bsp->set_backlight(0)`) after 60 seconds without touch interaction to prevent panel burn-in.
@@ -45,7 +46,7 @@ examples/everything/
 └── crates/
     └── everything-app/         # no_std Rust application logic
         ├── Cargo.toml
-        └── src/lib.rs          # 25-widget Everything schema, SystemEngine & virtual keyboard wiring
+        └── src/lib.rs          # 34-widget Everything schema across 7 tabs, SystemEngine & virtual keyboard wiring
 ```
 
 ---

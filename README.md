@@ -71,12 +71,13 @@ This framework solves the problem by cleanly separating concerns across a strict
 ## 2. Key Features
 
 - **100% Declarative UI Schemas in Rust:** Declare widgets, layouts, parameters, and labels directly in Rust static tables. The C engine constructs and binds the scene graph dynamically with a single call.
-- **Complete 26-Widget LVGL Suite:** Out-of-the-box support for all 26 core LVGL widgets across 3 tiers (switches, sliders, dials, gauges, keyboards, text inputs, charts, tables, calendar, canvas, menus, tileviews).
+- **Complete 34-Widget LVGL Suite:** Out-of-the-box declarative bindings for all 34 supported LVGL widgets across 7 tabs (scalars, dials, gauges, keyboards, text inputs, streaming charts, tables, calendar, canvas, menus, tileviews, media assets, windows, barcodes, and QR codes).
 - **Dynamic Virtual Keyboard Focus:** Tap a single-line command field or multi-line text area, and the on-screen QWERTY keyboard automatically retargets its input focus.
 - **Intelligent Inactivity Timeout & Wake-on-Touch:** Turns off the display backlight after 60 seconds of idle time to conserve power and prolong panel life. Tapping the dark screen immediately restores full brightness without triggering accidental clicks.
 - **Anti-Jitter 3-Stage Arbitration:** Eliminates visual rubber-banding and telemetry echo during user interaction via monotonic sequence tickets (`seq_id`) and temporal holdoff leases.
 - **Headless Host Visual QA (CI/CD):** Render pixel-perfect offscreen screenshots of the entire UI and verify state transitions on Linux/macOS in milliseconds without hardware attached.
 - **Turnkey Guition ESP32-S3-4848S040 Support:** Full board-support package for 4.0-inch 480×480 IPS display with ST7701S parallel RGB bus and Goodix GT911 touch.
+- **Developer & Contributor Guides:** See [`DEVELOPING.md`](DEVELOPING.md) for contributing to the framework, and [`AGENTS.md`](AGENTS.md) for AI agent conventions.
 
 ---
 
@@ -319,15 +320,16 @@ ui_engine_build_from_schema(schema, count);
 
 ---
 
-### Full 26-Widget Catalog
-
-The framework includes complete implementations for all 26 widget types:
+### Full 34-Widget Catalog
+ 
+The framework includes complete declarative bindings for all 34 supported LVGL widget types across 7 tabs:
 
 | Category | Widgets |
 |---|---|
 | **Tier 1: Scalars & Selectors** | `Switch`, `Slider`, `Button`, `Label`, `Arc` (Rotary Knob), `Bar`, `Checkbox`, `LED`, `Spinner`, `Dropdown`, `Roller`, `Spinbox` |
 | **Tier 2: Text, Keys & Gauges** | `TextInput` (single-line), `TextArea` (multi-line), `Keyboard` (virtual QWERTY), `ButtonMatrix` (PIN pad), `Scale` (analog needle meter), `MsgBox` (modal alert) |
 | **Tier 3: Containers & Data** | `TabView` (multi-page navigation), `TileView` (2D swipeable grid), `Menu` (hierarchical settings), `List` (scrollable items), `Chart` (streaming waveform), `Table` (diagnostics grid), `Calendar` (date picker), `Canvas` (custom graphics) |
+| **Rich Media & Visual Assets** | `Image` (RGB/PNG), `Line` (coordinate vectors), `ArcLabel` (curved text), `QRCode` (URL/Wi-Fi), `Win` (movable window), `ImageButton`, `SpanGroup` (multi-style text), `AnimImage`, `Barcode` |
 
 ---
 
@@ -336,14 +338,14 @@ The framework includes complete implementations for all 26 widget types:
 Here is how to add a new parameter and bind it from Rust to the display in 4 simple steps:
 
 ### Step 1: Declare a Parameter ID
-In your application (e.g. [`crates/app-core/src/lib.rs`](file:///home/thughes/git/esp32-rust-lvgl-framework/crates/app-core/src/lib.rs)):
+In your application (e.g. [`examples/minimal/crates/minimal-app/src/lib.rs`](examples/minimal/crates/minimal-app/src/lib.rs)):
 ```rust
 // Any application can declare custom parameter IDs:
 pub const TARGET_TEMPERATURE: ParamId = ParamId::new(101);
 ```
 
 ### Step 2: Declare the Widget in Your Schema
-In [`crates/app-core/src/lib.rs`](file:///home/thughes/git/esp32-rust-lvgl-framework/crates/app-core/src/lib.rs):
+In your application crate:
 ```rust
 WidgetDescriptor::slider(
     ParamId::TargetTemperature,
@@ -357,7 +359,7 @@ WidgetDescriptor::slider(
 ```
 
 ### Step 3: Handle the Parameter in Rust Domain Logic
-In `SystemEngine::process_command` ([`crates/app-core/src/lib.rs`](file:///home/thughes/git/esp32-rust-lvgl-framework/crates/app-core/src/lib.rs)):
+In `SystemEngine::process_command`:
 ```rust
 ParamId::TargetTemperature => {
     let new_temp = unsafe { cmd.value.i32_val };
@@ -443,6 +445,9 @@ make test
  
 ```text
 esp32-rust-lvgl-framework/
+├── README.md                   # User-facing manual & architecture guide
+├── DEVELOPING.md               # Developer & contributor manual (builds, tests, coding rules)
+├── AGENTS.md                   # AI agent rules, workflows, and conventions
 ├── Makefile                    # Developer shortcuts (test, check, build examples, docs)
 ├── .cargo/config.toml          # Xtensa exception flags & bare-metal targets
 ├── Cargo.toml                  # Workspace definition (crates and official examples)
@@ -457,12 +462,13 @@ esp32-rust-lvgl-framework/
 │   │   │   ├── esp_lvgl_bridge.h # Umbrella public header
 │   │   │   ├── esp_lvgl_bsp.h  # Generic BSP operations table interface
 │   │   │   ├── bridge_protocol.h # C FFI mirror of bridge-core ABI
-│   │   │   ├── ui_binding.h    # 27-widget schema parser & arbitration engine
+│   │   │   ├── ui_binding.h    # 34-widget schema parser & arbitration engine
 │   │   │   └── p4_c6_link.h    # P4 <-> C6 co-processor link
-│   │   └── src/
-│   │       ├── bridge_transport.c # FreeRTOS ring queue message passing
-│   │       ├── ui_binding.c    # Scene graph builder & arbitration engine
-│   │       └── p4_c6_link.c    # SDIO 3.0 / High-Speed SPI driver
+│   │   ├── src/
+│   │   │   ├── bridge_transport.c # FreeRTOS ring queue message passing
+│   │   │   ├── ui_binding.c    # Scene graph builder & arbitration engine
+│   │   │   └── p4_c6_link.c    # SDIO 3.0 / High-Speed SPI driver
+│   │   └── test/               # Unity unit tests for C bridge
 │   └── bsp_guition_s3_4848s040/ # Board Support Package Component
 │       ├── CMakeLists.txt      # Registers ST7701S & GT911 dependencies
 │       ├── idf_component.yml   # Managed component dependencies
@@ -475,7 +481,9 @@ esp32-rust-lvgl-framework/
 │   └── esp32-rust-lvgl-bridge-harness/ # Self-contained headless LVGL host test harness for pure Rust tests
 ├── examples/                   # Official Sample Applications
 │   ├── minimal/                # Minimal 3-widget starter project (minimal-app crate)
-│   └── everything/             # Full 25-widget 6-tab dashboard (everything-app crate)
+│   └── everything/             # Full 34-widget 7-tab dashboard (everything-app crate)
+├── test_apps/                  # Target test applications
+│   └── component_tests/        # ESP-IDF Unity unit test app (esp_lvgl_bridge & BSP)
 └── docs/                       # Architecture specifications & mdBook guides
     └── src/
         ├── declarative_ui.md   # Complete widget catalog & schema API guide

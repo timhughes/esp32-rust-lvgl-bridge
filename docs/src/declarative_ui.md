@@ -77,7 +77,7 @@ ui_engine_build_from_schema(schema, count);
 17. **`Scale`**: Analog speedometer / dial gauge with tick divisions, labels, and needle indicators.
 
 ### Tier 3: Containers, Navigation & Data Streams
-18. **`TabView`**: Multi-screen tabbed interface with top navigation headers (*Telemetry*, *Diagnostics*, *Config*).
+18. **`TabView`**: Multi-screen tabbed interface with top navigation headers (*Controls*, *Selectors*, *Inputs*, *Telemetry*, *Tools*, *Media*, *System*).
 19. **`TileView`**: 2D swipeable grid container.
 20. **`Menu`**: Hierarchical multi-level settings drill-down menu.
 21. **`List`**: Scrollable action list with items.
@@ -85,6 +85,17 @@ ui_engine_build_from_schema(schema, count);
 23. **`Table`**: Multi-row, multi-column tabular grid for system status, Wi-Fi scans, and diagnostic logs.
 24. **`Calendar`**: Month calendar viewer and date picker.
 25. **`Canvas`**: Raw pixel graphics buffer for custom drawing.
+
+### Rich Media & Visual Assets
+26. **`Image`**: Static raster graphic preview (RGB565 / PNG).
+27. **`Line`**: Precise vector line segments connecting coordinate points.
+28. **`ArcLabel`**: Curved circular heading label with adjustable arc angles.
+29. **`QRCode`**: High-density 2D QR code generator (URLs, Wi-Fi credentials).
+30. **`Win`**: Movable / dismissible window modal with title header and close button.
+31. **`ImageButton`**: Graphical button with distinct normal and pressed image assets.
+32. **`SpanGroup`**: Rich formatted text container with per-span coloring, fonts, and styling.
+33. **`AnimImage`**: Looping sprite frame animation.
+34. **`Barcode`**: 1D barcode generator for asset tracking and serial numbers.
 
 ---
 
@@ -180,24 +191,25 @@ Rather than hardcoding a keyboard to a single input field forever:
 
 ---
 
-### Complete 25-Widget Suite (`EVERYTHING_SCHEMA`)
+### Complete 34-Widget Suite (`EVERYTHING_SCHEMA`)
 
-The **Everything** application integrates **all 25 widget types** across 6 dedicated functional tabs in a 480×480 layout:
+The **Everything** application integrates **all 34 widget types** across 7 dedicated functional tabs in a 480×480 layout:
 
 | Tab | Name | Contained Widgets |
 |---|---|---|
-| **0** | **Controls** | `Switch`, `Led`, `Spinner`, `Arc` (dial), `Bar` (load), `Slider`, `Button`, `Label` (cycles) |
-| **1** | **Selectors** | `Checkbox`, `Dropdown`, `Roller`, `Spinbox`, `Scale` (analog needle gauge) |
-| **2** | **Inputs** | `TextInput` (single-line), `TextArea` (multi-line), `Keyboard` (virtual QWERTY), `MsgBox` (modal) |
-| **3** | **Telemetry** | `Chart` (streaming waveform), `Table` (diagnostics grid), `List` (interactive items) |
+| **0** | **Controls** | `Switch`, `Led`, `Spinner`, `Arc` (dial), `Bar` (load), `Slider`, `Button`, `ImageButton`, `ArcLabel`, `Label` (cycles) |
+| **1** | **Selectors** | `Checkbox`, `Dropdown`, `Roller`, `Spinbox`, `Scale` (analog needle gauge), `AnimImage` |
+| **2** | **Inputs** | `TextInput` (single-line), `TextArea` (multi-line), `Keyboard` (virtual QWERTY), `MsgBox` (modal), `SpanGroup` |
+| **3** | **Telemetry** | `Chart` (streaming waveform), `Line` (vector points), `Table` (diagnostics grid), `List` (interactive items) |
 | **4** | **Tools** | `Calendar` (interactive date picker), `ButtonMatrix` (4×3 keypad), `Canvas` (100×100 RGB565 custom graphics), `Label` |
-| **5** | **System** | `Menu` (hierarchical settings), `TileView` (horizontal swipeable 2D grid) |
+| **5** | **Media** | `Win` (movable window), `Barcode` (1D tag), `Image` (preview) |
+| **6** | **System** | `Menu` (hierarchical settings), `QRCode` (Wi-Fi setup), `TileView` (horizontal swipeable 2D grid), `Label` (live transport stats) |
 
 ```rust
-// Root Navigation Container: 6 Tabs across 480x480 screen
+// Root Navigation Container: 7 Tabs across 480x480 screen
 WidgetDescriptor::tabview(
     ParamId::NavTab,
-    c"Controls\nSelectors\nInputs\nTelemetry\nTools\nSystem",
+    c"Controls\nSelectors\nInputs\nTelemetry\nTools\nMedia\nSystem",
     480, 480,
 )
 ```
