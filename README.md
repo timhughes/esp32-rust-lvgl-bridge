@@ -115,6 +115,8 @@ pub static MY_UI_SCHEMA: &[WidgetDescriptor] = &[
 ];
 ```
 
+> **Zero C UI Code:** All widgets, layouts, holdoffs, and telemetry bindings are declared 100% in Rust. The underlying C runtime acts purely as a turnkey display runner (`ui_engine_build_from_schema(schema, count)`), so you never write procedural LVGL C code or touch `lv_obj_t*` pointers.
+
 See [`examples/minimal/`](examples/minimal) for the complete 3-widget starter template, and [`examples/everything/`](examples/everything) for the full 7-tab dashboard.
 
 ---
