@@ -97,6 +97,12 @@ extern "C" {
     fn bsp_4848s040_get_ops() -> *const EspLvglBspOps;
     fn bsp_backlight_set(percent: u8);
     fn bsp_backlight_is_on() -> bool;
+
+    fn ui_engine_init();
+    fn ui_engine_build_from_schema(schema: *const WidgetDescriptor, count: usize);
+    fn ui_engine_get_widget_by_param(param_id: u32) -> *mut std::ffi::c_void;
+    fn ui_engine_dispatch_telemetry(telem: *const DeviceTelemetry);
+    fn ui_engine_pump_telemetry();
 }
 
 static mut RECEIVED_BYTES: Vec<u8> = Vec::new();
@@ -220,6 +226,70 @@ fn test_unified_ui_binding_component_compilation() {
     harness.step(20);
 
     assert!(harness.widget_exists(P_TEST), "Button created directly via components/esp_lvgl_bridge/src/ui_binding.c");
+}
+
+#[test]
+fn test_ui_binding_direct_c_api_safety_and_lookups() {
+    let _guard = TEST_LOCK.lock().unwrap_or_else(|e| e.into_inner());
+    let mut harness = HeadlessHarness::new(200, 200);
+
+    // 1. Safe NULL handling
+    unsafe {
+        ui_engine_dispatch_telemetry(std::ptr::null());
+        ui_engine_build_from_schema(std::ptr::null(), 0);
+        ui_engine_pump_telemetry();
+    }
+
+    // 2. Unregistered / PARAM_NONE lookup returns null
+    unsafe {
+        assert!(ui_engine_get_widget_by_param(ParamId::NONE.as_u32()).is_null());
+        assert!(ui_engine_get_widget_by_param(9999).is_null());
+    }
+
+    // 3. Schema build and lookup
+    const P_SW: ParamId = ParamId::new(101);
+    const P_SLIDER: ParamId = ParamId::new(102);
+    let schema = [
+        WidgetDescriptor::switch(P_SW, UiAlign::Center, 0, 0, c"ON", c"OFF"),
+        WidgetDescriptor::slider(P_SLIDER, UiAlign::Center, 0, 40, 0, 100, 25, 100, c"%ld%%", c"%ld%%"),
+    ];
+
+    harness.build_schema(&schema);
+    harness.step(20);
+
+    unsafe {
+        let sw_obj = ui_engine_get_widget_by_param(P_SW.as_u32());
+        assert!(!sw_obj.is_null());
+        let slider_obj = ui_engine_get_widget_by_param(P_SLIDER.as_u32());
+        assert!(!slider_obj.is_null());
+    }
+
+    assert_eq!(harness.get_slider_value(P_SLIDER), Some(25));
+    assert_eq!(harness.get_checked_state(P_SW), Some(false));
+
+    // 4. Dispatch telemetry updates
+    let telem_slider = DeviceTelemetry {
+        param_id: P_SLIDER,
+        ack_seq_id: 1,
+        value: ParamVal::from_i32(75),
+    };
+    unsafe { ui_engine_dispatch_telemetry(&telem_slider) };
+    assert_eq!(harness.get_slider_value(P_SLIDER), Some(75));
+
+    let telem_sw = DeviceTelemetry {
+        param_id: P_SW,
+        ack_seq_id: 2,
+        value: ParamVal::from_bool(true),
+    };
+    unsafe { ui_engine_dispatch_telemetry(&telem_sw) };
+    assert_eq!(harness.get_checked_state(P_SW), Some(true));
+
+    // 5. Clean / reinit clears lookups
+    unsafe { ui_engine_init() };
+    unsafe {
+        assert!(ui_engine_get_widget_by_param(P_SW.as_u32()).is_null());
+        assert!(ui_engine_get_widget_by_param(P_SLIDER.as_u32()).is_null());
+    }
 }
 
 #[test]

@@ -2,6 +2,7 @@ idf_component_register(
     SRCS
         "test_bridge_transport.c"
         "test_p4_c6_link.c"
+        "test_ui_binding.c"
     INCLUDE_DIRS
         "."
     REQUIRES

@@ -218,44 +218,58 @@ typedef struct {
     uint32_t point_cnt;
 } bound_line_t;
 
+#if LV_USE_ARCLABEL
 typedef struct {
     param_id_t param_id;
     lv_obj_t *arclabel;
 } bound_arclabel_t;
+#endif
 
+#if LV_USE_QRCODE
 typedef struct {
     param_id_t param_id;
     lv_obj_t *qrcode;
 } bound_qrcode_t;
+#endif
 
 // Phase 2 Widgets
+#if LV_USE_WIN
 typedef struct {
     param_id_t param_id;
     lv_obj_t *win;
     lv_obj_t *content;
 } bound_win_t;
+#endif
 
+#if LV_USE_IMAGEBUTTON
 typedef struct {
     param_id_t param_id;
     lv_obj_t *imgbtn;
     uint32_t current_seq;
     uint32_t command_val;
 } bound_imagebutton_t;
+#endif
 
+#if LV_USE_SPAN
 typedef struct {
     param_id_t param_id;
     lv_obj_t *spangroup;
 } bound_spangroup_t;
+#endif
 
+#if LV_USE_ANIMIMG
 typedef struct {
     param_id_t param_id;
     lv_obj_t *animimg;
 } bound_animimage_t;
+#endif
 
+#if LV_USE_BARCODE
 typedef struct {
     param_id_t param_id;
     lv_obj_t *barcode;
 } bound_barcode_t;
+#endif
 
 typedef struct {
     param_id_t param_id;
@@ -347,27 +361,41 @@ static size_t s_num_images = 0;
 static bound_line_t s_lines[MAX_BINDINGS];
 static size_t s_num_lines = 0;
 
+#if LV_USE_ARCLABEL
 static bound_arclabel_t s_arclabels[MAX_BINDINGS];
 static size_t s_num_arclabels = 0;
+#endif
 
+#if LV_USE_QRCODE
 static bound_qrcode_t s_qrcodes[MAX_BINDINGS];
 static size_t s_num_qrcodes = 0;
+#endif
 
 // Phase 2
+#if LV_USE_WIN
 static bound_win_t s_wins[MAX_BINDINGS];
 static size_t s_num_wins = 0;
+#endif
 
+#if LV_USE_IMAGEBUTTON
 static bound_imagebutton_t s_imgbtns[MAX_BINDINGS];
 static size_t s_num_imgbtns = 0;
+#endif
 
+#if LV_USE_SPAN
 static bound_spangroup_t s_spangroups[MAX_BINDINGS];
 static size_t s_num_spangroups = 0;
+#endif
 
+#if LV_USE_ANIMIMG
 static bound_animimage_t s_animimages[MAX_BINDINGS];
 static size_t s_num_animimages = 0;
+#endif
 
+#if LV_USE_BARCODE
 static bound_barcode_t s_barcodes[MAX_BINDINGS];
 static size_t s_num_barcodes = 0;
+#endif
 
 // Button matrix map storage
 static char s_btnmatrix_str_bufs[MAX_BINDINGS][256];
@@ -678,6 +706,7 @@ static void on_msgbox_ok_clicked(lv_event_t *e) {
     ui_set_obj_hidden(b->msgbox, true);
 }
 
+#if LV_USE_WIN
 static void on_win_close_clicked(lv_event_t *e) {
     bound_win_t *b = (bound_win_t *)lv_event_get_user_data(e);
     if (!b) return;
@@ -690,7 +719,9 @@ static void on_win_close_clicked(lv_event_t *e) {
     bridge_send_command_from_ui(&cmd);
     ui_set_obj_hidden(b->win, true);
 }
+#endif
 
+#if LV_USE_IMAGEBUTTON
 static void on_imgbtn_event_clicked(lv_event_t *e) {
     bound_imagebutton_t *b = (bound_imagebutton_t *)lv_event_get_user_data(e);
     if (!b) return;
@@ -702,6 +733,7 @@ static void on_imgbtn_event_clicked(lv_event_t *e) {
     };
     bridge_send_command_from_ui(&cmd);
 }
+#endif
 
 // ----------------------------------------------------------------------
 // Tier 3 Callbacks: TabView, Calendar, List
@@ -862,14 +894,28 @@ void ui_engine_init(void) {
     // Phase 1
     s_num_images = 0;
     s_num_lines = 0;
+#if LV_USE_ARCLABEL
     s_num_arclabels = 0;
+#endif
+#if LV_USE_QRCODE
     s_num_qrcodes = 0;
+#endif
     // Phase 2
+#if LV_USE_WIN
     s_num_wins = 0;
+#endif
+#if LV_USE_IMAGEBUTTON
     s_num_imgbtns = 0;
+#endif
+#if LV_USE_SPAN
     s_num_spangroups = 0;
+#endif
+#if LV_USE_ANIMIMG
     s_num_animimages = 0;
+#endif
+#if LV_USE_BARCODE
     s_num_barcodes = 0;
+#endif
 
     s_num_lookups = 0;
     s_global_seq = 0;
