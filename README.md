@@ -1,53 +1,22 @@
 # ESP32 Hybrid C/Rust LVGL Framework
 
-[![Architecture: C + Rust](https://img.shields.io/badge/Architecture-C%20%2B%20Rust%20(no__std)-blue.svg)](#1-overview--architectural-philosophy)
+[![Architecture: C + Rust](https://img.shields.io/badge/Architecture-C%20%2B%20Rust%20(no__std)-blue.svg)](#the-core-philosophy)
 [![LVGL: v9](https://img.shields.io/badge/LVGL-v9.4-orange.svg)](https://lvgl.io)
 [![ESP-IDF: v5.4+](https://img.shields.io/badge/ESP--IDF-v5.4%2B-red.svg)](https://github.com/espressif/esp-idf)
-[![Target: S3 | P4 | C6](https://img.shields.io/badge/Targets-ESP32--S3%20|%20P4%20|%20C6-green.svg)](#3-supported-hardware-matrix)
+[![Target: S3 | P4 | C6](https://img.shields.io/badge/Targets-ESP32--S3%20|%20P4%20|%20C6-green.svg)](#supported-hardware)
+[![Documentation](https://img.shields.io/badge/docs-GitHub%20Pages-brightgreen.svg)](https://timhughes.github.io/esp32-rust-lvgl-bridge/)
 
 A production-ready embedded firmware framework and automated visual QA testing pipeline for modern Espressif microcontrollers (**ESP32-S3**, **ESP32-P4**, **ESP32-C6**).
 
-This project combines the industry-standard **LVGL v9** graphics engine in C with safe, deterministic **`no_std` Rust** for domain logic, closed-loop state machines, and protocols.
+Combines the industry-standard **LVGL v9** graphics engine in C with safe, deterministic **`no_std` Rust** for domain logic, closed-loop state machines, and protocols.
 
 ---
 
-## Table of Contents
+## The Core Philosophy
 
-1. [Overview & Architectural Philosophy](#1-overview--architectural-philosophy)
-2. [Key Features](#2-key-features)
-3. [Supported Hardware Matrix](#3-supported-hardware-matrix)
-4. [Prerequisites & Dependencies](#4-prerequisites--dependencies)
-5. [Quickstart Guide](#5-quickstart-guide)
-   - [Option A: Run Headless Simulation on Host (No Hardware Needed)](#option-a-run-headless-simulation-on-host-no-hardware-needed)
-   - [Option B: Build & Flash to Physical Hardware](#option-b-build--flash-to-physical-hardware)
-6. [How It Works](#6-how-it-works)
-   - [FFI Communication Protocol (Zero-Copy POD Structs)](#ffi-communication-protocol-zero-copy-pod-structs)
-   - [3-Stage Arbitration Engine (Jitter-Free Controls)](#3-stage-arbitration-engine-jitter-free-controls)
-   - [Declarative UI Defined 100% in Rust](#declarative-ui-defined-100-in-rust)
-   - [Full 26-Widget Catalog](#full-26-widget-catalog)
-7. [Developer Tutorial: Adding Your Own Feature](#7-developer-tutorial-adding-your-own-feature)
-8. [Hardware Deep Dive: Guition ESP32-S3-4848S040](#8-hardware-deep-dive-guition-esp32-s3-4848s040)
-   - [Display & Pinout Specifications](#display--pinout-specifications)
-   - [Automatic 1-Minute Screen Timeout & Wake-on-Touch](#automatic-1-minute-screen-timeout--wake-on-touch)
-   - [ST7701S RGB MDT (0xCD) Parallel Bus Fix](#st7701s-rgb-mdt-0xcd-parallel-bus-fix)
-9. [Inter-Chip Link (ESP32-P4 + ESP32-C6)](#9-inter-chip-link-esp32-p4--esp32-c6)
-10. [Automated Visual QA & Testing](#10-automated-visual-qa--testing)
-11. [Repository Structure](#11-repository-structure)
-12. [License](#12-license)
+> **"C owns the display; Rust owns the system."**
 
----
-
-## 1. Overview & Architectural Philosophy
-
-### *"C owns the display; Rust owns the system."*
-
-Building complex graphical embedded applications typically forces a difficult choice:
-- **Pure C/C++:** Fast access to vendor drivers and LVGL, but prone to memory safety bugs, race conditions, and unstructured state machines.
-- **Pure Rust:** Memory-safe and expressive, but wrapping massive C GUI libraries like LVGL requires thousands of lines of fragile `unsafe` FFI bindings, complex pointer lifetimes, and heavy build workarounds.
-
-This framework solves the problem by cleanly separating concerns across a strict hardware/domain boundary:
-
-```
+```text
 ┌────────────────────────────────────────────────────────────────────────┐
 │                          ESP32 Dual-Core SoC                           │
 │                                                                        │
@@ -62,438 +31,141 @@ This framework solves the problem by cleanly separating concerns across a strict
 └────────────────────────────────────────────────────────────────────────┘
 ```
 
-1. **C / ESP-IDF (Display & Hardware Layer):** Drives display controllers, DMA framebuffers, touch digitizers, FreeRTOS tasks, and the LVGL v9 scene graph.
-2. **Rust `no_std` (Application Core):** Implements all business logic, closed-loop state machines, protocols, and data models inside an isolated `staticlib`.
-3. **POD FFI Boundary:** Communication occurs strictly via value-typed FreeRTOS ring queues passing fixed-size Plain Old Data (POD) structs. Zero shared heap memory, zero raw `lv_obj_t*` pointers crossing into Rust.
+1. **C / ESP-IDF (Display & Hardware Layer):** Drives display peripherals, DMA framebuffers, touch digitizers, FreeRTOS tasks, and the LVGL v9 scene graph.
+2. **Rust `no_std` (Application Core):** Implements all domain logic, closed-loop state machines, protocols, and data models inside an isolated `staticlib`.
+3. **POD FFI Boundary:** Communication occurs strictly via value-typed FreeRTOS ring queues passing fixed-size Plain Old Data (POD) structs (`UiCommand`, `DeviceTelemetry`). Zero shared heap memory, zero raw `lv_obj_t*` pointers crossing into Rust.
 
 ---
 
-## 2. Key Features
+## Documentation
 
-- **100% Declarative UI Schemas in Rust:** Declare widgets, layouts, parameters, and labels directly in Rust static tables. The C engine constructs and binds the scene graph dynamically with a single call.
-- **Complete 34-Widget LVGL Suite:** Out-of-the-box declarative bindings for all 34 supported LVGL widgets across 7 tabs (scalars, dials, gauges, keyboards, text inputs, streaming charts, tables, calendar, canvas, menus, tileviews, media assets, windows, barcodes, and QR codes).
-- **Dynamic Virtual Keyboard Focus:** Tap a single-line command field or multi-line text area, and the on-screen QWERTY keyboard automatically retargets its input focus.
-- **Intelligent Inactivity Timeout & Wake-on-Touch:** Turns off the display backlight after 60 seconds of idle time to conserve power and prolong panel life. Tapping the dark screen immediately restores full brightness without triggering accidental clicks.
-- **Anti-Jitter 3-Stage Arbitration:** Eliminates visual rubber-banding and telemetry echo during user interaction via monotonic sequence tickets (`seq_id`) and temporal holdoff leases.
-- **Headless Host Visual QA (CI/CD):** Render pixel-perfect offscreen screenshots of the entire UI and verify state transitions on Linux/macOS in milliseconds without hardware attached.
-- **Turnkey Guition ESP32-S3-4848S040 Support:** Full board-support package for 4.0-inch 480×480 IPS display with ST7701S parallel RGB bus and Goodix GT911 touch.
-- **Developer & Contributor Guides:** See [`DEVELOPING.md`](DEVELOPING.md) for contributing to the framework, and [`AGENTS.md`](AGENTS.md) for AI agent conventions.
+Full architectural documentation, guides, and API specifications are available online or locally:
 
----
+* **Online Book:** [timhughes.github.io/esp32-rust-lvgl-bridge](https://timhughes.github.io/esp32-rust-lvgl-bridge/)
+* **Developer & Contributor Manual:** [`DEVELOPING.md`](DEVELOPING.md) — build targets, coding standards, and how to extend the framework.
+* **AI Agent Instructions:** [`AGENTS.md`](AGENTS.md) — architectural boundaries and workflows for autonomous coding agents.
+* **Offline mdBook Source:** [`docs/src/`](docs/src/) (serve locally via `make docs-serve`).
 
-## 3. Supported Hardware Matrix
-
-| Hardware Target | Microcontroller Architecture | Display & Interfaces | Primary Role |
-|---|---|---|---|
-| **Guition 4848S040** | ESP32-S3 Dual Xtensa LX7 (240MHz, 8MB PSRAM, 16MB Flash) | 4.0" 480×480 ST7701S 16-bit RGB Parallel, GT911 I2C Touch | **Turnkey Smart Display Device** |
-| **ESP32-P4** | Dual RISC-V HP (400MHz, MIPI-DSI, HW PPA 2D Accelerator) | High-definition MIPI-DSI Displays, USB 2.0 High-Speed | **High-Performance GUI Host** |
-| **ESP32-C6** | Single RISC-V LP (160MHz, Wi-Fi 6, BLE 5.3, 802.15.4) | SDIO 3.0 / High-Speed SPI link to P4 | **Wireless Co-Processor Node** |
-| **Host PC (x86_64 / aarch64)** | Native Linux / macOS | Headless offscreen framebuffer (generates RGB888 PNGs) | **Visual QA & Automated Testing** |
+### Documentation Topics
+| Guide | Markdown Source | Description |
+|---|---|---|
+| **System Architecture** | [`docs/src/architecture.md`](docs/src/architecture.md) | Dual-core task model, generic BSP interface, CMake integration |
+| **Declarative UI Engine** | [`docs/src/declarative_ui.md`](docs/src/declarative_ui.md) | 34-widget catalog, dynamic keyboard focus, 3-stage arbitration |
+| **FFI Contracts** | [`docs/src/ffi_contracts.md`](docs/src/ffi_contracts.md) | POD structs, serialization layout, FreeRTOS message queues |
+| **Guition 4848S040** | [`docs/src/hardware/esp32s3_4848s040.md`](docs/src/hardware/esp32s3_4848s040.md) | ST7701S parallel RGB pinout, MDT (0xCD) fix, 60s sleep/wake |
+| **P4 + C6 Link** | [`docs/src/hardware/esp32p4_c6.md`](docs/src/hardware/esp32p4_c6.md) | High-speed SDIO/SPI interconnect & virtual channel framing |
+| **Headless Visual QA** | [`docs/src/headless_testing.md`](docs/src/headless_testing.md) | Offscreen framebuffer testing, PNG capture, CI assertions |
+| **Building & Flashing** | [`docs/src/building_and_flashing.md`](docs/src/building_and_flashing.md) | ESP-IDF toolchain export, compilation, flashing, serial monitor |
 
 ---
 
-## 4. Prerequisites & Dependencies
+## Key Highlights
 
-### For Host Simulation & Testing (No Hardware Required)
-- **OS:** Linux (Ubuntu 22.04+, Debian 12+, Fedora 38+, Arch) or macOS.
-- **Build Tools:** `gcc` or `clang`, `make`.
-- **Rust:** Standard Rust toolchain (`rustup install stable` or `nightly`).
-- **Graphics Libraries:** None! The host harness includes an offscreen software renderer and single-header PNG exporter (`stb_image_write.h`).
-
-### For Flashing Physical Hardware (ESP32-S3)
-- **ESP-IDF:** v5.4+ or v5.5+ ([Installation Guide](https://docs.espressif.com/projects/esp-idf/en/stable/esp32/get-started/)).
-- **Python:** 3.10+ with `esptool` installed.
-- **Rust Toolchain:**
-  - Rust nightly toolchain with `rust-src` component:
-    ```bash
-    rustup toolchain install nightly
-    rustup component add rust-src --toolchain nightly
-    ```
-  - Espressif Xtensa LLVM target (configured automatically via `.cargo/config.toml`).
+* **100% Declarative UI Schemas in Rust:** Declare widgets, layouts, parameters, and labels in static Rust tables. The C engine dynamically builds and binds the scene graph in a single call.
+* **34 Core LVGL Widgets:** Out-of-the-box support for switches, sliders, dials, gauges, keyboards, text inputs, streaming charts, tables, calendar, canvas, menus, tileviews, media assets, windows, barcodes, and QR codes.
+* **Jitter-Free 3-Stage Arbitration:** Eliminates visual rubber-banding during touch interaction via monotonic sequence tickets (`seq_id`) and temporal holdoff leases (`ARB_DRAGGING` $\rightarrow$ `ARB_HOLDOFF` $\rightarrow$ `ARB_TRACKING`).
+* **Headless Visual QA (CI/CD):** Render pixel-perfect offscreen screenshots of the entire UI and verify state transitions on Linux/macOS in milliseconds without hardware attached.
+* **Turnkey Guition ESP32-S3-4848S040 Support:** Complete board support package for 4.0-inch 480×480 IPS display with automatic 60-second backlight timeout and wake-on-touch.
 
 ---
 
-## 5. Quickstart Guide
+## Quickstart
 
 ### Option A: Run Headless Simulation on Host (No Hardware Needed)
-
-You can compile and run the full LVGL v9 engine, Rust state machine, and test harness on your PC in under 10 seconds:
+Compile and test the full LVGL engine, Rust state machine, and visual regression suites on your workstation in seconds:
 
 ```bash
-# 1. Clone the repository
 git clone https://github.com/timhughes/esp32-rust-lvgl-framework.git
 cd esp32-rust-lvgl-framework
 
-# 2. Run all unit tests and headless visual QA in pure Rust
+# Run all 54+ workspace unit tests and offscreen visual QA:
 cargo test --workspace
 # Or:
 make test
 ```
 
-The test runner executes 4 headless unit test suites (FFI serialization, P4-C6 link, Rust state engine, 3-stage arbitration) followed by 12 interactive visual scenarios (including 6-tab S3 app and screensaver power management):
-
-```text
---- Phase 1: Unit Assertions (Headless Protocol & Engine) ---
-  [TEST] FFI Protocol & POD Serialization... -> PASS
-  [TEST] Inter-Chip Link (P4 <-> C6) Loopback & Protocol Framing... -> PASS
-  [TEST] Rust SystemEngine Closed-Loop State Simulation... -> PASS
-  [TEST] 3-Stage Anti-Jitter Arbitration Engine... -> PASS
-
---- Phase 2: Everything S3-4848 6-Tab Application Journey ---
-[1/12] S3 Tab 0 (Controls) Initial State -> Saved artifacts/01_s3_tab0_controls_init.png
-[2/12] S3 Tab 0 (Controls) Interactive Running & Dragging -> Saved artifacts/02_s3_tab0_controls_running.png
-...
-[7/12] S3 Tab 5 (System) Settings Menu & Swipeable TileView -> Saved artifacts/07_s3_tab5_system.png
-
---- Phase 3: Power Management & Inactivity Lifecycle ---
-[8/12] Inactivity Timeout (Screen Blanked after 60s) -> Saved artifacts/08_s3_screen_blanked.png
-[9/12] Wake-on-Touch (Screen Restored, Blind Tap Swallowed) -> Saved artifacts/09_s3_screen_woken.png
-
---- Phase 4: Standalone Widget Catalog Smoke Tests ---
-[10/12] Tier 1 12-Widget Showcase -> Saved artifacts/10_tier1_showcase.png
-[11/12] Tier 2 Text, Keyboard, Matrix & Dialog Showcase -> Saved artifacts/11_tier2_showcase.png
-[12/12] Tier 3 Multi-Tab Container Showcase -> Saved artifacts/12_tier3_showcase.png
-```
-
-> [!TIP]
-> Open any generated `.png` in your image viewer to inspect the exact pixels rendered by LVGL.
-
----
-
-### Option B: Build & Flash the Everything Showcase (`examples/everything`)
-
-Deploy the complete 25-widget application to a **Guition ESP32-S3-4848S040** display (or any ESP32-S3 board):
+### Option B: Build & Flash to Physical Hardware (ESP32-S3)
+Deploy the full 34-widget reference showcase to a **Guition ESP32-S3-4848S040** display (or any ESP32-S3):
 
 ```bash
-# 1. Connect your ESP32-S3 board to USB (e.g. /dev/ttyUSB0 on Linux)
-
-# 2. Source the ESP-IDF environment
+# 1. Source ESP-IDF environment
 source $HOME/esp/esp-idf/export.sh
 
-# 3. Build the Rust static library for Xtensa bare-metal
+# 2. Build the Rust static library for Xtensa bare-metal
 cargo build --release --target xtensa-esp32s3-none-elf -p everything-app
 
-# 4. Build and flash the firmware using the Makefile shortcut:
+# 3. Build and flash the firmware
 make build-everything
-make flash-everything
-
-# Or directly using idf.py:
-idf.py -C examples/everything -DIDF_TARGET=esp32s3 build
-idf.py -C examples/everything -p /dev/ttyUSB0 -b 460800 flash monitor
-```
-
-*(Press `Ctrl+]` to exit the serial monitor).*
-
-### Option C: Build the Minimal Starter Example (`examples/minimal`)
-
-To build the self-contained starter project:
-
-```bash
-# 1. Compile the minimal Rust staticlib:
-cargo build --release --target xtensa-esp32s3-none-elf -p minimal-app
-
-# 2. Build and flash using Makefile:
-make build-minimal
-make flash-minimal
-
-# Or directly with idf.py:
-cd examples/minimal
-idf.py -DIDF_TARGET=esp32s3 build
-idf.py -p /dev/ttyUSB0 -b 460800 flash monitor
+make flash-everything PORT=/dev/ttyUSB0
 ```
 
 ---
 
-## 6. How It Works
+## Declarative UI in 10 Seconds
 
-### FFI Communication Protocol (Zero-Copy POD Structs)
-
-All communication between C (LVGL) and Rust (`SystemEngine`) uses Plain Old Data (POD) structs passed by value over FreeRTOS queues ([`components/esp_lvgl_bridge/include/bridge_protocol.h`](file:///home/thughes/git/esp32-rust-lvgl-framework/components/esp_lvgl_bridge/include/bridge_protocol.h) and [`crates/esp32-rust-lvgl-bridge-core/src/abi.rs`](file:///home/thughes/git/esp32-rust-lvgl-framework/crates/esp32-rust-lvgl-bridge-core/src/abi.rs)):
+Define your user interface in pure static Rust without procedural C boilerplate:
 
 ```rust
-// Fixed-size Plain Old Data parameter value (no heap pointers!)
-#[repr(C)]
-#[derive(Copy, Clone)]
-pub union ParamVal {
-    pub i32_val: i32,
-    pub u32_val: u32,
-    pub f32_val: f32,
-    pub bool_val: bool,
-    pub str_val: [u8; 32], // Zero-allocation fixed string buffer
-}
-
-// UI -> Rust Worker (Command Queue)
-#[repr(C)]
-#[derive(Copy, Clone)]
-pub struct UiCommand {
-    pub param_id: ParamId,
-    pub seq_id: u32,
-    pub value: ParamVal,
-}
-
-// Rust Worker -> UI (Telemetry Queue)
-#[repr(C)]
-#[derive(Copy, Clone)]
-pub struct DeviceTelemetry {
-    pub param_id: ParamId,
-    pub ack_seq_id: u32,
-    pub value: ParamVal,
-}
-```
-
----
-
-### 3-Stage Arbitration Engine (Jitter-Free Controls)
-
-When a user drags a slider or turns a rotary dial, high-rate background telemetry updates can cause "rubber-banding" if the motor or filter has a physical lag. The framework resolves this with a **3-stage arbitration lease**:
-
-```
-[User Touching]   ──► ARB_DRAGGING: UI leased by user; incoming telemetry dropped.
-                           │
-[User Released]   ──► ARB_HOLDOFF: 500ms lease active; worker acknowledges seq_id.
-                           │
-[Holdoff Expired] ──► ARB_TRACKING: UI smoothly returns to worker telemetry tracking.
-```
-
-- **Monotonic Sequence IDs (`seq_id`):** Every touch interaction claims a monotonically increasing sequence ticket. Stale telemetry packets with `ack_seq_id < current_seq` are discarded.
-- **Active Touch Priority:** If `lv_obj_has_state(widget, LV_STATE_PRESSED)` is true, external telemetry is ignored immediately.
-- **Recursion Suppression:** When updating toggles programmatically from telemetry, `is_programmatic_update = true` suppresses outbound echo loops.
-
----
-
-### Declarative UI Defined 100% in Rust
-
-Instead of writing hundreds of lines of procedural C layout code, the interface is defined as static data tables in Rust ([`examples/everything/crates/everything-app/src/lib.rs`](file:///home/thughes/git/esp32-rust-lvgl-framework/examples/everything/crates/everything-app/src/lib.rs)):
-
-```rust
-pub static EVERYTHING_SCHEMA: &[WidgetDescriptor] = &[
-    // 1. Root Container: 6-Tab TabView across 480x480 screen
-    WidgetDescriptor::tabview(
-        ParamId::NavTab,
-        c"Controls\nSelectors\nInputs\nTelemetry\nTools\nSystem",
-        480, 480,
-    ),
-
-    // 2. Power Toggle Switch on Tab 0
+pub static MY_UI_SCHEMA: &[WidgetDescriptor] = &[
+    // Power Toggle Switch
     WidgetDescriptor::switch(
-        ParamId::SystemEnable,
-        UiAlign::TopLeft,
-        20, 15,
-        c"System: RUNNING",
-        c"System: STOPPED",
-    ).with_parent(ParamId::NavTab, 0),
-
-    // 3. Frequency Slider with 500ms Holdoff Arbitration on Tab 0
+        PARAM_POWER, UiAlign::TopMid, 0, 40,
+        c"Power: ON", c"Power: OFF",
+    ),
+    // Speed Slider with 500ms arbitration holdoff lease
     WidgetDescriptor::slider(
-        ParamId::SetpointHz,
-        UiAlign::Center,
-        0, 95,
-        1, 100, 10, 500,
-        c"%ld Hz (Setting)",
-        c"%ld Hz (Actual)",
-    ).with_parent(ParamId::NavTab, 0),
-
-    // 4. Single-line Text Input on Tab 2
-    WidgetDescriptor::text_input(
-        ParamId::TextInput,
-        UiAlign::TopMid,
-        0, 10, 440, 40,
-        c"Single-line command...",
-        Some(c"SYS:STATUS"),
-        31,
-    ).with_parent(ParamId::NavTab, 2),
-
-    // 5. Virtual On-Screen Keyboard on Tab 2
-    WidgetDescriptor::keyboard(
-        ParamId::Keyboard,
-        ParamId::TextInput,
-        UiAlign::BottomMid,
-        0, -5, 460, 165,
-    ).with_parent(ParamId::NavTab, 2),
+        PARAM_SPEED, UiAlign::Center, 0, -10,
+        0, 100, 25, 500,
+        c"Speed: %ld RPM (Setting)", c"Speed: %ld RPM (Actual)",
+    ),
+    // Live Telemetry Readout Label
+    WidgetDescriptor::label(
+        PARAM_COUNTER, UiAlign::BottomMid, 0, -40,
+        c"Cycles: %ld",
+    ),
 ];
 ```
 
-The C runtime binds this table into native LVGL objects at boot with a single call:
-```c
-ui_engine_build_from_schema(schema, count);
-```
+See [`examples/minimal/`](examples/minimal) for the complete 3-widget starter template, and [`examples/everything/`](examples/everything) for the full 7-tab dashboard.
 
 ---
 
-### Full 34-Widget Catalog
- 
-The framework includes complete declarative bindings for all 34 supported LVGL widget types across 7 tabs:
+## Supported Hardware
 
-| Category | Widgets |
-|---|---|
-| **Tier 1: Scalars & Selectors** | `Switch`, `Slider`, `Button`, `Label`, `Arc` (Rotary Knob), `Bar`, `Checkbox`, `LED`, `Spinner`, `Dropdown`, `Roller`, `Spinbox` |
-| **Tier 2: Text, Keys & Gauges** | `TextInput` (single-line), `TextArea` (multi-line), `Keyboard` (virtual QWERTY), `ButtonMatrix` (PIN pad), `Scale` (analog needle meter), `MsgBox` (modal alert) |
-| **Tier 3: Containers & Data** | `TabView` (multi-page navigation), `TileView` (2D swipeable grid), `Menu` (hierarchical settings), `List` (scrollable items), `Chart` (streaming waveform), `Table` (diagnostics grid), `Calendar` (date picker), `Canvas` (custom graphics) |
-| **Rich Media & Visual Assets** | `Image` (RGB/PNG), `Line` (coordinate vectors), `ArcLabel` (curved text), `QRCode` (URL/Wi-Fi), `Win` (movable window), `ImageButton`, `SpanGroup` (multi-style text), `AnimImage`, `Barcode` |
+| Target | Architecture | Display & Bus | Primary Role |
+|---|---|---|---|
+| **Guition 4848S040** | ESP32-S3 Dual Xtensa LX7 (240MHz, 8MB PSRAM, 16MB Flash) | 4.0" 480×480 ST7701S RGB Parallel + GT911 Touch | Turnkey Smart Display |
+| **ESP32-P4** | Dual RISC-V HP (400MHz, MIPI-DSI, HW 2D PPA) | High-definition MIPI-DSI Displays | High-Performance GUI Host |
+| **ESP32-C6** | Single RISC-V LP (160MHz, Wi-Fi 6, BLE 5.3, 802.15.4) | SDIO 3.0 / High-Speed SPI link to P4 | Wireless Co-Processor |
+| **Host PC** | Native Linux / macOS (`x86_64` / `aarch64`) | Offscreen RGB888 memory buffer | Visual QA & Automated Testing |
 
 ---
 
-## 7. Developer Tutorial: Adding Your Own Feature
+## Repository Structure
 
-Here is how to add a new parameter and bind it from Rust to the display in 4 simple steps:
-
-### Step 1: Declare a Parameter ID
-In your application (e.g. [`examples/minimal/crates/minimal-app/src/lib.rs`](examples/minimal/crates/minimal-app/src/lib.rs)):
-```rust
-// Any application can declare custom parameter IDs:
-pub const TARGET_TEMPERATURE: ParamId = ParamId::new(101);
-```
-
-### Step 2: Declare the Widget in Your Schema
-In your application crate:
-```rust
-WidgetDescriptor::slider(
-    ParamId::TargetTemperature,
-    UiAlign::Center,
-    0, 20,       // Center alignment with +20px Y offset
-    15, 35, 21,  // 15°C to 35°C range, initial 21°C
-    500,         // 500ms holdoff lease
-    c"%ld C (Setting)",
-    c"%ld C (Actual)",
-).with_parent(ParamId::NavTab, 0),
-```
-
-### Step 3: Handle the Parameter in Rust Domain Logic
-In `SystemEngine::process_command`:
-```rust
-ParamId::TargetTemperature => {
-    let new_temp = unsafe { cmd.value.i32_val };
-    self.setpoint_temp = new_temp;
-}
-```
-
-### Step 4: Verify on Host, Then Build Official Example
-```bash
-# Preview changes instantly in offscreen test snapshots via pure Rust harness:
-cargo test --workspace
-
-# Build the official Everything firmware binary:
-make build-everything
-# Or directly with idf.py:
-idf.py -C examples/everything -DIDF_TARGET=esp32s3 build
-```
-
----
-
-## 8. Hardware Deep Dive: Guition ESP32-S3-4848S040
-
-The **Guition ESP32-S3-4848S040** is a popular 4.0-inch 480×480 smart display module.
-
-```
-       ┌────────────────────────────────────────────────────────┐
-       │                 480x480 IPS Display                    │
-       │                   (ST7701S RGB)                        │
-       │                                                        │
-       │       Controls   Selectors   Inputs   Data   Tools     │
-       │     ┌────────────────────────────────────────────┐     │
-       │     │                                            │     │
-       │     │          Guition ESP32-S3-4848S040         │     │
-       │     │                                            │     │
-       │     └────────────────────────────────────────────┘     │
-       │                                                        │
-       └────────────────────────────────────────────────────────┘
-```
-
-### Display & Pinout Specifications
-- **Display:** 4.0" IPS 480×480 RGB parallel interface driven by an Sitronix **ST7701S** controller.
-- **Touch Screen:** Goodix **GT911** capacitive digitizer over I2C (`SDA: GPIO 19`, `SCL: GPIO 45`).
-- **Memory:** 8MB Octal PSRAM (80MHz OPI), 16MB Quad SPI Flash (80MHz DIO).
-- **Backlight Control:** `GPIO 38` (Active-High).
-
-### Automatic 1-Minute Screen Timeout & Wake-on-Touch
-To prevent LCD burn-in and minimize battery/power consumption:
-- **Idle Screen Blanking:** After 60 seconds with no touch events, `screen_saver_timer_cb` turns off the LED backlight (`bsp_backlight_set(0)`).
-- **Instant Wake-on-Touch:** When touched while dark, the GT911 touch interrupt restores the backlight (`bsp_backlight_set(100)`). The initial wake tap swallows the click event to prevent blind button presses.
-
-### ST7701S RGB MDT (0xCD) Parallel Bus Fix
-ST7701S panels on Guition 4848S040 displays require Command 2 Bank 0 register `0xCD` to be initialized to `0x00`. Without this command, the panel defaults to 18-bit sub-pixel mode, scrambling 16-bit RGB565 data into colored vertical stripes. This custom fix is integrated in [`main/bsp_4848s040.c`](file:///home/thughes/git/esp32-rust-lvgl-framework/main/bsp_4848s040.c#L101-L108).
-
----
-
-## 9. Inter-Chip Link (ESP32-P4 + ESP32-C6)
-
-On the **ESP32-P4**, wireless connectivity is delegated to an auxiliary **ESP32-C6** co-processor over **SDIO 3.0** or **High-Speed SPI** ([`main/include/p4_c6_link.h`](file:///home/thughes/git/esp32-rust-lvgl-framework/main/include/p4_c6_link.h)):
-
-- **Multiplexed Virtual Channels:**
-  - `P4_C6_CHAN_SYSTEM`: Reset, power management, clock synchronization.
-  - `P4_C6_CHAN_WIFI`: 802.3 Ethernet frame encapsulation.
-  - `P4_C6_CHAN_BLE`: Bluetooth 5.3 HCI commands and events.
-  - `P4_C6_CHAN_802154`: Thread, Zigbee, and Matter packets.
-  - `P4_C6_CHAN_TELEMETRY`: Co-processor RF telemetry and link metrics.
-- **Packet Integrity:** Every frame is protected by a 16-bit sync magic (`0xE5P4`), sequence ticket, payload length, and CRC-CCITT checksum.
-
----
-
-## 10. Automated Visual QA & Testing
-
-The headless host test runner validates layouts, fonts, and state machines automatically. It renders frames into an offscreen RGB888 memory buffer and exports PNGs via `esp32-rust-lvgl-bridge-harness`.
-
-```bash
-cargo test --workspace
-# Or:
-make test
-```
-
----
-
-## 11. Repository Structure
- 
 ```text
 esp32-rust-lvgl-framework/
-├── README.md                   # User-facing manual & architecture guide
+├── README.md                   # Quickstart, highlights & documentation hub
 ├── DEVELOPING.md               # Developer & contributor manual (builds, tests, coding rules)
 ├── AGENTS.md                   # AI agent rules, workflows, and conventions
 ├── Makefile                    # Developer shortcuts (test, check, build examples, docs)
-├── .cargo/config.toml          # Xtensa exception flags & bare-metal targets
-├── Cargo.toml                  # Workspace definition (crates and official examples)
 ├── components/                 # Reusable Modular ESP-IDF Components
-│   ├── esp_lvgl_bridge/        # Core Bridge Engine Library Component
-│   │   ├── CMakeLists.txt      # ESP-IDF component registration
-│   │   ├── Kconfig             # Menuconfig settings (queue depth, holdoff, timeout)
-│   │   ├── idf_component.yml   # ESP Component Registry manifest
-│   │   ├── cmake/
-│   │   │   └── esp_rust.cmake  # Reusable CMake helper for building & linking Rust staticlibs
-│   │   ├── include/
-│   │   │   ├── esp_lvgl_bridge.h # Umbrella public header
-│   │   │   ├── esp_lvgl_bsp.h  # Generic BSP operations table interface
-│   │   │   ├── bridge_protocol.h # C FFI mirror of bridge-core ABI
-│   │   │   ├── ui_binding.h    # 34-widget schema parser & arbitration engine
-│   │   │   └── p4_c6_link.h    # P4 <-> C6 co-processor link
-│   │   ├── src/
-│   │   │   ├── bridge_transport.c # FreeRTOS ring queue message passing
-│   │   │   ├── ui_binding.c    # Scene graph builder & arbitration engine
-│   │   │   └── p4_c6_link.c    # SDIO 3.0 / High-Speed SPI driver
-│   │   └── test/               # Unity unit tests for C bridge
-│   └── bsp_guition_s3_4848s040/ # Board Support Package Component
-│       ├── CMakeLists.txt      # Registers ST7701S & GT911 dependencies
-│       ├── idf_component.yml   # Managed component dependencies
-│       ├── include/
-│       │   └── bsp_4848s040.h  # Board HAL interface & esp_lvgl_bsp_ops_t getter
-│       └── src/
-│           └── bsp_4848s040.c  # ST7701S RGB parallel bus & GT911 touch driver
-├── crates/
-│   ├── esp32-rust-lvgl-bridge-core/    # Pure reusable no_std Rust library: ABI contracts & schemas
-│   └── esp32-rust-lvgl-bridge-harness/ # Self-contained headless LVGL host test harness for pure Rust tests
-├── examples/                   # Official Sample Applications
-│   ├── minimal/                # Minimal 3-widget starter project (minimal-app crate)
-│   └── everything/             # Full 34-widget 7-tab dashboard (everything-app crate)
-├── test_apps/                  # Target test applications
-│   └── component_tests/        # ESP-IDF Unity unit test app (esp_lvgl_bridge & BSP)
-└── docs/                       # Architecture specifications & mdBook guides
-    └── src/
-        ├── declarative_ui.md   # Complete widget catalog & schema API guide
-        ├── examples.md         # Example walkthroughs & build guides
-        └── ffi_contracts.md    # POD ring queue protocol specification
+│   ├── esp_lvgl_bridge/        # Core C bridge transport & UI binding engine
+│   └── bsp_guition_s3_4848s040/ # Board Support Package (ST7701S RGB + GT911 touch)
+├── crates/                     # Reusable Rust Crates
+│   ├── esp32-rust-lvgl-bridge-core/    # no_std ABI contracts & schema descriptors
+│   └── esp32-rust-lvgl-bridge-harness/ # Headless LVGL host test harness
+├── examples/                   # Official Reference Applications
+│   ├── minimal/                # Clean 3-widget starter project
+│   └── everything/             # Full 34-widget 7-tab showcase
+├── test_apps/                  # Target Test Applications
+│   └── component_tests/        # ESP-IDF Unity unit test app
+└── docs/                       # mdBook technical documentation source
 ```
 
 ---
 
-## 12. License
+## License
 
 - Framework codebase: Licensed under Apache-2.0 or MIT.
 - [LVGL](https://lvgl.io): Licensed under MIT.
