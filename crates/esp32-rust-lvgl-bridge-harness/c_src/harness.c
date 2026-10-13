@@ -234,7 +234,18 @@ bool harness_save_png(const char *filename) {
         memset(s_framebuffer, 0, s_hor_res * s_ver_res * 3);
     }
 
-    int res = stbi_write_png(filename, s_hor_res, s_ver_res, 3, s_framebuffer, s_hor_res * 3);
+    // LVGL RGB888 buffer on little-endian x86_64 has BGR byte ordering.
+    // Convert BGR to standard RGB for PNG encoding.
+    uint8_t *rgb_buf = (uint8_t *)malloc(s_hor_res * s_ver_res * 3);
+    if (!rgb_buf) return false;
+    for (int32_t i = 0; i < s_hor_res * s_ver_res; i++) {
+        rgb_buf[i * 3 + 0] = s_framebuffer[i * 3 + 2]; // R
+        rgb_buf[i * 3 + 1] = s_framebuffer[i * 3 + 1]; // G
+        rgb_buf[i * 3 + 2] = s_framebuffer[i * 3 + 0]; // B
+    }
+
+    int res = stbi_write_png(filename, s_hor_res, s_ver_res, 3, rgb_buf, s_hor_res * 3);
+    free(rgb_buf);
     return res != 0;
 }
 

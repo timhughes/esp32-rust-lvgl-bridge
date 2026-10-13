@@ -1451,6 +1451,11 @@ void ui_engine_build_from_schema(const widget_descriptor_t *schema, size_t count
 
         case WIDGET_TYPE_BUTTON: {
             lv_obj_t *btn = lv_button_create(parent_obj);
+            if (d->width > 0 && d->height > 0) {
+                lv_obj_set_size(btn, d->width, d->height);
+                lv_obj_set_style_pad_hor(btn, 3, 0);
+                lv_obj_set_style_pad_ver(btn, 1, 0);
+            }
             lv_obj_align(btn, align, d->offset_x, d->offset_y);
 
             lv_obj_t *btn_lbl = lv_label_create(btn);
@@ -1496,7 +1501,7 @@ void ui_engine_build_from_schema(const widget_descriptor_t *schema, size_t count
             lv_arc_set_value(arc, d->initial_val);
 
             lv_obj_t *lbl = NULL;
-            if (d->label_secondary) {
+            if (d->label_secondary && d->label_secondary[0] != '\0') {
                 lbl = lv_label_create(parent_obj);
                 lv_obj_align_to(lbl, arc, LV_ALIGN_CENTER, 0, 0);
                 lv_label_set_text_fmt(lbl, d->label_secondary, (long)d->initial_val);
@@ -1792,14 +1797,104 @@ void ui_engine_build_from_schema(const widget_descriptor_t *schema, size_t count
             lv_obj_set_size(scale, d->width > 0 ? d->width : 160, d->height > 0 ? d->height : 160);
             lv_obj_align(scale, align, d->offset_x, d->offset_y);
             lv_scale_set_range(scale, d->min_val, d->max_val);
-            lv_scale_set_angle_range(scale, 240);
-            lv_scale_set_rotation(scale, 150);
-            lv_scale_set_total_tick_count(scale, 21);
-            lv_scale_set_major_tick_every(scale, 5);
-            lv_scale_set_label_show(scale, true);
+
+            bool is_wind = (d->label_primary && strcmp(d->label_primary, "WIND") == 0);
+            bool is_compass = (d->label_primary && strcmp(d->label_primary, "COMPASS") == 0);
+            bool is_360_generic = !is_wind && !is_compass && (d->min_val == 0 && d->max_val == 360);
+
+            if (is_wind) {
+                // 360-degree circular marine wind instrument dial
+                lv_scale_set_angle_range(scale, 360);
+                lv_scale_set_rotation(scale, 270); // 12 o'clock zero reference
+                lv_scale_set_total_tick_count(scale, 37); // Ticks every 10° (0..360 inclusive)
+                lv_scale_set_major_tick_every(scale, 3);  // Major tick every 30°
+                lv_scale_set_label_show(scale, true);
+
+                static const char *s_wind_labels[] = {
+                    "0", "30", "60", "90", "120", "150", "180", "150", "120", "90", "60", "30", "", NULL
+                };
+                lv_scale_set_text_src(scale, s_wind_labels);
+
+                // Port (red) close-hauled sector: 300°..340°
+                static lv_style_t s_style_port_arc;
+                static lv_style_t s_style_port_tick;
+                static bool s_port_style_inited = false;
+                if (!s_port_style_inited) {
+                    lv_style_init(&s_style_port_arc);
+                    lv_style_set_arc_color(&s_style_port_arc, lv_palette_main(LV_PALETTE_RED));
+                    lv_style_set_arc_width(&s_style_port_arc, 8);
+                    lv_style_init(&s_style_port_tick);
+                    lv_style_set_line_color(&s_style_port_tick, lv_palette_main(LV_PALETTE_RED));
+                    lv_style_set_line_width(&s_style_port_tick, 3);
+                    s_port_style_inited = true;
+                }
+
+                // Starboard (green) close-hauled sector: 20°..60°
+                static lv_style_t s_style_stbd_arc;
+                static lv_style_t s_style_stbd_tick;
+                static bool s_stbd_style_inited = false;
+                if (!s_stbd_style_inited) {
+                    lv_style_init(&s_style_stbd_arc);
+                    lv_style_set_arc_color(&s_style_stbd_arc, lv_palette_main(LV_PALETTE_GREEN));
+                    lv_style_set_arc_width(&s_style_stbd_arc, 8);
+                    lv_style_init(&s_style_stbd_tick);
+                    lv_style_set_line_color(&s_style_stbd_tick, lv_palette_main(LV_PALETTE_GREEN));
+                    lv_style_set_line_width(&s_style_stbd_tick, 3);
+                    s_stbd_style_inited = true;
+                }
+
+                lv_scale_section_t *sec_stbd = lv_scale_add_section(scale);
+                lv_scale_set_section_range(scale, sec_stbd, 20, 60);
+                lv_scale_set_section_style_main(scale, sec_stbd, &s_style_stbd_arc);
+                lv_scale_set_section_style_indicator(scale, sec_stbd, &s_style_stbd_tick);
+                lv_scale_set_section_style_items(scale, sec_stbd, &s_style_stbd_tick);
+
+                lv_scale_section_t *sec_port = lv_scale_add_section(scale);
+                lv_scale_set_section_range(scale, sec_port, 300, 340);
+                lv_scale_set_section_style_main(scale, sec_port, &s_style_port_arc);
+                lv_scale_set_section_style_indicator(scale, sec_port, &s_style_port_tick);
+                lv_scale_set_section_style_items(scale, sec_port, &s_style_port_tick);
+            } else if (is_compass) {
+                // 360-degree circular marine compass rose dial
+                lv_scale_set_angle_range(scale, 360);
+                lv_scale_set_rotation(scale, 270); // 12 o'clock North reference
+                lv_scale_set_total_tick_count(scale, 37); // Ticks every 10° (0..360 inclusive)
+                lv_scale_set_major_tick_every(scale, 3);  // Major tick every 30°
+                lv_scale_set_label_show(scale, true);
+
+                static const char *s_compass_labels[] = {
+                    "N", "30", "60", "E", "120", "150", "S", "210", "240", "W", "300", "330", "", NULL
+                };
+                lv_scale_set_text_src(scale, s_compass_labels);
+            } else if (is_360_generic) {
+                lv_scale_set_angle_range(scale, 360);
+                lv_scale_set_rotation(scale, 270);
+                lv_scale_set_total_tick_count(scale, 37);
+                lv_scale_set_major_tick_every(scale, 3);
+                lv_scale_set_label_show(scale, true);
+            } else {
+                lv_scale_set_angle_range(scale, 240);
+                lv_scale_set_rotation(scale, 150);
+                lv_scale_set_total_tick_count(scale, 21);
+                lv_scale_set_major_tick_every(scale, 5);
+                lv_scale_set_label_show(scale, true);
+            }
 
             lv_obj_t *needle = lv_line_create(scale);
+            lv_obj_set_style_line_width(needle, 4, 0);
+            lv_obj_set_style_line_color(needle, lv_palette_main(LV_PALETTE_RED), 0);
+            lv_obj_set_style_line_rounded(needle, true, 0);
             lv_scale_set_line_needle_value(scale, needle, -25, d->initial_val);
+
+            if (is_wind || is_compass) {
+                lv_obj_t *cap = lv_obj_create(scale);
+                lv_obj_set_size(cap, 14, 14);
+                lv_obj_set_style_radius(cap, LV_RADIUS_CIRCLE, 0);
+                lv_obj_set_style_bg_color(cap, lv_color_black(), 0);
+                lv_obj_set_style_border_width(cap, 2, 0);
+                lv_obj_set_style_border_color(cap, lv_palette_main(LV_PALETTE_GREY), 0);
+                lv_obj_center(cap);
+            }
 
             if (s_num_scales < MAX_BINDINGS) {
                 bound_scale_t *b = &s_scales[s_num_scales++];
