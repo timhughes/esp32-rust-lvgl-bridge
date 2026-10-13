@@ -20,6 +20,12 @@ impl ParamId {
     /// Start of the reserved framework protocol block (`0xFFFF_0000..=u32::MAX`, top 64K IDs).
     pub const PROTOCOL_RESERVED_START: u32 = 0xFFFF_0000;
 
+    /// Special framework protocol parameter ID for touch gesture swipe events.
+    pub const GESTURE_SWIPE: Self = Self(u32::MAX - 2);
+
+    /// Special framework protocol parameter ID for runtime screen selection and transitions.
+    pub const SCREEN_SELECT: Self = Self(u32::MAX - 1);
+
     /// Special framework protocol parameter ID for dynamic runtime widget flag updates.
     pub const WIDGET_FLAGS: Self = Self(u32::MAX);
 

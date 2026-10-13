@@ -11,7 +11,8 @@ extern "C" {
 
 typedef enum {
     PARAM_NONE              = 0U,          // Sentinel: Unbound widget or root container without parent
-    PARAM_PROTOCOL_RESERVED = 0xFFFF0000U, // Start of top 64K IDs reserved for framework protocol messages
+    PARAM_GESTURE_SWIPE     = 0xFFFFFFFDU, // Framework touch gesture swipe (u32::MAX - 2): i32_val: +1=next, -1=prev
+    PARAM_SCREEN_SELECT     = 0xFFFFFFFEU, // Framework screen switch (u32::MAX - 1): u32_val=screen_idx
     PARAM_WIDGET_FLAGS      = 0xFFFFFFFFU, // Framework protocol sentinel (u32::MAX): ack_seq_id=target_param_id, u32_val=flags
 } param_id_t;
 

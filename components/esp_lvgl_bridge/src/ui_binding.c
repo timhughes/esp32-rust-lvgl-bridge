@@ -1350,6 +1350,61 @@ void ui_engine_dispatch_telemetry(const device_telemetry_t *telem) {
 #pragma GCC diagnostic pop
         }
     }
+
+    // 26. Buttons (Dynamic label text updates)
+    for (size_t i = 0; i < s_num_buttons; i++) {
+        bound_button_t *b = &s_buttons[i];
+        if (b->opts.param_id == telem->param_id) {
+            if (telem->value.str_val[0] != '\0') {
+                lv_obj_t *lbl = lv_obj_get_child(b->opts.button, 0);
+                if (lbl) {
+                    lv_label_set_text(lbl, (const char *)telem->value.str_val);
+                }
+            }
+        }
+    }
+
+    // 27. Screen Selection / Transition (Phase 3)
+    if (telem->param_id == PARAM_SCREEN_SELECT) {
+        size_t new_screen_idx = (size_t)telem->value.u32_val;
+        size_t count = 0;
+        extern const widget_descriptor_t *rust_get_seadash_screen_schema(size_t screen_idx, size_t *out_count);
+        const widget_descriptor_t *new_schema = rust_get_seadash_screen_schema(new_screen_idx, &count);
+        if (new_schema && count > 0) {
+            lv_obj_clean(lv_screen_active());
+            ui_engine_init();
+            ui_engine_build_from_schema(new_schema, count);
+        }
+        return;
+    }
+}
+
+__attribute__((weak)) const widget_descriptor_t *rust_get_seadash_screen_schema(size_t screen_idx, size_t *out_count) {
+    (void)screen_idx;
+    if (out_count) *out_count = 0;
+    return NULL;
+}
+
+static void on_screen_gesture(lv_event_t *e) {
+    (void)e;
+    lv_indev_t *indev = lv_indev_active();
+    if (!indev) return;
+    lv_dir_t dir = lv_indev_get_gesture_dir(indev);
+    if (dir == LV_DIR_LEFT) {
+        ui_command_t cmd = {
+            .param_id = PARAM_GESTURE_SWIPE,
+            .seq_id = ++s_global_seq,
+            .value = { .i32_val = 1 },
+        };
+        bridge_send_command_from_ui(&cmd);
+    } else if (dir == LV_DIR_RIGHT) {
+        ui_command_t cmd = {
+            .param_id = PARAM_GESTURE_SWIPE,
+            .seq_id = ++s_global_seq,
+            .value = { .i32_val = -1 },
+        };
+        bridge_send_command_from_ui(&cmd);
+    }
 }
 
 void ui_engine_pump_telemetry(void) {
@@ -1383,6 +1438,7 @@ void ui_engine_build_from_schema(const widget_descriptor_t *schema, size_t count
     }
     s_num_lookups = 0;
     lv_obj_t *scr = lv_screen_active();
+    lv_obj_add_event_cb(scr, on_screen_gesture, LV_EVENT_GESTURE, NULL);
 
     for (size_t i = 0; i < count; i++) {
         const widget_descriptor_t *d = &schema[i];
@@ -1488,7 +1544,7 @@ void ui_engine_build_from_schema(const widget_descriptor_t *schema, size_t count
             lv_obj_align(lbl, align, d->offset_x, d->offset_y);
             if (d->label_primary) {
                 if (strstr(d->label_primary, "%s")) {
-                    lv_label_set_text_fmt(lbl, d->label_primary, d->label_secondary ? d->label_secondary : "Init");
+                    lv_label_set_text_fmt(lbl, d->label_primary, d->label_secondary ? d->label_secondary : "--");
                 } else if (strchr(d->label_primary, '%')) {
                     lv_label_set_text_fmt(lbl, d->label_primary, (unsigned long)d->initial_val);
                 } else {
