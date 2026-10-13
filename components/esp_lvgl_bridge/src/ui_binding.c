@@ -153,6 +153,7 @@ typedef struct {
     param_id_t param_id;
     lv_obj_t *scale;
     lv_obj_t *needle;
+    bool is_compass;
 } bound_scale_t;
 
 // Tier 3 Widgets
@@ -1197,7 +1198,17 @@ void ui_engine_dispatch_telemetry(const device_telemetry_t *telem) {
     for (size_t i = 0; i < s_num_scales; i++) {
         bound_scale_t *b = &s_scales[i];
         if (b->param_id == telem->param_id && b->needle) {
-            lv_scale_set_line_needle_value(b->scale, b->needle, -25, telem->value.i32_val);
+            if (b->is_compass) {
+                // Marine steering compass (Head-Up):
+                // The dial (compass card) turns beneath a static pointer (lubber line) pointing forward (12 o'clock / 270°).
+                int32_t heading = telem->value.i32_val;
+                int32_t rot = (270 - heading) % 360;
+                if (rot < 0) rot += 360;
+                lv_scale_set_rotation(b->scale, rot);
+                lv_scale_set_line_needle_value(b->scale, b->needle, -25, heading);
+            } else {
+                lv_scale_set_line_needle_value(b->scale, b->needle, -25, telem->value.i32_val);
+            }
         }
     }
 
@@ -1857,7 +1868,9 @@ void ui_engine_build_from_schema(const widget_descriptor_t *schema, size_t count
             } else if (is_compass) {
                 // 360-degree circular marine compass rose dial
                 lv_scale_set_angle_range(scale, 360);
-                lv_scale_set_rotation(scale, 270); // 12 o'clock North reference
+                int32_t rot = (270 - d->initial_val) % 360;
+                if (rot < 0) rot += 360;
+                lv_scale_set_rotation(scale, rot);
                 lv_scale_set_total_tick_count(scale, 37); // Ticks every 10° (0..360 inclusive)
                 lv_scale_set_major_tick_every(scale, 3);  // Major tick every 30°
                 lv_scale_set_label_show(scale, true);
@@ -1901,6 +1914,7 @@ void ui_engine_build_from_schema(const widget_descriptor_t *schema, size_t count
                 b->param_id = d->param_id;
                 b->scale = scale;
                 b->needle = needle;
+                b->is_compass = is_compass;
             }
             register_lookup(d->param_id, scale);
             break;
