@@ -1368,8 +1368,8 @@ void ui_engine_dispatch_telemetry(const device_telemetry_t *telem) {
     if (telem->param_id == PARAM_SCREEN_SELECT) {
         size_t new_screen_idx = (size_t)telem->value.u32_val;
         size_t count = 0;
-        extern const widget_descriptor_t *rust_get_seadash_screen_schema(size_t screen_idx, size_t *out_count);
-        const widget_descriptor_t *new_schema = rust_get_seadash_screen_schema(new_screen_idx, &count);
+        extern const widget_descriptor_t *rust_get_screen_schema(size_t screen_idx, size_t *out_count);
+        const widget_descriptor_t *new_schema = rust_get_screen_schema(new_screen_idx, &count);
         if (new_schema && count > 0) {
             lv_obj_clean(lv_screen_active());
             ui_engine_init();
@@ -1379,32 +1379,10 @@ void ui_engine_dispatch_telemetry(const device_telemetry_t *telem) {
     }
 }
 
-__attribute__((weak)) const widget_descriptor_t *rust_get_seadash_screen_schema(size_t screen_idx, size_t *out_count) {
+__attribute__((weak)) const widget_descriptor_t *rust_get_screen_schema(size_t screen_idx, size_t *out_count) {
     (void)screen_idx;
     if (out_count) *out_count = 0;
     return NULL;
-}
-
-static void on_screen_gesture(lv_event_t *e) {
-    (void)e;
-    lv_indev_t *indev = lv_indev_active();
-    if (!indev) return;
-    lv_dir_t dir = lv_indev_get_gesture_dir(indev);
-    if (dir == LV_DIR_LEFT) {
-        ui_command_t cmd = {
-            .param_id = PARAM_GESTURE_SWIPE,
-            .seq_id = ++s_global_seq,
-            .value = { .i32_val = 1 },
-        };
-        bridge_send_command_from_ui(&cmd);
-    } else if (dir == LV_DIR_RIGHT) {
-        ui_command_t cmd = {
-            .param_id = PARAM_GESTURE_SWIPE,
-            .seq_id = ++s_global_seq,
-            .value = { .i32_val = -1 },
-        };
-        bridge_send_command_from_ui(&cmd);
-    }
 }
 
 void ui_engine_pump_telemetry(void) {
@@ -1438,7 +1416,6 @@ void ui_engine_build_from_schema(const widget_descriptor_t *schema, size_t count
     }
     s_num_lookups = 0;
     lv_obj_t *scr = lv_screen_active();
-    lv_obj_add_event_cb(scr, on_screen_gesture, LV_EVENT_GESTURE, NULL);
 
     for (size_t i = 0; i < count; i++) {
         const widget_descriptor_t *d = &schema[i];

@@ -95,7 +95,6 @@ static void lvgl_touch_read_cb(lv_indev_t *indev, lv_indev_data_t *data) {
         data->point.x = pt.x;
         data->point.y = pt.y;
         data->state = LV_INDEV_STATE_PRESSED;
-        ESP_LOGI(TAG, "Touch point: (%d, %d)", (int)pt.x, (int)pt.y);
     } else {
         data->state = LV_INDEV_STATE_RELEASED;
     }
@@ -287,8 +286,8 @@ lv_indev_t *bsp_touch_init(lv_display_t *disp) {
         .rst_gpio_num = -1,
         .int_gpio_num = -1,
         .flags = {
-            .swap_xy = 1,
-            .mirror_x = 1,
+            .swap_xy = 0,
+            .mirror_x = 0,
             .mirror_y = 0,
         },
     };
